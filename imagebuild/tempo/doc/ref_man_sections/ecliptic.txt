@@ -1,0 +1,18 @@
+OBLIQUITY OF THE ECLIIPTIC FILE:  ecliptic.txt in the ephemeris directory
+
+This file contains values of the obliquity of the ecliptic according to
+various conventions.  Details are given in the file itself.  The file can
+have comments starting with a pound sign.  Blank lines are ignored.
+Lines should following the form of, e.g.,
+IAU1976 84381.448
+where the first word on the line is the name of the convention and 
+the second is the value of the obliquity in milliarcseconds.
+Whitespace may be used freely.
+
+One entry should have the convention name DEFAULT.  This value will
+be used if the user does not specify a convention.  The DEFAULT value
+can be equal to the value of another entry, e.g.,
+IAU1976 84381.448
+DEFAULT 84381.448
+
+

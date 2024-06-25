@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Tempo version 11.000</title>
+  </head>
+
+  <body>
+      <h1>Tempo version 11.000</h1>
+
+      Tempo version 11.000 is a substantial revsion of the program.  
+      Improvements include a new, friendlier input file format,
+      better astrometric algorithms, and a new binary model.  Many
+      internal improvements were made to the code, most notably
+      the use modified Julian days throughout the program.<br><br>
+
+      The revisions were coordinated by and largely written by Dick
+      Manchester, with major input from Joe Taylor, David Nice, Alan Irwin 
+      and Norbert Wex.
+      <br><br>
+
+      The major changes are:
+
+      <ul>
+	<li>Ephemeris:
+	  <ul>
+
+	    <li>The CfA PEP solar system ephemeris is no longer supported.
+
+	    <li>All output is in J2000 coordinates, although B1950 may be used
+	    for input.
+
+	    <li>The JPL ephemerides are now read directly in the format
+	    provided by JPL.
+
+	    <li> A systematic error in use of TDB-TT corrections when
+	    referencing the ephemeris has been corrected. 
+
+	    <li>DE200 and DE405 ephemerides for years 1950-2050 are supplied
+	    with the standard Tempo distribution, but they could easily be
+	    supplemented by other JPL-format ephemerides.
+
+	  </ul>
+
+	<li>A new free-format input file format has been added:
+	  <ul>
+	    <li> Header information and TOAs may be in separate files or
+	      in a single file.
+	    <li> Parameters are identified by keyword.
+	    <li> Parameters not previously available for input are now
+	      allowed (F0, F1, F2, F3, Xdot, DMCOFx, etc.)
+	    <li> Final parameters are output in a file with the same
+	      format as the input files.
+	    <li> Comments and blank lines are allowed throughout the files.
+	  </ul>
+
+	<li> Old-style files with fixed-format headers may still be used (`-o'
+	command-line option).
+
+	<li> The format of tempo.lis has been changed to emphasize rotation
+	  frequencies rather than periods.
+
+	<li> The treatment of proper motions and parallax has been made
+	  more rigorous.  As part of this, a radial velocity term is
+	  introduced.  
+
+	<li> There is an option to compute parameters corrected for
+	  motion of the pulsar (`Shklovskii' effect).
+
+	<li> Internal 1966 day numbers have been eliminated.  They
+	  are still allowed in input files for backwards compatability.
+
+	<li> A new binary model (DD+) accounts more accurately for orbital
+	  precession due to spin-orbit coupling.
+
+	<li> The ephemeris prediction system (`tz') has been modified:
+	  <ul>
+	    <li> Pulsar names may have up to 10 characters.
+	    <li> Pulsar parameters may be spread among many files 
+	      (psrname.par).
+	    <li> Absolute phase calculations have been improved.
+	    <li> A doppler-shift factor has been added to the output.
+	  </ul>
+
+	<li> Confiuration file tempo.cfg has been revamped.
+
+      </ul>
+
+      <a href="tempo11.000_install.html"> To the Tempo 11 installation 
+         instructions.</a><br>
+      <a href="reference_manual.html"> To the Tempo 11 reference 
+         manual.</a><br>
+      <a href="tempo_idx.html"> Back to main Tempo page.</a><br>
+
+  </body>
+</html>

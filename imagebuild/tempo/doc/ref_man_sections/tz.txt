@@ -1,0 +1,19 @@
+PREDICTION MODE
+
+In prediction mode (indicated by '-z' on the command line, and
+sometimes called 'tz' mode), tempo calculates pulsar ephemerides over
+short periods of time (typically hours) in the form of a simple
+polynomial expansion.  Such ephemerides are particularly useful for
+on-line folding of pulsar data while observing.  Ephemerides are
+calculated on a day-by-day basis centered about the transit time of
+the pulsar at the observatory.  The time spans of the polynomial
+series are specified by giving a 'maximum hour angle' for observations
+along with a maximum time span over which a single series must be
+valid.  Multiple series within a day are calculated when necessary.
+The user is queried for start and end dates (MJD) for which
+ephemerides will be calculated.
+
+The list of pulsars for which ephemerides are to be produced is read
+from file 'tz.in'.
+
+

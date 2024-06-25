@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Tempo Installation</title>
+  </head>
+  
+  <body>
+    <h1>Tempo Installation (v. 11.001 and later)</h1>
+    
+    Use the following procedure for installing the most recent version of
+    Tempo.  (It is slightly different than the procedure for installing 
+    <a href=":tempo11.000_install.html">tempo version 11.000</a>.)
+    Installation of recent versions has been tested on systems running
+    Solaris, Linux, and OSF/1.  The procedure below should work without
+    modification under Solaris 2.5.1.  Notes for other systems are listed at
+    the end of this document.
+    
+    <ul>
+      <li>
+        Create a directory (e.g. tempo11) and cd to it.<br><br>
+      <li>
+        Download the following files from ATNF (Australia) or 
+        Princeton (USA):<br><br>
+        <ul>
+          <li><pre>tempo.tar.gz:       <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/tempo.tar.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/tempo.tar.gz">Princeton</a></pre>
+          <li><pre>DE200.1950.2050.gz: <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/DE200.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/DE200.1950.2050.gz">Princeton</a></pre>
+          <li><pre>DE405.1950.2050.gz: <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/DE405.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/DE405.1950.2050.gz">Princeton</a></pre>
+          <li><pre>TDB.1950.2050.gz:   <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/TDB.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/TDB.1950.2050.gz">Princeton</a></pre>
+        </ul><br>
+        Note: these are large files.  It may be easier to use anonymous-ftp
+        directly to download the files rather than downloading them via a
+        web browser.<br><br>
+
+      <li>
+        Uncompress the ephemeris files. It is recommended that these be
+        moved to to a parallel directory, e.g. tempo_ephem.<br>
+        <pre>gunzip DE200.1950.2050.gz DE405.1950.2050.gz TDB1950.2050.gz
+mkdir ../tempo_ephem
+mv *2050 ../tempo_ephem
+
+        </pre>
+        
+
+      <li> 
+        Un-compress the source files:<br>
+        <pre>gunzip tempo.tar.gz </pre>
+        
+      <li>
+        Un-tar the source code and support files:<br>
+        <pre>tar -xf tempo.tar</pre>
+
+      <li>
+        This creates several subdirectories, including `src' which
+        contains the source code.  Go to this directory:<br>
+        <pre>cd src</pre>
+
+      <li> If necessary, edit the `Makefile' to reflect the compilers
+        and compiler flags appropriate to your system.<br><br>
+
+      <li>
+        Compile the code.  The executable will be placed in the 
+        current directory
+        <pre>make all</pre>
+
+      <li>
+        Go to the tempo11 root directory:
+        <pre>cd ..</pre>
+
+      <li>
+        Set environment variable TEMPO to point to the tempo11 directory
+        using the full path name.  For example, using csh in the directory `/disk1':
+        <pre>setenv TEMPO /disk1/tempo11</pre>
+
+      <li>
+        Edit tempo.cfg.  Change the EPHDIR entry to the name of the directory
+        containing the ephemeris files, including a trailing slash.  
+        Change the CLKDIR and PARDIR entries to the full path of the
+        tempo11 directory plus `clock/' (for CLKDIR) or `tzpar/'
+        (for PARDIR).
+        Change OBSYS to the full path of the file
+        tempo11/obsys.dat.  For example, if the root directory is
+        `/disk1', these entries in tempo.cfg would be
+        <pre>CLKDIR     /disk1/tempo11/clock/
+PARDIR     /disk1/tempo11/tzpar/
+EPHDIR     /disk1/tempo_ephem/
+OBSYS      /disk1/tempo11/obsys.dat   
+        </pre>
+
+
+      <li>
+        Run tempo on a test file:
+        <pre>cd test
+../src/tempo 0437.tim</pre>
+        
+      <li>
+        Compare the 'tempo.lis' and '0437-4715.par' output files with the 
+        files from the distribution:
+        <pre>diff tempo.lis tempo.lis.original
+diff 0437-4715.par 0437-4715.par.original</pre> 
+        Ideally the 'par' files will be idential and the 'tempo.lis' files
+        will differ in only two lines (date and input file name).  In 
+        practice, parameter values often differ slighly in their least
+        significant digits.<br><br>  
+      <li>
+        Optionally get rid of the 'tar' file:
+        <pre>rm tempo.tar</pre>
+    </ul>
+
+    Compliation notes:
+
+    <ul>
+      <li> Tempo v 11.005 has been succesfully compiled under:
+        <ul>
+          <li> Sparc:  SunOS 5.6 with Sun 4.2 compilers
+          <li> Intel x86: Red Hat 6.2 (Linux 2.2.14-12) 
+            with egcs-2.91.66 compilers
+          <li> Alpha: Red Hat 6.1 (Linux 2.2.13-0.9) 
+            with egcs-2.91.66 compilers
+          <li> Alpha: Red Hat 6.1 (Linux 2.2.13-0.9) 
+            with Compaq Fortran (V1.0-920) and Compaq C (V6.2-002).
+            <ul>
+              <li> Use the ``-assume byterecl'' flag with the 
+                Compaq Fortran
+                compiler, or change ``nrecl=4'' to ``nrecl=1'' in
+                ephinit.f and tdbinit.f. 
+              <li> If you get ``not enough room for program headers'' errors
+                from the linker, try the following compile sequence.
+                (I don't understand the exact origin of this problem.
+                Comments and suggestions are especially welcome--DJN.)
+                <dl>
+                  <dt> tempo: $(OBJS)
+                  <dd>  $(FC) $(FFLAGS) -r -o tmp $(OBJS)
+                  <dd> ld -o tempo tmp
+                </dl>
+            </ul>
+          <li> Problems have been noticed with Linux systems writing
+            to disks cross-mounted from Solaris systems via NFS.  File
+            output can be very slow, which can cause Tempo to appear
+            to hang near the end of a run, when it is writing the
+            resid2.tmp file.  The solution is
+            to run tempo from a working directory (i.e., the directory
+            where tempo.lis and resid2.tmp are written) which is not
+            cross-mounted.  (Suggestions for better solutions would be welcome!)
+        </ul>
+    </ul>
+
+
+  </body>
+</html>

@@ -1,0 +1,39 @@
+Extract
+
+notes by DJN, 25-March-2010
+
+Extract reads tempo residual output files resid2.tmp and writes the
+residuals in ASCII form.  
+
+Use:
+  extract [options] [outfile]
+
+  options:
+    -h:      Help message, lists what is in each column of the output file.
+
+  parameters:
+    outfile: Output file name.  Default is "c.tmp"
+
+The output file has one line per residual with the following columns:
+ 1. TOA day number in 1966 days (i.e., 1-Jan-1966 = 0)  
+    (Here for historic reasons; use MJD, column 7, instead!)
+ 2. postfit residual (in P)
+ 3. postfit residual (in microsec)
+ 4. timing error used by Tempo (in microsec)
+ 5. prefit residual (in microsec)
+ 6. orbital phase
+ 7. MJD
+ 8. ptype (use as point type in mongo/sm to distinguish points by freq
+ 9. serial number (1,2,3,....)
+10. day of year (day number mod 365.25)
+11. observing frequency (in MHz)
+12. time of day in seconds
+13. serial number, except that this counter skips ahead 10 each time there is 
+    a gap of more than 0.25 days or a negative jump in the MJDs
+    (useful for separating observations at different epochs in a plot)
+14. MJD-50000   (fewer quantization issues than MJD when read by 
+    plotting programs)
+15. weight of point in tempo fit
+
+Handy tip: to a good approximation, YEAR=(MJD-53005)/365.25+2004.
+

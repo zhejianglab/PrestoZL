@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+#
+# check.ut1
+# checks that dates in a ut1 file make sense
+#
+# use: check.ut1 < $TEMPO/clock/ut1.dat
+#
+<STDIN>;
+($npr,$int) = (split(" ",<STDIN>))[4,5];
+($mjd0) = (split(" ",<STDIN>))[0];
+$n = 0;
+$mjdx = $mjd0;
+while (<STDIN>) {
+  $n++;
+  $mjdx += $npr*$int;
+  $mjd = (split)[0];
+  print "discrepancy, line $n:  expect $mjdx got $mjd\n"  if ($mjd != $mjdx);
+}
+      

@@ -1,0 +1,71 @@
+Notes on cull.pl, DJN, 18-March-2010
+
+Setup:
+  It is a perl script so no installation is needed.
+  I make a soft link from bin/cull to $TEMPO/util/cull/cull.pl 
+
+Use (shown via examples):
+
+To get a list of options:
+
+  cull -h
+
+The following takes all the TOAs from file 1234.tim (including TOAs
+incorporated via INCLUDE statements), merges them into a single file
+1234.new, and comments out any TOAs which had residual greater than 10
+microseconds:
+
+  tempo 1234.tim -f 1234.par
+  cull -r10u 1234.tim 1234.new
+
+If the parameters and TOAs are all in a single file (HEAD / TOA in the
+file), cull will work as you would expect.  It copies the parameters from
+the top of the old file to the top of the new file, then writes the
+new TOAs in the body of the new file:
+
+  tempo 1234.a
+  cull -r10u 1234.a 1234.new
+
+You can specify maximum residual in seconds ("-r10s") or milliseconds
+("-r10ms").  To remove only positive residuals greater than 10
+microseconds, use "-r+10u".  To remove only negative residuals greater in
+magnitude than 10 microseconds, use "-r-10u".
+
+If the .tim file INCLUDES a bunch of other files, and you want to preserve
+that entire file structure, you can do so.  Use the "-o" option, and
+specify an extension which will be added to the .tim file and all the
+included files:
+
+  tempo 1234.tim -f 1234.par
+  cull -r10u 1234.tim -o abc
+
+This creates output file 1234.tim.abc.  If 1234.tim uses include statements
+such as "INCLUDE toa/1234.arecibo.800.toa", cull will create new files such
+as "toa/1234.arecibo.800.toa.abc", and will set up 1234.tim.abc so that it
+INCLUDEs these new files.
+
+You can merge a tree full of INCLUDEd files into a single timing file,
+including all TOAs (no actual "culling" of the data):
+
+  tempo 1234.tim -f 1234.par
+  cull 1234.tim 1234.all
+
+If you want to remove (comment out) TOAs from TOAs which are in DMX ranges
+which have a frequency spread of less than 25% (defining frequency spread
+as (f_max-f_min)/(0.5*(f_min+f_max))), use the "-g" option:
+
+  tempo 1234.tim -f 1234.par
+  cull -g 1234.tim 1234.new
+
+You can combine options, e.g., "-r10u -o".
+
+Cull can do a *lot* of other things as well: exclude TOAs from specified
+MJD ranges, exclude TOAs from specified frequency ranges, exclude TOAs from
+specified orbital phase ranges, remove comment lines, convert 1966 day
+numbers to MJD, convert Parkes/Jodrell TOAs to Princeton format, filter out
+TOAs using various DMX/multifrequency criteria, merge TIME statements into
+TOAs, replace JUMPs with TIME statements, replace raw TOA errors with
+EFAC/EQUAD/EMIN'd values, remove zero-weight points, remove SKIP'd
+sections.
+
+

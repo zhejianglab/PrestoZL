@@ -1,0 +1,14 @@
+INPUT FILE
+
+The input file(s) have either a 'fixed-format' or 'free-format'
+header.  Pulse times of arrival (TOAs) follow the header, or may
+be listed in a separate file if a free-format header is used.
+Use of the fixed-format headers is discouraged, as new features will likely
+be added only for free-format files.
+
+Blank lines and comment lines are allowed throughout input files
+except within fixed-format headers.  Comment lines are indicated
+by 'C ' (capital C followed by a space) in the first two columns
+or by '#' in the first non-blank column.
+
+

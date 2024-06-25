@@ -1,0 +1,16 @@
+PSR              1937+21     
+RA       19:39:38.56024702
+DEC       21:34:59.1434800
+PMRA               -0.0380
+PMDEC              -0.4150
+PX                  0.2000
+F0    641.9282681231345578
+F1     -4.331757517747D-14
+PEPOCH        46024.858000
+DM               71.040000
+EPHEM             DE200
+CLK               UNCORR      
+TZRMJD 49683.6812499099469
+TZRFRQ          430.000000
+TZRSITE                  3
+# Produced from tztot.dat, in Princeton, at Tue Jul 14 11:33:55 1998

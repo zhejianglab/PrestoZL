@@ -1,0 +1,9 @@
+"lk" is the classic ascii residual plotting program.
+
+Useful if you are stuck on an island with nothing but a VT100 
+connected to a computer with tempo installed.
+
+To make it: "gfortran -o lk lk.f", substituting the name of your
+favorite fortran compiler.  Maybe someday there will be a Makefile.
+
+To run it: type "lk"

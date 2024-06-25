@@ -1,0 +1,19 @@
+#! /bin/csh
+# Uploads documentation to Sourceforge.  Gets username from git.
+
+# Check that we're running from right dir
+set ldir = `pwd | awk -F/ '{print $NF}'`
+if ($ldir != "doc") then
+  echo "The upload script must be run from the doc/ subdir."
+  exit
+endif
+
+set server = `git config --get remote.origin.url`
+
+set SFUSER = `echo $server | awk -F// '{print $2}' | awk -F@ '{print $1}'`
+set SFPATH = ${SFUSER},tempo@web.sourceforge.net:htdocs/
+
+echo "Uploading webpages as $SFUSER"
+
+rsync -av -C --exclude=upload --exclude=.cvsignore *.html *.txt ref_man_sections $SFPATH/
+

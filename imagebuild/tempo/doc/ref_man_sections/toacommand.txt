@@ -1,0 +1,33 @@
+TOA COMMANDS
+
+Numerous commands may be interspersed with the TOA lines.  Command
+lines have the format 'keyword [parameter]'.  The command must start
+in column 1.  Blank space(s) separate the keyword and parameter (if
+any).  Note that TOA commands may not be used in the header.
+
+DITHER  x   Add Gaussian noise with rms=x us.
+EFAC    x   Multiply uncertainties by x
+EMAX    x   Ignore TOAs with residual higher than x us
+EMAP    x   Ignore TOAs with residual higher than x pulse periods
+EMIN    x   Set minimum uncertainty to x
+EQUAD   x   Additional uncertainty in us, added in quadrature
+FMAX    x   Ignore TOAs at frequencies higher than x
+FMIN    x   Ignore TOAs at frequencies lower than x
+FORMAT  x   x=1, parse TOAs in Tempo2 format; x=0, parse standard formats
+INCLUDE x   Insert contents of file x here; may be used recursively
+INFO    x   Write x to info.tmp for subsequent TOAs (until next INFO card)
+JUMP        Beginning or end of a jump segment
+MODE    x   x=0, no weighting;  x=1, use estimated uncertainties
+NOSKIP	    End of a SKIP segment
+PHA1    x   Ignore orbital phases between x and y (see PHA2) 
+PHA2    y  
+PHASE   x   Add x turns of pulsar phase to subsequent TOAs
+SEARCH  x   Sets TRACK mode; inserts JUMPs to allow non-connected solution
+SIGMA   x   Set uncertainties of following TOAs to x us (forces MODE=1)
+SIM	    Enter simulation mode
+SKIP	    Skip all lines until NOSKIP is read
+TIME    x   Add x (seconds) to following TOAs
+TRACK   x   Tracks phase wrap-arounds if time step is less than x days
+ZAWGT	    Weight 1913+16 data for Arecibo zenith angle at 1400 MHz
+
+

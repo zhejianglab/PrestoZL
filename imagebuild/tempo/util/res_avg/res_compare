@@ -1,0 +1,38 @@
+#! /usr/bin/env python
+import sys
+import numpy as np
+
+# Expects input as produced by print_resid
+# Usage: res_compare file1.res file2.res
+
+rfile1 = sys.argv[1]
+rfile2 = sys.argv[2]
+
+raw1 = np.loadtxt(rfile1)
+raw2 = np.loadtxt(rfile2)
+
+ntoa1 = raw1.shape[0]
+ntoa2 = raw2.shape[0]
+
+print "# %s: %d residuals" % (rfile1, ntoa1)
+print "# %s: %d residuals" % (rfile2, ntoa2)
+
+# Will pair up residuals using first match in the following bounds:
+time_tol = 10.0 / 1440.0 # in days
+freq_tol = 1.0           # in MHz
+
+for i1 in range(ntoa1):
+    mjd1 = raw1[i1, 0]
+    freq1 = raw1[i1, 1]
+    res1 = raw1[i1, 2]
+    err1 = raw1[i1, 3]
+    for i2 in range(raw2.shape[0]):
+        mjd2 = raw2[i2, 0]
+        freq2 = raw2[i2, 1]
+        res2 = raw2[i2, 2]
+        err2 = raw2[i2, 3]
+        if abs(mjd2-mjd1)<time_tol and abs(freq2-freq1)<freq_tol:
+            print "%.15f %.3f %+.6e %.3e %+.6e %.3e" % (mjd1, freq1, 
+                    res1, err1, res2, err2)
+            break
+

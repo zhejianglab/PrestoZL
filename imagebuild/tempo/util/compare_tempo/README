@@ -1,0 +1,38 @@
+Use:
+    compare_tempo file1 [file2] (options)
+What it does:
+    default: Run tempo twice (on two files, or two versions of tempo); compare .par files
+    -p mode: Compare .par files without actually running tempo
+Parameters:
+    file1 = tempo input file (or par file in -p mode) for first run
+    file2 = tempo input file (or par file in -p mode) for second run [default=same as file1]
+Options:
+   -aXXX   = tempo executable, first run    [default=tempo]
+   -bXXX   = tempo executable, second run   [default=tempo]
+   -cXXX   $TEMPO env variable, first run  [default=preexisting $TEMPO]
+   -dXXX   $TEMPO env variable, second run [default=preexisting $TEMPO]
+   -eXXX   = working directory, first run   [default=current working directory]
+   -fXXX   = working directory, second run  [default=current working directory]
+   -h      = help message
+   -p      = don't run tempo; read file1 and file2 as tempo .par files
+
+Sample use:
+
+Run tempo on files 1855.a and 1855.b and compare par outputs:
+   compare_tempo 1855.a 1855.b
+
+Run two different versions of tempo (tempo_x, tempo_y) on file 1855.a and compare par outputs:
+   compare_tempo -atempo_x -btempo_y 1855.a
+
+Run tempo on file 1855.a with two different environment variables and compare par outputs:
+   compare_tempo -c/usr/local/tempo -d/usr/local/tempo_experimental 1855.a
+
+Run tempo on file 1855.a in current working directory and in directory ./tmpdir and compare par outputs:
+   compare_tempo -ftmpdir 1855.a
+
+Compare pre-existing tempo output par files 1855_old.par and 1855_new.par:
+   compare_tempo -p 1855_old.par 1855_new.par
+
+Run tempo on files 1855.tim with two different input par files, 1855_x.par and 1855_y.par:
+   compare_tempo 1855.tim -a"tempo -f 1855_x.par" -b"tempo -f 1855_y.par"
+

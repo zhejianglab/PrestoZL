@@ -1,0 +1,409 @@
+#!/usr/bin/perl -w
+
+#   compare_tempo -- compare tempo outputs from two files, or from two
+#                    versions of tempo
+
+#   see usage_die below for usage
+
+use Scalar::Util qw(looks_like_number);
+
+$tpo1default = "tempo";
+$tpo2default = "tempo";
+
+$outblank = ' ' x 192;
+
+($file1, $file2, $tpo1, $tpo2, $env1, $env2, $dir1, $dir2, $parfile1, $parfile2, $runtpo, $sigflag, $hdr, $fullfilename) = 
+        compare_tempo_command_line_parse($tpo1default,$tpo2default,@ARGV);
+
+$parfile1 = " -f $parfile1 " if ($parfile1 ne "");
+$parfile2 = " -f $parfile2 " if ($parfile2 ne "");
+
+die "Error: file $file1 does not exist\n" if (! -e $file1);
+die "Error: file $file2 does not exist\n" if (! -e $file2);
+
+if ($runtpo) { # first tempo run; open par file
+
+  if ($env1 eq "") {
+    if ($dir1 eq "") {
+      system ("$tpo1 $parfile1 $file1 2>&1 > /dev/null\n");
+    } else {
+      system ("cd $dir1; $tpo1 $parfile1 $file1 2>&1 > /dev/null\n");
+    }
+  } else {
+    if ($dir1 eq "") {
+      system ("export TEMPO; TEMPO=$env1; $tpo1 $parfile1 $file1 2>&1 > /dev/null\n");
+    } else {
+      system ("cd $dir1;export TEMPO;TEMPO=$env1;$tpo1 $parfile1 $file1 2>&1 >/dev/null\n");
+    }
+  }
+
+  ($chisqr1,$dof1,$parfile) = &tempo_lis_info($dir1);
+
+  open (A,$parfile);
+
+} else {       # pre-existing first par file
+
+  open (A,$file1); 
+
+}
+
+@a = <A>;
+foreach $i (0..$#a) {
+  chop $a[$i];
+}
+close A;
+
+if ($runtpo) { # second tempo run; open par file
+
+  system ("rm $parfile\n");  # get rid of any pre-existing par file
+
+  if ($env2 eq "") {
+    if ($dir2 eq "") {
+      system ("$tpo2 $parfile2 $file2 2>&1 > /dev/null\n");
+    } else {
+      system ("cd $dir2; $tpo2 $parfile2 $file2 2>&1 > /dev/null\n");
+    }
+  } else {
+    if ($dir2 eq "") {
+      system ("export TEMPO; TEMPO=$env2; $tpo2 $parfile2 $file2 2>&1 > /dev/null\n");
+    } else {
+      system ("cd $dir2;export TEMPO;TEMPO=$env2;$tpo2 $parfile2 $file2 2>&1 >/dev/null\n");
+    }
+  }
+
+  ($chisqr2,$dof2,$parfile) = &tempo_lis_info($dir2);
+
+  open (A,$parfile);
+
+} else {       # pre-existing first par file
+
+  open (A,$file2); 
+
+}
+
+@b = <A>;
+foreach $i (0..$#b) {
+  chop $b[$i];
+}
+close A;
+
+if ($hdr==1) {
+  print "\n";
+
+  print '-'x21 . 'tempo run a' . '-'x21 . '       ';
+  print '-'x21 . 'tempo run b' . '-'x21 . "\n";
+
+  if ($runtpo) {
+    $out = ' 'x 120;
+    substr($out,0,length($file1)+11) = "file:      ".$file1;
+    substr($out,60,length($file2)+11) = "file:      ".$file2;
+    print "$out\n";
+    $out = ' 'x 120;
+    substr($out,0,length($dir1)+11) = "directory: ".$dir1;
+    substr($out,60,length($dir2)+11) = "directory: ".$dir2;
+    print "$out\n";
+    $out = ' 'x 120;
+    substr($out,0,length($tpo1)+11) = "tempo:     ".$tpo1;
+    substr($out,60,length($tpo2)+11) = "tempo:     ".$tpo2;
+    print "$out\n";
+    $out = ' 'x 120;
+    if ($fullfilename) {
+      $p1  = $parfile1;
+      $p2  = $parfile2;
+    } else {
+      $p1 = (split("/",$parfile1))[-1];
+      $p2 = (split("/",$parfile2))[-1];
+    }
+    substr($out,0,length($p1)+11) = "parfile:   ".$p1;
+    substr($out,60,length($p2)+11) = "parfile:   ".$p2;
+    print "$out\n";
+    $out = ' 'x 120;
+    substr($out,0,length($env1)+11) = "\$TEMPO:    ".$env1;
+    substr($out,60,length($env2)+11) = "\$TEMPO:    ".$env2;
+  } else {
+    $out = ' 'x 120;
+    if ($fullfilename) {
+      $p1  = $file1;
+      $p2  = $file2;
+    } else {
+      $p1 = (split("/",$file1))[-1];
+      $p2 = (split("/",$file2))[-1];
+    }
+    substr($out,0,length($p1)+11) = "par file:  ".$p1;
+    substr($out,60,length($p2)+11) = "par file:  ".$p2;
+  }
+  $out = $out . "  "."     b-a     ";
+  $out = $out . "  "." (b-a)/max(siga,sigb)";
+  $out = $out . "  "."   (b-a)/[(a+b)/2]";
+  $out = $out . "  sigb/siga";
+  print "$out\n";
+  print "\n";
+}
+
+foreach $i (0..$#a) {
+while ($#a>-1) {
+  $astring = shift(@a);
+  $matchflag = 0;
+  ($aname,$aoff) = &get_par_name($astring);
+  foreach $i (0..$#b) {
+    ($bname,$boff) = &get_par_name($b[$i]);
+    if ($aname eq $bname) {
+      $matchflag = 1;
+      $bstring = splice(@b,$i,1);
+      last;
+    }
+  }
+  if ($matchflag==0) {
+    $out = $outblank;  
+    substr($out,0,length($astring)) = $astring;
+    print "$out\n";
+  } else {
+    $out = substr($outblank,0,120);
+    substr($out,0,length($astring)) = $astring;
+    substr($out,60,length($bstring)) = $bstring;
+    $astring =~ s/D/E/g;
+    $bstring =~ s/D/E/g;
+    ($atmp1,$aflag,$aerr) = (split(" ",$astring))[$aoff..$aoff+2];
+    ($btmp1,$bflag,$berr) = (split(" ",$bstring))[$boff..$boff+2];
+
+    if (defined($aflag) && defined($bflag) && looks_like_number($aflag) && looks_like_number($bflag) && $aflag>0 && $bflag>0) {    
+      @atmp = split(":",$atmp1);   #this fixes entries of the form aa:bb:cc
+      @btmp = split(":",$btmp1);   #but also works for single number-entries
+      $aparam = 0.;
+      foreach $i (0..$#atmp) {
+        $aparam = 60*$aparam + shift(@atmp);
+      }
+      $bparam = 0.;
+      foreach $i (0..$#btmp) {
+        $bparam = 60*$bparam + shift(@btmp);
+      }
+      $diff = $bparam-$aparam;
+      $diffx = $diff/(0.5*($aparam+$bparam));
+      $diffsig = abs($diff)/$aerr if ($berr<=$aerr);
+      $diffsig = abs($diff)/$berr if ($berr>$aerr);
+      $ratsig = 0;
+      $ratsig = $berr/$aerr if ($aerr>0);
+      $outflag = "";
+      if ($sigflag>0. && $diffsig>$sigflag) {
+        $outflag = "*****";
+      }
+      $out = $out . sprintf("  %13.6e  %20.15f  %20.15f  %7.3f   %s",$diff,$diffsig,$diffx,$ratsig,$outflag);
+    }
+    print "$out\n";
+  }
+}
+while ($#b>-1) {
+  $bstring = pop(@b);
+  $out = $outblank;
+  substr($out,60,length($bstring)) = $bstring;
+  print "$out\n";
+  }
+}
+
+if ($runtpo) {
+  print "\n";
+  printf "CHISQR    %16.2f".(" "x34)."CHISQR     %16.2f\n", $chisqr1, $chisqr2;
+  printf "DOF       %16d"  .(" "x34)."DOF        %16d\n",   $dof1, $dof2;
+  printf "CHISQR/DOF%16.2f".(" "x34)."CHISQR/DOF %16.2f\n", $chisqr1/$dof1, $chisqr2/$dof2;
+}
+
+#-----------------------------------------
+
+sub get_par_name{
+
+  # get parameter name from a tempo par file entry and point to the 'next' word
+  #   if the second word in the par file entry begins with a dash
+  #      then merge the first three words into a single "parameter name"
+  #      else use only the first word as the parameter name
+  # the goal is to handle the different types of par lines, such as:
+  #   PBDOT            0.0458582  1           0.0193367
+  #   XDOT              0.003449  1            0.000890
+  #   T2EFAC -f Rcvr1_2_GUPPI   1.080
+
+
+  my($s) = shift;
+  my($sname,$soff);
+
+  my(@s) = (split(" ",$s));
+
+  my(@plist) = ("JUMP", "T2EFAC", "T2EQUAD", "ECORR");
+
+  $s0 = $s[0];
+
+  my($flag) = 0;
+
+  for $x (@plist) {
+    $flag = 1 if ($s0 =~ /^$x/);
+  }
+
+  if ($flag) {
+    $sname = join("_",@s[0..2]);
+    $soff = 3;
+  } else {
+    $sname = $s[0];
+    $soff = 1;
+  }
+
+  ($sname,$soff);
+}
+
+#-----------------------------------------
+
+sub tempo_lis_info {
+  my($dir) = @_;
+  my($psr);
+  my($chisqr,$dof,$parfile);
+  $dir = "." if ($dir eq "");
+  open (AAA,"$dir/tempo.lis");
+  $psr = "error"; # default
+  ($chisqr,$dof) = (-1,-1);  # default
+  while (<AAA>) {
+    if (/Assumed parameters/) {      
+      $psr = (split)[4];
+    }
+    if (/Chisqr\/nfree/) {
+      @tmp = split("=");
+      $dof     = (split(/\//,$tmp[0]))[-1];
+      $rchisqr = (split(" ",$tmp[1]))[0];
+#      $_ =~ s/=/ = /g;
+#      $_ =~ s/nfree:/nfree: /g;
+#      ($chisqr,$dof) = (split)[1,2];
+#      ($dof,$rchisqr) = (split)[2,4];
+      $chisqr = $rchisqr*$dof;
+    }
+  }
+  close (AAA);
+  $parfile = $dir . "/" . $psr . ".par";
+  ($chisqr, $dof, $parfile);
+
+}
+
+#-----------------------------------------
+
+sub compare_tempo_command_line_parse {
+
+  # parse input line
+  #  
+  # calling parameters:
+  #    -- $tpo1default
+  #    -- $tpo2default
+  #    -- command line parameters from @ARGV
+  #  
+  #
+  # the parsing code is set up to allow for:
+  #    -- flags of the form '-a'
+  #    -- flags with parameters of the form '-axxxx'
+  #    -- parameters without flags, simply 'xxxx' (but see below)
+  #
+  # Parameters without flags are accumulated in array @param.  
+
+  my($tpo1default) = shift;   # first parameter of subroutine
+  my($tpo2default) = shift;   # second parameter of subroutine
+
+  my($usage) = 
+  "\n".
+  "Use:\n".
+  "    compare_tempo file1 [file2] (options)\n".
+  "What it does:\n".
+  "    default: Run tempo twice (on two files, or two versions of tempo); compare .par files\n".
+  "    -p mode: Compare .par files without actually running tempo\n".
+  "Parameters:\n".
+  "    file1 = tempo input file (or par file in -p mode) for first run\n".
+  "    file2 = tempo input file (or par file in -p mode) for second run [default=same as file1]\n".
+  "Options:\n".
+  "   -dXXX   = working directory, first run   [default=current working directory]\n".
+  "   -DXXX   = working directory, second run  [default=current working directory]\n".
+  "   -eXXX   \$TEMPO env variable, first run  [default=preexisting \$TEMPO]\n".
+  "   -EXXX   \$TEMPO env variable, second run [default=preexisting \$TEMPO]\n".
+  "   -fXXX   = par file (tempo -f flag), first run   [default=(psr).par]\n".
+  "   -FXXX   = par file (tempo -f flag), second run  [default=(psr).par]\n".
+  "   -tXXX   = tempo executable, first run    [default=$tpo1default]\n".
+  "   -TXXX   = tempo executable, second run   [default=$tpo2default]\n".
+  "   -h      = help message\n".
+  "   -sXXX   = flag error differences greater than XXX sigma [default=not done]\n".
+  "   -n      = don't print header or file information, only print parameters\n".
+  "   -p      = don't run tempo; read file1 and file2 as tempo .par files\n".
+  "   -l      = in the output, remove any path before listing input file names\n".
+  "\n";
+
+  my($f);
+  my($par);
+  my(@param)=();
+
+  # defaults
+
+  my($env1) = "";
+  my($env2) = "";
+  my($dir1) = "";
+  my($dir2) = "";
+  my($tpo1) = $tpo1default;
+  my($tpo2) = $tpo2default;
+  my($parfile1) = "";
+  my($parfile2) = "";
+  my($runtpo) = 1;
+  my($hdr) = 1;
+  my($fullfilename) = 1;
+  my($sigflag) = 0.;
+
+  foreach $par (@_) {
+    if ($par=~/^-/) {           # flags
+      $par = substr($par,1);      #   strip off the leading "-"
+      while ($par ne "") {      #   loop through the string
+        $f = substr($par,0,1);  #     strip off the current flag
+        $par = substr($par,1);    #     process flags:
+        if ($f eq "t")      {#       -t
+          $tpo1 = $par;
+          last;
+        } elsif ($f eq "T") {#       -T
+          $tpo2 = $par;
+          last;
+        } elsif ($f eq "e") {#       -e
+          $env1 = $par;
+          last;
+        } elsif ($f eq "E") {#       -E
+          $env2 = $par;
+          last;
+        } elsif ($f eq "d") {#       -d
+          $dir1 = $par;
+          last;
+        } elsif ($f eq "D") {#       -D
+          $dir2 = $par;
+          last;
+        } elsif ($f eq "f") {#       -f
+          $parfile1 = $par;
+          last;
+        } elsif ($f eq "F") {#       -F
+          $parfile2 = $par;
+          last;
+        } elsif ($f eq "s") {#       -F
+          $sigflag = $par;
+          last;
+        } elsif ($f eq "h") {#       -h
+          die $usage;
+        } elsif ($f eq "p") {#       -t
+          $runtpo = 0;
+        } elsif ($f eq "n") {#       -n
+          $hdr = 0;
+        } elsif ($f eq "l") {#       -l
+          $fullfilename = 0;
+        }  else {            #       invalid flag
+          print "\nERROR: Invalid flag -$f\n\n";
+          die $usage;
+        }
+      }
+    } else {                  # parameters
+      push @param, $par;        #   push onto parameter list
+    }
+  }
+
+  if ($#param<0 || $#param>1) {
+    print "\nERROR: following parameters have no meaning: ",join(" ",@param),"\n";
+    die $usage;
+  }
+  my($file1) = $param[0];
+  my($file2) = $file1;
+  $file2 = $param[1] if ($#param>0);
+
+  return $file1, $file2, $tpo1, $tpo2, $env1, $env2, $dir1, $dir2, $parfile1, $parfile2, $runtpo, $sigflag, $hdr,$fullfilename;
+}
+

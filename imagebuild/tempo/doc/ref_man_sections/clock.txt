@@ -1,0 +1,82 @@
+OBS_NIST FILE (typically 'time.dat')
+
+This file contains clock offsets between observatory clocks (to which
+TOAs are referenced) and UTC(NIST).
+
+This file may either have fixed format or flexible format.
+
+In fixed format, each line has the following format:
+
+    col      item
+    1-9     MJD
+   10-21    offset1 (us)
+   22-33    offset2 (us)
+   35-35    observatory code
+   37-37    flag
+ 
+  The difference offset1-offset2 is ObservatoryTime-UTC(NIST).  If the
+  flag is ' ' (blank), offsets from the two entries closest to the
+  target MJD are linearly interpolated.  If the flag is 'f', the closest
+  entry to the target MJD is used without interpolation.
+
+In flexible format, each line has the following format:
+  OFFSET <site> <mjd> <offset> [fixed]
+
+  The first six columns must be 'OFFSET' (case insensitive).
+  The site may be a 1- or 2-character observatory code.
+  MJD and offset play the role of MJD and offset2 in the
+  fixed-format headers described above; the optional word
+  "fixed" plays the role of the 'f' flag described above.
+
+In either format, lines that begin with "#" or "MJD" or "=====" are ignored,
+Lines of the form "INCLUDE <filename>" may be used at any point to
+incorporate additional. files.
+
+Clock offsets from a given observatory must be in chronological order,
+but offsets from different observatories may be intermixed.
+
+NIST_UTC, NIST_BIPM, NIST_PTB, NIST_AT1 FILES
+
+These files contain clock offsets between UTC(NIST) and other
+timescales.
+
+The first two lines of these file are ignored.  Subsequent lines have
+the format:
+
+    col      item
+    1-10    MJD
+   11-29    offset
+
+The offset is xxx-UTC(NIST) in nanoseconds, where xxx is UTC,
+TT(BIPM), UTC(PTB), or AT1.  Linear interpolation between entries is
+performed.
+
+
+UT1 FILE (typically 'ut1.dat')
+
+This file contains values of UT1-UTC, TAI-UT1, or A1-UT1 (indicated by
+setting the KIND variable in the header to 1, 2, or 3, respectively).
+The first line of this file is ignored.  Line 2 has the following
+format:
+
+    col       item
+    1-32     VARFMT, the format of data lines in Fortran notation
+   33-34     KIND
+   36-42     start JD (integer)
+   44-50     end JD (integer, set to a high value to read to end of file)
+   52-54     the number of entries per data line
+   56-58     interval, in days, between each entry on a data line
+   60-74     UNITS (e.g., 1E-3 means milliseconds)
+
+Subsequent lines contain a control string, MJD, and offset entries in
+the format described by the VARFMT variable.  If the control string
+reads 'END', any further lines of the file are ignored.
+
+
+LEAP SECOND FILE
+
+File 'leap.sec' in the clkdir directory contains a list of leap
+seconds.  One date is stored per line, in ascending order.  Dates are
+MJDs.
+
+

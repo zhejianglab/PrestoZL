@@ -1,0 +1,92 @@
+Parameters which may be set in free-format headers:
+
+PSRxxx   Pulsar name (parameter name must start "PSR", can have further characters)
+RA       Right Ascension ('hhmmss.sssssss' or 'hh:mm:ss.sssssss')
+DEC      Declination ('-ddmmss.ssssss' or '-dd:mm:ss.ssssss')
+PMRA     Proper motion in RA direction (mas/yr)
+PMDEC    Proper motion in Declination (mas/yr)
+PMRV     Radial 'proper motion' (mas/yr)
+BETA     Ecliptic latitude (degrees)
+LAMBDA   Ecliptic longitude (degrees)
+PMBETA   Proper motion in ecliptic latitude (mas/yr)
+PMLAMBDA Proper motion in ecliptic longitude (mas/yr)
+ELAT     Alternate input name for BETA
+ELONG    Alternate input name for LAMBDA
+PMELAT   Alternate input name for PMBETA
+PMELONG  Alternate input name for PMLAMBDA
+PX       Parallax (mas)
+PEPOCH   Epoch of period/frequency parameters and position (MJD) (not fit)
+POSEPOCH Epoch of position (MJD); default is PEPOCH (not fit)
+F0       Pulsar rotation frequency (s^-1)
+F        Alternative for F0
+F1       Pulsar rotation frequency derivative (s^-2)
+         (if flag 2..9,A..C, fit multiple rotation frequency derivatives)
+F2       Pulsar rotation frequency second derivative
+Fn       Pulsar rotation frequency n'th derivative;  n=2..9,A..C
+P0       Pulsar period (s).  Alternative for 'F0'
+P        Alternative for P0
+P1       Pulsar period derivative (10^-15).  Alternative for 'F1'
+         (if flag>1, fit multiple rotation frequency derivatives)
+DM       Dispersion measure (pc cm^-3)
+         (if flag 2..9,A, fit n time derivative(s) of DM, n=1..9)	
+DMn      n'th time derivative of dispersion measure; n=1..9
+DMX_n    DM value in n'th DMX segment (pc cm^-3)
+DMX1_n   DM time derivative in n'th DMX segment
+DMXEP_n  Epoch of n'th DMX segment (MJD) (not fit)
+DMXR1_n  Start date of n'th DMX segment (MJD) (not fit)
+DMXR2_n  End date of n'th DMX segment (MJD) (not fit)
+DMXF1_n  Lowest frequncy in n'th DMX segment (MJD) (output only)
+DMXF2_n  Highest frequncy in n'th DMX segment (MJD) (output only)
+XMX_m    Amplitude value in m'th XMX segment (pc cm^-3)  dt=XMX*(FREQ/XMXFRQ0)^XMXEXP
+XMXEXP_m Frequency index m'th XMX segment 
+XMXR1_m  Start date of m'th XMX segment (MJD) (not fit)
+XMXR2_m  End date of m'th XMX segment (MJD) (not fit)
+XMXF1_m  Lowest frequency to apply m'th XMX segment (MHz) (default=unused)
+XMXF2_m  Highest frequency to apply m'th XMX segment (MHz) (default=unused)
+XMXFRQ0  Fiducial frequency for XMX delays (default 1000 MHz)
+A1_n     Projected pulsar semi-major axis, n'th orbit (s)  (n=1,2,3; default 1)
+E_n      Eccentricity of n'th orbit                        (n=1,2,3; default 1)
+T0_n     Epoch of periastron passage of n'th orbit (MJD)   (n=1,2,3; default 1)
+TASC     Epoch of ascending node passage (MJD)
+PB_n     Period of n'th orbit (days)                       (n=1,2,3; default 1)
+OM_n     Longitude of periastron passage, n'th orbit (deg) (n=1,2,3; default 1)
+FB0      Orbital frequency (1/PB but different units) (s^-1)   
+FB1      n'th time derivative of frequency of orbit (s^-(1+n))  (n=1..9)
+FBJ0n    Jump in orbital frequency                         
+TFBJ0n   Time of n'th jump in orbital frequency            
+EPS1     First Laplace parameter [eccentricity times sin(omega)]
+EPS2     Second Laplace parameter [eccentricity times cos(omega)]
+EPS1DOT  Time derivative of EPS1
+EPS2DOT  Time derivative of EPS2
+H3       Shapiro delay parameter H3 as in Freire and Wex 2010
+H4       Shapiro delay parameter H4 as in Freire and Wex 2010
+OMDOT    Rate of periastron advance (deg/yr) 
+OM2DOT   Second time derivative of angle of periastron (rad/s^2)
+XOMDOT   Rate of periastron advance minus GR prediction (deg/yr)
+PBDOT    Rate of change of orbital period (10^-12) 
+XPBDOT   Rate of change of orbital period minus GR prediction (10^-12)
+GAMMA    Time dilation & gravitational redshift (s) 
+PPNGAMMA PPN parameter gamma
+SINI     Sine of inclination angle  
+MTOT     Total system mass (solar masses)
+M2       Companion mass (solar masses) 
+DR       Relativistic deformation of the orbit (not fit)
+DTHETA   Relativistic deformation of the orbit (-6) 
+XDOT     Rate of change of projted semi-major axis (10^-12 s/s) 
+XDOT_1   Alias for XDOT (note different unit convention than XDOT_2, etc.)
+XDOT_n   n'th derivative of projected semi-major axis n=2..9 (1/s,1/s^2,etc)
+X2DOT    Second time derivative of projected semi-major axis (1/s)
+EDOT     Rate of change of eccentricity (-12)
+AFAC     aberration geometric factor (sin(eta)/sin(lambda))
+A0       aberration parameter (microsec) (not fit)
+B0       aberration parameter (microsec) (not fit)
+BP       tensor multi-scalar parameter beta-prime (not fit)
+BPP      tensor multi-scalar parameter beta-prime-prime (not fit)
+GLEP_n   Epoch of glitch n, n=1..9 (MJD) (not fit)
+GLPH_n   Glitch n phase increment
+GLF0_n   Permanent glitch n pulse frequency increment (s^-1)
+GLF1_n   Permanent glitch n frequency derivative increment (s^-2)
+GLF0D_n  Decaying glitch n frequency increment (s^-1)
+GLTD_n   Decay time constant for glitch n (days)
+JUMP_n   Time offset for segment n defined by "JUMP" TOA command
+JUMP -f v Tempo2-style flag-based JUMP syntax (f=flag name, v=flag value)

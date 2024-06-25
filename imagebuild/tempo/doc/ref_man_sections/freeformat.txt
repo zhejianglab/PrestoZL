@@ -1,0 +1,38 @@
+FREE-FORMAT HEADER
+
+If a 'free-format' header is used, the header and TOAs are either in
+separate files or are combined into a single file.
+
+If a single file is used, the file contains, in order:
+   1.  A line with the keyword 'HEAD'.
+   2.  Free-format header parameters and control cards.
+   3.  A line with the keyword 'TOA'.
+   4.  TOA lines.
+
+If two primary files are used, the TOAs are listed in the <file>
+given in the tempo command line.  The header parameters are in
+'<file>.par'.  If <file> has an extension, '.par' replaces it; if
+not, '.par' is appended.
+
+Free-format header entries have the format 'keyword value [flag]',
+with one keyword per line.  There are two types of keyword, for
+control parameters and pulsar parameters, respectively. Space(s) or
+tab(s) separate items in an entry.  Characters following the value
+are ignored.  Keywords are case-insensitive, and characters in
+keywords beyond those given in the parameter list are ignored.
+
+Flags are used to indicate whether or not a parameter is to be
+fitted.  Flags must be one and only one character. For keywords
+representing parameters of the fit, a flag value of 0 (the default)
+indicates the parameter should not be fit, while a flag vale of 1
+indicates the parameter should be fit.  In a few special cases flag
+values above 1 indicate fitting of several, closely associated
+parameters. For values above 9, the hex character is used.  Flags are
+not used for most control keywords.  Exceptions are 'START' and
+'FINISH':  these keywords are ignored unless the associated flag
+value is nonzero.
+
+Each time TEMPO is run, an output file giving the results of the fit
+and their errors is produced. This file ('<psrname>.par' in the
+working directory) has the same format as the input file and may be
+used as an input file. (The errors are ignored for TEMPO input.)

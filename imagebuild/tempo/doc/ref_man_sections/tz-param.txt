@@ -1,0 +1,52 @@
+PARAMETER FILES
+
+Pulsar parameters used to calculate ephemrides are read from either
+<psrname>.par files for individual pulsars or, for 'old-format' only, from a
+single "tztot.dat" file.
+
+
+<psrname>.par files
+
+If free-format headers are used (no '-o' flag in the command line), pulsar
+parameters for prediction mode are read from files '<psrname>.par' in the
+'pardir' directory (pointed to in $TEMPO/tempo.cfg).  The parameters are in
+the format described in the FREE-FORMAT HEADERS section.  Three additional
+parameters describe the arrival time used as the absolute reference for the
+ephemeris:
+
+TZRMJD   Reference TOA (MJD)                                      
+TZRFREQ  Frequency of reference TOA (MHz)
+TZRSITE  One-letter observatory code of reference TOA
+
+These and other parameters from a given solution are written out by TEMPO in
+the file '<psrname>.par' in the current working directory. If such a file is
+to be used for prediction purposes, it should be moved to the 'pardir'
+directory.
+
+
+TZTOT.DAT file
+
+If fixed-format headers are used (indicated by command-line flag '-o'),
+pulsar parameters for prediction mode are read from a single 'tztot' file
+(pointed to in $TEMPO/tempo.cfg).  For each pulsar, this file contains
+parameters as described for lines two and higher in FIXED-FORMAT HEADERS,
+above, with an additional flag parameter in the first column of the second
+line of the entry.  Allowed flag values are:
+
+   Flag  Coordinates    Binary model
+   ----  -----------    ------------
+    B       B1950            BT
+    C       J2000            BT
+    D       J2000            BT1P
+    E       J2000            BT2P
+    F       B1950            DD
+    G       J2000            DD
+    P       B1950            NONE
+    Q       J2000            NONE
+
+The header is followed by a single TOA line used as the absolute phase
+reference.  Parameters for different pulsars are listed sequentially
+in the tztot file.  There is a single line between parameters sets
+(and before the first parameter set), which is ignored.  Typically
+this line is filled with dashes in the tztot file.
+

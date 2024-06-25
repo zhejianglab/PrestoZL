@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+
+# dmxparse.pl 
+# from Ingrid, Email, 12 April 2010
+
+$outfiledefault = "dmxparse.out";
+$ndmxmax = 100;
+
+$help = 
+  "\n".
+  "Usage: dmxprase infile [flags]\n".
+  "\n".
+  "Input:\n".
+  "   a tempo or tempo2 .par file with DMX lines\n".
+  "\n".
+  "Flags:\n".
+  "   -h      help message\n".
+  "   -o xxx  output file (default $outfiledefault)".
+  "\n".
+  "\n";
+
+$outfile = $outfiledefault;
+@parlist = ();
+
+@a = @ARGV;
+
+A: while ($#a>=0) {
+  $s = shift @a;
+  if (substr($s,0,1) eq "-") {
+    $s = substr($s,1);
+    while (length($s)>0) { 
+      $ss = substr($s,0,1,"");  # "shift" the first charcter out of $s
+      if ($ss eq "h") {
+        die $help;
+      } elsif ($ss eq "o") {
+        if (length($s)>0) {
+          $outfile = $s;
+          next A;
+        } elsif ($#a>=0) {
+          $outfile = shift @a;
+        } else {
+          die $help;
+        }
+      }
+    }
+  } else {
+    push @parlist, $s
+  }
+}
+
+die $help if ($#parlist!=0);
+
+($file) = @parlist;
+open(IN,$file) || die "cannot open $file for reading: $!";
+open(OUT,">$outfile") || die "cannot open $outfile for writing: $!";
+for ($i = 0;$i < $ndmxmax;$i++) {
+  $dmval[$i] = 0;
+  $dmerr[$i] = 0;
+  $dmr1[$i] = 0;
+  $dmr2[$i] = 0;
+  $dmep[$i] = 0;
+}
+$ndm = 0;
+while (<IN>) {
+  s/D\+/e\+/g;
+  s/D\-/e\-/g;
+  ($jnq,$jnqd) = split;
+  if($jnq =~ /START/) {$mjdstart = $jnqd;}
+  if($jnq =~ /FINISH/) {$mjdend = $jnqd;}
+  if($jnq =~ /PEPOCH/) {$pepoch = $jnqd;}
+  $dmxtest1 = substr($_,0,3);
+  $dmxtest2 = substr($_,0,5);
+  if($dmxtest1 =~ /DMX/ && !($dmxtest2 =~ /DMX  /)) {
+    if($dmxtest2 =~ /DMX_0/) {
+       @b = split;
+       $dmid = substr($b[0],4,4);
+       $ndm++;
+       $dmval[$dmid] = $b[1];
+       $dmerr[$dmid] = $b[3] if ($#b>1); # catch cases with no error
+    }
+    else {
+       ($bound,$epin) = split;
+       $b1test = substr($bound,0,5);
+       $dmid = substr($bound,6,4);
+       if($b1test =~ /DMXR1/) {
+          $dmr1[$dmid] = $epin;
+       }
+       if($b1test =~ /DMXR2/) {
+          $dmr2[$dmid] = $epin;
+       }
+    }
+  }
+}
+close(IN);
+printf "Start, finish, pepoch: %f %f %f\n", $mjdstart, $mjdend,$pepoch;
+for ($i = 1; $i < $ndmxmax; $i++) {
+  if ($dmr1[$i]>0) {  # skip over any unused DMX numbers
+    $dmep[$i] = ($dmr1[$i]+$dmr2[$i])/2.;
+    printf OUT "%f %f %f\n", $dmep[$i],$dmval[$i],$dmerr[$i];
+  }
+}
+close(OUT);

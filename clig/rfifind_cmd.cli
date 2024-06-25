@@ -1,0 +1,57 @@
+# Admin data
+
+Name rfifind
+
+Usage "Examines radio data for narrow and wide band interference as well as problems with channels"
+
+Version [exec date +%d%b%y]
+
+Commandline full_cmd_line
+
+# Options (in order you want them to appear)
+
+Int -ncpus   ncpus      {Number of processors to use with OpenMP} \
+	-r 1 oo  -d 1
+String -o       outfile {Root of the output file names} \
+	-m
+Flag   -filterbank  filterbank  {Raw data in SIGPROC filterbank format}
+Flag   -psrfits     psrfits     {Raw data in PSRFITS format}
+Flag   -noweights  noweights  {Do not apply PSRFITS weights}
+Flag   -noscales   noscales   {Do not apply PSRFITS scales}
+Flag   -nooffsets  nooffsets  {Do not apply PSRFITS offsets}
+Flag   -wapp    wapp    {Raw data in Wideband Arecibo Pulsar Processor (WAPP) format}
+Flag   -window  window  {Window correlator lags with a Hamming window before FFTing}
+Int    -numwapps numwapps  {Number of WAPPs used with contiguous frequencies} \
+	-r 1 8    -d 1
+Int    -if      ifs     {A specific IF to use if available (summed IFs is the default)} \
+        -r 0 1
+Float  -clip    clip    {Time-domain sigma to use for clipping (0.0 = no clipping, 6.0 = default} \
+	-r 0 1000.0  -d 6.0
+Flag   -noclip  noclip  {Do not clip the data.  (The default is to _always_ clip!)}
+Flag   -invert  invert  {For rawdata, flip (or invert) the band}
+Flag   -zerodm  zerodm  {Subtract the mean of all channels from each sample (i.e. remove zero DM)}
+Flag   -xwin    xwin    {Draw plots to the screen as well as a PS file}
+Flag   -nocompute nocompute {Just plot and remake the mask}
+Flag   -rfixwin rfixwin {Show the RFI instances on screen}
+Flag   -rfips   rfips   {Plot the RFI instances in a PS file}
+Double -time    time    {Seconds to integrate for stats and FFT calcs (use this or -blocks)} \
+	-r 0 oo  -d 30.0
+Int    -blocks  blocks  {Number of blocks (usually 16-1024 samples) to integrate for stats and FFT calcs} \
+	-r 1 oo
+Float  -timesig timesigma {The +/-sigma cutoff to reject time-domain chunks} \
+	-r 0 oo  -d 10
+Float  -freqsig freqsigma {The +/-sigma cutoff to reject freq-domain chunks} \
+	-r 0 oo  -d 4
+Float  -chanfrac chantrigfrac {The fraction of bad channels that will mask a full interval} \
+	-r 0.0 1.0 -d 0.7
+Float  -intfrac  inttrigfrac  {The fraction of bad intervals that will mask a full channel} \
+	-r 0.0 1.0 -d 0.3
+String -zapchan zapchanstr {Comma separated string (no spaces!) of channels to explicitly mask.  Ranges are specified by min:max[:step]}
+String -zapints zapintsstr {Comma separated string (no spaces!) of intervals to explicitly mask.  Ranges are specified by min:max[:step]}
+String -mask    maskfile {File containing masking information to use}
+String -ignorechan ignorechanstr {Comma separated string (no spaces!) of channels to ignore (or file containing such string).  Ranges are specified by min:max[:step]}
+
+# Rest of command line:
+
+Rest infile {Input data file name(s).} \
+        -c 1 16384

@@ -1,0 +1,17 @@
+Name realfft
+
+Usage {Perform a single-precision FFT of real data or its inverse}
+
+Version [exec date +%d%b%y]
+
+Commandline full_cmd_line
+
+Flag -fwd  forward  {Force an forward FFT (sign=-1) to be performed}
+Flag -inv  inverse  {Force an inverse FFT (sign=+1) to be performed}
+Flag -del  delete   {Delete the original file(s) when performing the FFT}
+Flag -disk diskfft  {Force the use of the out-of-core memory FFT}
+Flag -mem  memfft   {Force the use of the in-core memory FFT}
+String -tmpdir tmpdir {Scratch directory for temp file(s) in out-of-core FFT}
+String -outdir outdir {Directory where result file(s) will reside}
+Rest infiles {Input data file(s)} \
+	-c 1 16384

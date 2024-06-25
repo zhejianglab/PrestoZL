@@ -1,0 +1,162 @@
+Tempo parameter indexes
+ 
+ Following run from 1 to NPAR1 = 60
+
+  1  R0          Pulsar phase
+  2  f0          Frequency
+  3  f1          Frequency derivative
+  4  f2          Frequency second derivative
+  5  delta       Declination           [or beta for ecliptic coordinates]
+  6  alpha       Right ascension       [or lambda]
+  7  mu_delta    Proper motion in DEC  [or PM beta]
+  8  mu_alpha    Proper motion in RA   [or PM lambda]
+  9  x           Orbital projected semi-major axis
+ 10  e           Orbital eccentricity        [or EPS1 for nbin=9]
+ 11  T0          Time of periastron passage
+ 12  Pb          Orbital period
+ 13  OM          Longitude of periastron     [or EPS2 for nbin=9]
+ 14  OMdot       Advance of periastron                   
+ 15  Gamma       Time dilation, grav redshift            4: N/A
+ 16  DM          Dispersion Measure 
+ 17  px          Parallax
+ 18  pbdot       Orbital period derivative               
+ 19  PPNgamma    PPN parameter gamma
+ 20  s=sin(i)    Orbit inclination, DD parameter s     1,4: N/A
+     varsig      Freire & Wex parameter varsig     nbin=15 only 
+ 21  M           Total mass, m1+m2                 1,2,3,5: N/A
+ 22  m2          Companion mass                       1,2,: N/A
+     h3          Freire & Wex parameter h3         nbin=15,16 only 
+ 23  dtheta      DD parameter    (nbin=3)
+ 24  xdot        Derivative of x
+ 25  edot        Derivative of eccentricity
+ 26  x2          Projected semi-major axis #2
+ 27  e2          Eccentricity #2
+ 28  T02         Time of periastron #2
+ 29  Pb2         Orbital period #2
+ 30  OM2         Longitude of periastron #2
+ 31  x3          Projected semi-major axis #3
+ 32  e3          Eccentricity #3
+ 33  T03         Time of periastron #3
+ 34  Pb3         Orbital period #3
+ 35  OM3         Longitude of periastron #3
+ 36  PMRV        Proper Motion radial velocity
+ 37  XOMDOT      Advance of periastron minus GR value (nbin=4)
+ 38  XPBDOT      Orbital period derivative minus GR value (nbin=4)
+ 39  X2DOT       2nd derivative of x     [nbin=8]  [EPS1DOT, nbin=9]
+ 40  OM2DOT      2nd derivative of omega [nbin=8]  [EPS2DOT, nbin=9]
+ 41  DM1         Dispersion measure derivative         [superseded by NPAR9 group, below?]
+ 42  DMCOF(1)    Dispersion measure second derivative  [superseded by NPAR9 group, below?]
+ 43  DMCOF(2)    Dispersion measure thrid derivative   [superseded by NPAR9 group, below?]
+ 44  DMCOF(3)    Dispersion measure fourth derivative  [superseded by NPAR9 group, below?]
+ 45  DMCOF(4)    Dispersion measure fifth derivative   [superseded by NPAR9 group, below?]
+ 46  DMCOF(5)    Dispersion measure sixth derivative   [superseded by NPAR9 group, below?]
+ 47  DMCOF(6)    Dispersion measure seventh derivative [superseded by NPAR9 group, below?]
+ 48  DMCOF(7)    Dispersion measure eighth derivative  [superseded by NPAR9 group, below?]
+ 49  DMCOF(8)    Dispersion measure ninth derivative   [superseded by NPAR9 group, below?]
+ 50  DMCOF(9)    Dispersion measure tenth derivative   [superseded by NPAR9 group, below?]
+ 51  DMCOF(10)   Dispersion measure eleventh derivative  (fomerlay also f3)  [superseded?]
+ 52  KOM         Kopeikin Omega parameter in DDK binary model
+ 53  KIN         Kopeikin inclination parameter in DDK binary model
+ 54              Unused (formerly frequency sixth derivative)
+ 55              Unused (formerly frequency seventh derivative)
+ 56              Unused (formerly frequency eighth derivative)
+ 57              Unused (formerly frequency ninth derivative)
+ 58              Unused (formerly frequency tenth derivative)
+ 59              Unused (formerly frequency eleventh derivative)
+ 60              Unused (formerly frequency twelfth derivative)
+ 
+Subsequent index values are offset from constants defined in dim.h, starting with NPAR1=60
+ 
+NPAR1+1=61                 glph(1)            Glitch 1 change in phase 
+NPAR1+2=62                 glf0p(1)           Glitch 1 permanent change in frequency
+NPAR1+3=63                 glf1p(1)           Glitch 1 permanent change in frequency derivative
+NPAR1+4=64                 glf0d1(1)          Glitch 1 exponential term frequency step
+NPAR1+5=65                 gltd1(1)           Glitch 1 exponential term time constant
+NPAR1+6=66                 glph(2)            Glitch 2 change in phase 
+NPAR1+7=67                 glf0p(2)           Glitch 2 permanent change in frequency
+NPAR1+8=68                 glf1p(2)           Glitch 2 permanent change in frequency derivative
+NPAR1+9=69                 glf0d1(2)          Glitch 2 exponential term frequency step
+NPAR1+10=70                gltd1(2)           Glitch 2 exponential term time constant
+  ...                        ...                   ...
+NPAR1+NGLT*NGLP-4          glph(NGLT)         Glitch NGLT exponential term time constant
+NPAR1+NGLT*NGLP-3          glf0p(NGLT)        Glitch NGLT exponential term time constant
+CPAR1+NGLT*NGLP-2          glf1p(NGLT)        Glitch NGLT exponential term time constant
+NPAR1+NGLT*NGLP-1          glf0d1(NGLT)       Glitch NGLT exponential term time constant
+NPAR2=NPAR1+NGLT*NGLP      gltd1(NGLT)        Glitch NGLT exponential term time constant
+
+
+NPAR2+1                    dct(1)             Jump 1 offset
+NPAR2+2                    dct(2)             Jump 2 offset
+  ...                        ...                   ...
+NPAR3=NPAR2+NJUMP          dct(NDUMP)         Jump JUMP offset
+
+
+NPAR3+1                    fb(1)              Orbital frequency
+NPAR3+2                    fb(2)              Orbital frequency 1st derivative
+  ...                        ...                   ...
+NPAR4=NPAR3+NFBMAX         fb(20)             Orbital frequency NFBMAX'th derivative
+
+
+NPAR4+1                    xdot2(1)           Orbit Proj Semi-major axis 2nd derivative
+NPAR4+2                    xdot2(2)           Orbit Proj Semi-major axis 3rd derivative
+  ...                        ...                   ...
+NPAR5=NPAR4+(NXDOTMAX-1)   xdot2(NXDOTMAX-1)  Orbit Proj Semi-major axis NXDOTMAX'th derivative
+
+
+NPAR5+1                    tfbj(1)            Time of orbital frequency jump 1
+NPAR5+2                    fbj(1)             Size of orbital frequency jump 1
+NPAR5+3                    tfbj(2)            Time of orbital frequency jump 2
+NPAR5+4                    fbj(2)             Size of orbital frequency jump 2
+  ...                        ...                   ...
+NPAR5+2_NFBJMAX-1          tfbj(120)          Time of orbital frequency jump NFBJMAX
+NPAR6=NPAR5+2*NFBJMAX      fbj(120)           Size of orbital frequency jump NFBJMAX
+
+
+NPAR6+1                    dmx(1)             DM offset 1
+NPAR6+2                    dmx1(1)            DM offset derivative 1
+NPAR6+3                    dmx(2)             DM offset 2
+NPAR6+4                    dmx1(2)            DM offset derivative 2
+  ...                        ...                   ...
+NPAR6+2*NDMXMAX-1          dmx(NDMXMAX)       DM offset DMXMAX
+NPAR7=NPAR6+2*NDMXMAX      dmx1(NDMXMAX)      DM offset derivative DMXMAX
+
+
+NPAR7+1                    edot2(1)           Orbital eccentricity second derivative
+NPAR7+2                    edot2(2)           Orbital eccentricity third derivative
+  ...                        ...                   ...
+NPAR8=NPAR7+NEDOTMAX-1     edot2(NEDOTMAX-1)  Orbital eccentricity NEDOTMAX derivative
+
+
+NPAR8+1                    omdot2(1)          Orbital omega second derivative
+NPAR8+2                    omdot2(2)          Orbital omega third derivative
+  ...                        ...                   ...
+NPAR9=NPAR8+NOMDOTMAX-1    omdot2(NEDOTMAX-1) Orbital omega NEDOTMAX derivative
+
+
+NPAR9+1                    dmcof(1)           DM(t) first derivative
+NPAR9+2                    dmcof(2)           DM(t) second derivative
+  ...                        ...                   ...
+NPAR10=NPAR9+NDMCOFMAX     dmcof(NDMCOFMAX)   DM(t) NDMCOFMAX derivative
+
+
+NPAR10+1                   fdcof(1)           non-dispersion freq-dependent coefficient 1
+NPAR10+2                   fdcof(2)           non-dispersion freq-dependent coefficient 2
+  ...                        ...                   ...
+NPAR11=NPAR10+NFDMAX       fdcof(NFDMAX)      non-dispersion freq-dependent coefficient NFDMAX
+
+
+NPAR11+1                   f3                 Third spin frequency derivative
+NPAR11+2                   f4(1)              Fourth spin frequency derivative
+NPAR11+3                   f4(2)              Fifth spin frequency derivative
+  ...                        ...                   ...
+NPAR12=NPAR11+NFMAX-2      f4(NFMAX)          NFXMAX spin frequency derivative
+
+NPAR12+1                   xmx(1)             xmx amplitude 1
+NPAR12+2                   xmxexp(1)          xmx exponent 1
+NPAR12+3                   xmx(2)             xmx amplitude 2
+NPAR12+4                   xmxexp(2)          xmx exponent 2
+  ...                        ...                   ...
+NPAR12+2*NXMXMAX-1         xmx(NXMXMAX)       xmx amlitude NXMXMAX
+NPAR=NPAR12+2*NXMXMAX      xmxexp(NXMXMAX)    xmx exponent NXMXMAX
+
+

@@ -1,0 +1,22 @@
+Test data set with an f-dot
+Num data pts      = 8388608
+dt per bin (s)    =    1.1920928955078125e-07
+Pulse shape       = Sine
+Rounding format   = Fractional
+Pulse freq (hz)   =               1000000.345
+fdot (s-2)        =                     5.789
+fdotdot (s-3)     =                         0
+Pulse amp         =                      0.15
+Pulse phs (deg)   =                   224.657
+DC backgrnd level =                       200
+Binary period (s) =                         0
+Bin asini/c (s)   =                         0
+Bin eccentricity  =                         0
+Ang of Peri (deg) =                         0
+Tm since peri (s) =                         0
+Amp Mod amplitude =                         0
+Amp Mod phs (deg) =                         0
+Amp Mod freq (hz) =                         0
+Noise type        = Standard
+Noise sigma       =           14.142135623731
+On/Off Pair  1    = 0 1

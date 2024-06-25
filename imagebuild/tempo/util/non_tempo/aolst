@@ -1,0 +1,36 @@
+#!/usr/bin/perl -w
+
+$useage = "\n" .
+          "Use: aolst MJD [xx[:xx[:xx]]]\n" .
+          "     MJD is MJD which may include a fractional part\n" .
+          "     xx:xx:xx is UT time added to MJD\n".
+          "\n";
+
+die $useage if ($#ARGV<0 || $#ARGV>1);
+
+$mjd = $ARGV[0];
+if ($#ARGV==1) {
+  @t = split(/:/,$ARGV[1]);
+  $mjd += $t[0]/24. if ($#t>=0); 
+  $mjd += $t[1]/1440. if ($#t>=1); 
+  $mjd += $t[2]/86400. if ($#t>=2); 
+}
+
+$fut = $mjd - 39126;
+
+# Arecibo's longitude
+$alng = 66. + (45./60.);
+
+$lstday = 1.002737909*$fut+0.277801-$alng/360.;
+$lstday = $lstday - int($lstday);
+$lsthr = int(24*$lstday);
+$lstmin = int(0.5+60*(24*$lstday-$lsthr));
+if ($lstmin==60) {
+  $lsthr++;
+  $lstmin = 0;
+}
+$lsthr = 0 if ($lsthr==24);
+
+printf "Arecibo LST on MJD $mjd is %2.2d:%2.2d\n", $lsthr, $lstmin;
+
+

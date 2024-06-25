@@ -1,0 +1,23 @@
+This directory contains utility files to be used with Tempo.
+
+A typical utlity program reads the output of a tempo run and does
+something useful with it.  Look for README files in the inidividual
+directories for details about each program.
+
+cull:        filter for removing high residuals, reformatting TOAs, etc.
+extract:     write residual information in ASCII text form
+lk:          ascii residual plots
+obswgt:      calculates weights, rms's and chi^2's for data subsets
+print_resid: write residual information in ASCII text form
+res_avg:     average date-sorted residuals to one point per day
+wgttpo:      find optimal weights to make reduced chi^2==1 for data subsets
+ut1:         scripts for producing ut1.dat from IERS data
+dmx_ranges:  script for optimizing DMX time ranges
+pubpar:      script that converts a .par file to publishable form
+
+non_tempo:   scripts not directly related to Tempo but of interest to
+             many users of tempo
+non_tempo/mjd:    print an MJD in human readable form 
+non_tempo/aolst:  calculate LST at Arecibo at a given MJD and UT time
+non_tempo/dt:     calculate dispersion delay between two frequencies
+            

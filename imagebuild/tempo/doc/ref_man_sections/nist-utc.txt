@@ -1,0 +1,14 @@
+NIST_UTC, NIST_BIPM, NIST_PTB, NIST_AT1 FILES
+
+These files contain clock offsets between UTC(NIST) and other timescales.
+
+The first two lines of these file are ignored.  Subsequent lines have the
+format:
+
+    col      item
+    1-10    MJD
+   11-29    offset
+
+The offset is xxx-UTC(NIST) in nanoseconds, where xxx is UTC, TT(BIPM),
+UTC(PTB), or AT1.  Linear interpolation between entries is performed.
+

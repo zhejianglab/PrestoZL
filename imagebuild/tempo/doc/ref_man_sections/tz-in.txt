@@ -1,0 +1,23 @@
+TZ.IN FORMAT
+
+The tz.in file is a free-format, ASCII file.  Items on a line may be
+separated by any number of spaces and tabs.  
+
+The first line contains default parameters:
+  SITE        a one- or two-character site code 
+  MAXHADEF    default maximum hour angle for observations (hr)
+  NSPANDEF    default time span per ephemeris entry (minutes)
+  NCOEFFDEF   default number of coefficients per ephemeris entry
+  FREQDEF     default observing frequency (MHz)
+
+The second and third lines are ignored.
+
+Subsequent lines contain free-format entries for individual pulsars.  
+Only the pulsar name is required.  Other values override default 
+values (from the first line).
+  NAME        pulsar name
+  NSPAN       time span per ephemeris entry
+  NCOEFF      number of coefficients per ephemeris
+  MAXHA       maximum hour angle for observations
+  FREQ        observing frequency (MHz)
+

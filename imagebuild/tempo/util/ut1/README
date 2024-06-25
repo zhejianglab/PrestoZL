@@ -1,0 +1,25 @@
+Notes on ut1 utils, PBD 2010/06/04.
+
+Scripts in this directory process UT1 information from IERS into the
+ut1.dat file that tempo understands.  Here is a short description of
+each program:
+
+do.iers - This processes "old-style" Bulletin B files.  This format
+ended with number 263.  It updates your $TEMPO/clock/ut1.dat file in
+place.
+
+do.iers.new - This processes "new" Bulleting B files (#264 and later).
+It outputs new ut1.dat lines to stdout which then need to be manually
+added to the end of ut1.dat.
+
+check.ut1 - Checks that the MJDs in a ut1.dat file make sense.
+
+get_ut1 - Downloads UT1-TAI values from the IERS web form, rather than
+parsing values from Bulletin B's.  Output goes into ut1_tai.dat.  If
+predict_ut1 has been compiled, values are extrapolated ahead by 30 days.
+
+make_ut1 - Processes the ut1_tai.dat file created by get_ut1 into
+ut1.dat for tempo.
+
+predict_ut1 - Uses linear prediction to extend ut1_tai.dat.  See
+comments at head of predict_ut1.c for build info.

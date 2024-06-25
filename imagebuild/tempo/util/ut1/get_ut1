@@ -1,0 +1,54 @@
+#! /usr/bin/perl
+# Queries hpiers.obspm.fr to get UT1-TAI for a large range of dates.
+# This is an alternative (easier to parse) to using bulletin B.
+
+$outf = "ut1_tai.dat";
+$tmpf = ".$outf.tmp";
+
+# Save old one in case of errors
+if (-e $outf) { 
+    $oldf = $outf;
+    $oldf =~ s/dat/old/;
+    system("mv $outf $oldf"); 
+}
+
+# Exapmple query:
+# http://hpiers.obspm.fr/eop-pc/products/combined/C04.php?date=2&eop=22&year1=1980&month1=1&day1=1&year2=2007&month2=5&day2=31&SUBMIT=Submit+Search
+$addr = "http://hpiers.obspm.fr/eop-pc/products/combined/C04.php";
+
+# Get todays date
+#($sec,$min,$hr,$mday,$mon,$yr,$wday,$yday) = gmtime(time);
+#$mon++; # Change to 1..12 month
+#$yr += 1900; # change to actual year
+
+# Prediction 1 month ahead
+($sec,$min,$hr,$mday,$mon,$yr,$wday,$yday) = gmtime(time);
+$mon++; # Change to 1..12 month
+$mon++; # go to next month
+if ($mon==13) { $mon=1; $yr++; }
+$yr += 1900; # change to actual year
+
+
+# Build qry
+$qry = "date=2&eop=22&year1=1962&month1=1&day1=1&year2=$yr&month2=$mon&day2=$mday&SUBMIT=Submit+Search";
+
+$totaddr = $addr . "?" . $qry;
+
+system("wget \"$totaddr\" -O $tmpf");
+
+# Remove any html tags from file
+open (IN, $tmpf) or die "Can't open $tmpf\n";
+open (OUT, ">$outf") or die "Can't open $outf\n";
+while (<IN>) {
+    s/<.+>//g; 
+    print OUT;
+}
+close IN;
+close OUT;
+unlink($tmpf);
+
+# Run LPC extender
+if (-x "./predict_ut1") {
+    system("tail -2048 $outf > ut1_tai.small");
+    system("./predict_ut1 >> $outf");
+}

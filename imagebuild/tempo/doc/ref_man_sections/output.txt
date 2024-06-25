@@ -1,0 +1,58 @@
+OUTPUT FILES
+  
+  tempo.lis 
+  
+     ASCII format.  Lists input parameters, input data (TOAs,
+     frequencies, weights), pre-fit and post-fit residuals,
+     best-fit parameters and uncertaities, statistics, and a
+     crude covariance matrix.
+  
+  resid2.tmp 
+  
+     Residuals, etc.  Binary format.  
+     Each record contains eight real*8 values:
+       --TOA (MJD, referenced to solar system barycenter)
+       --Postfit residual (pulse phase, from 0 to 1)
+       --Postfit residual (seconds)
+       --Orbital phase (where applicable)
+       --Observing frequency (in barycenter frame)
+       --Weight of point in the fit
+       --Timing uncertainty (according to input file)
+       --Prefit residual (seconds)
+  
+  matrix.tmp 
+  
+      Covariance matrix.  Binary format with variable length
+      records.  The n'th record contains:
+       --integer m (see below)
+       --integer j (parameter index)
+       --char*4  parameter name
+       --real*8  generalized covariance of parameter
+       --real*8  uncertainty of parameter
+       --real*8(m) normalized covarinaces:
+                   a(j,k)/sig(j)sig(k),k=1..m
+  
+  <psrname>.par 
+  
+      ASCII format.  Control parameters and name, final value, fit 
+      flag and error for pulsar parameters. Can be used as an input 
+      parameter file for TEMPO and other programs.
+  
+  gro.1, gro.2
+  
+      Timing parameters in "GRO" format.  ASCII.  Produced in "GRO" 
+      mode only. gro.2 contains binary parameters where applicable.
+      Note: for TEMPO V11.0, the name of barycentric ephemeris and the
+      full pulsar name are appended to the gro.1 output line.
+  
+  gro.99
+  
+      Rotation parameters translated to epoch at middle of data set.  
+      ASCII format.  Produced in "GRO" mode only.
+
+  polyco.dat
+
+      Pulsar ephemerides.  See "prediction mode (tz)" section.
+
+
+  

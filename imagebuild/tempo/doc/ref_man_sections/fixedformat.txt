@@ -1,0 +1,84 @@
+FIXED FORMAT HEADER
+
+If a 'fixed-format' header is used, there is a single primary input
+file (though additional TOAs and commands may be incorporated via the
+INCLUDE command; see TOA COMMANDS).  The first line of the file contains a
+series of one-character flags indicating which model parameters should
+be fit, and controlling characteristics of the fit.  Flag locations
+within the first line are listed under 'Header Flag Column' below.
+Parameter values themselves are contained on subsequent lines:
+
+Header  --Parameter--
+ Flag   ----Value----
+Column  Line  Columns    Parameter
+  1                      RPHASE
+         2     1-12      PSRNAME
+  5           21-40      RA***
+  6           41-60      DEC***
+  7           61-70      PMRA
+  8           71-80      PMDEC
+  2      3     2-20      P0
+  3           21-40      P1
+              41-60      PEPOCH
+  4           61-70      P2
+  17          71-80      PX
+  16     4     9-20      DM
+  9      5*    1-20      A1
+  10          21-40      ECC
+  11          41-60      T0
+  12          61-80      PB****
+  13     6*    1-10      OM
+  14          11-20      OMDOT   [nbin!=4]    XOMDOT [nbin==4]
+  15          21-30      GAMMA
+  18          31-40      PBDOT   [nbin!=4]    XPBDOT [nbin==4]
+  20          41-50      SINI
+  21          51-60      MTOT
+  22          61-65      M2      [nbin!=7]
+              66-70      DR      [nbin!=7]
+  23          71-74      DTHETA  [nbin!=7]
+              75-78      A0      [nbin!=7]
+              79-80      B0      [nbin!=7]
+  19          61-70      M1      [nbin==7]
+  24          71-75      BP      [nbin==7]
+  25          76-80      BPP     [nbin==7]
+              
+         **    1-5       Flags for GLPH, GLF0P, GLG1P, GLG0D, GLDT
+         **   11-22      Glitch epoch
+         **   23-34      Glitch phase increment
+         **   35-46      Permanent glitch pulse frequency increment
+         **   47-58      Permanent glitch frequency derivative
+         **   59-70      Decaying glitch frequency increment (s^-1)
+         **   71-82      Decaying glitch time constant (days)
+    
+Notes:
+   *  Lines 5 and 6 contain parameters for the first orbital 
+      companion.  Parameters for two additional orbital companions 
+      may be listed on lines 7-8 and 9-10.  These orbits are may only 
+      have Keplerian parameters (all columns of first line, columns 1-10 
+      or second line).  Flags are in columns 51-55 and 56-60.
+
+  **  Lines containing glitch parameters start immediately after the 
+      lines for pulsar and binary parameters. 
+
+ ***  RA and DEC have form hhmmss.ss and ddmmss.ss
+
+****  PB is in seconds, not days (as in free-format headers)
+
+Several control flags are also set in the first line:
+
+Header
+ Flag
+Column  Line       Notes
+  27    NBIN     Binary model: 0=none 1=BT 2=EH 3=DD 4=DDGR 5=H88
+                  6=BT+ 7=DDT 8=DD+ 9=2 BT orbits a=3 BT orbits
+  29    NPRNT    List residuals every 10^NPRNT lines
+  33    ITERS    Number of iterations
+  40    NGL      Number of glitches
+  42    NDDM     Use DM corrections if NDDM=1
+  44    NCLK     0=observatory clock, 1=UTC(NIST), 2=UTC, 3=TT(BIPM), 
+                  4=UT(PTB), 5=AT1
+  46    EPHEM    Ephemeris number  (must be 1 for DE200;  formerly 0 for
+                   PEP740R was also allwed)
+  47    COORDS   Input coordinates (0=B1950, 1=J2000)
+
+

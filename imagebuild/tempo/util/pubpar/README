@@ -1,0 +1,32 @@
+Written by Erik Madsen, Aug. 2011.
+
+  Usage:
+    Command line:  python pubpar.py [options] <parfile>
+         IPython:  run pubpar.py [options] <parfile>
+
+
+  This script takes a parfile output by a Tempo fit and displays
+  the fitted parameters with their uncertainties in parentheses
+  in a format appropriate for publication.
+
+
+  Options:
+    -h  Show this useful help text.
+
+    -l  Output exponential notation in LaTeX X$\times 10^{Y}$
+        format rather than simple XeY format.
+
+    -n <precision>
+        Force number of decimals in quoted error to <precision>,
+        rather than the default, which is 1 digit, or 2 digits
+        when the first digit is a 1.
+
+    -p  Convert rotation frequencies and frequency derivatives to
+        periods and period derivatives. F0 must be included.
+          F0 --> PER0, F1 --> PER1, etc.
+
+    -s  Force scientific notation.
+
+    -t  Leave Tempo errors as reported in parfile rather than
+        doubling them.
+

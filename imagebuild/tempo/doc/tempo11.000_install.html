@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Tempo 11 Installation</title>
+  </head>
+
+  <body>
+      <h1>Tempo 11.000 Installation</h1>
+
+      The following procedure has been tested on a system running Solaris
+      2.5.1.  This procedure (and the tempo makefile) may need modifications
+      for use on other systems.
+
+      <ul>
+	<li>
+	  Create a directory (e.g. tempo11) and cd to it.<br><br>
+	<li>
+	  Download the following files from ATNF (Australia) or 
+Princeton (USA):<br><br>
+	  <ul>
+	    <li><pre>tempo11.tar.gz:     <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/tempo11.000.tar.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/tempo11.000.tar.gz">Princeton</a></pre>
+	    <li><pre>DE200.1950.2000.gz: <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/DE200.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/DE200.1950.2050.gz">Princeton</a></pre>
+	    <li><pre>DE405.1950.2000.gz: <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/DE405.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/DE405.1950.2050.gz">Princeton</a></pre>
+	    <li><pre>TDB.1950.2050.gz:   <a href="ftp://ftp.atnf.csiro.au/pub/people/rmanches/TDB.1950.2050.gz">ATNF</a> <a href="http://pulsar.princeton.edu/ftp/pub/tempo11/TDB.1950.2050.gz">Princeton</a></pre>
+	  </ul><br>
+	  Note:  these are large files.  It may be easier to use anonymous-ftp directly
+	  to download the files rather than downloading them via a web browser.<br><br>
+
+	<li>
+	  Uncompress the ephemeris files. It is recommended that these be moved to 
+          to a parallel directory, e.g. tempo_ephem.<br>
+	  <pre>gunzip DE200.1950.2050.gz DE405.1950.2050.gz TDB1950.2050.gz
+mkdir ../tempo_ephem
+mv *2050 ../tempo_ephem
+
+</pre>
+          
+
+	<li> 
+	  Un-compress the source files:<br>
+	  <pre> gunzip tempo11.tar.gz </pre>
+          
+	<li>
+	  Un-tar the source code and support files:<br>
+	  <pre> tar -xf tempo11.tar</pre>
+
+	<li>
+	  This creates several subdirectories, including `src' which
+               contains the source code.  Go to this directory:<br>
+	  <pre> cd src</pre>
+
+	<li>
+	  Compile the code.  The executable will be `tempo11/tpo'
+	  <pre> make tpo</pre>
+
+	<li>
+	  Go to the tempo11 directory:
+	  <pre> cd ..</pre>
+
+	<li>
+	  Set environment variable TEMPO to point to the tempo11 directory
+	  using the full path name.  For example, using csh in the directory `/disk1':
+	  <pre> setenv TEMPO /disk1/tempo11</pre>
+
+	<li>
+	  Edit tempo.cfg.  Change the CLKDIR and EPHDIR entries to the full
+	  path of the tempo11 directory, including a slash after the path.
+	  Change PARDIR to the full path of the tempo11/tzpar
+	  subdirectory.  Change OBSYS to the full path of the file
+	  tempo11/obsys.dat.  For example, if the root directory is
+	  `/disk1', these entries in tempo.cfg would be
+	  <pre>CLKDIR     /disk1/tempo11/
+PARDIR     /disk1/tempo11/tzpar/
+EPHDIR     /disk1/tempo_ephem/
+OBSYS      /disk1/tempo11/obsys.dat   
+	  </pre>
+
+	<li>
+	  Make a backup copy of `tempo.lis' from the distribution:
+	  <pre> cp tempo.lis tempo.lis.original</pre>
+
+	<li>
+	  Run tempo on a test file:
+	  <pre> tpo 0437.tim</pre>
+ 
+	<li>
+	  Compare the tpo output file with the file from the distribution:
+	  <pre> diff tempo.lis tempo.lis.original</pre> 
+	  Ideally only two lines
+	  of these files will differ--the line with the tempo execution time,
+	  and the line with the input file name (with its full path).  There
+	  may be more differences in some systems (especially those not using
+	  IEEE arithmetic) due to roundoff errors, etc.
+
+  </body>
+</html>

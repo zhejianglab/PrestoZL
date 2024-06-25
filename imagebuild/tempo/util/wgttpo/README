@@ -1,0 +1,49 @@
+Notes on wgttpo.pl and wgttpo_emin.pl,  IHS, March 29, 2010.
+
+These perl scripts attempt to find the optimal weights for a set of
+INCLUDEd toa files, using equad/efac (wgttpo) or emin/efac (wgttpo_emin).
+A new script (wgttpo_equad) aims to use only equad.
+
+Usage:
+wgttpo.pl <par file> <toa file>
+wgttpo_emin.pl <par file> <toa file>
+wgttpo_equad.pl <par file> <toa file>
+
+The toa file must consist of "INCLUDE x.tim" lines; the script will not work
+on a file full of toas, nor can it cope with header and toas all in the
+same file.  The toa file can contain whatever INFO, JUMP, etc., lines that
+you want; these will get written out to the output file.  Existing 
+EQUAD/EFAC/EMIN lines will not get written out to the output file but
+will be replaced with new values.
+
+The scripts work by making a temporary toa file with the toas from an individual
+INCLUDEd tim file, then running tempo multiple times on it using the input
+par file.  Wgttpo gradually increments EQUAD until Wmax ( = ratio of
+largest to smallest error bar) is down to 2 or until chisq is 1.05, whichever
+happens first.  It then determines the remaining EFAC needed to bring
+the reduced-chisq to 1.0, then writes out the EQUAD and EFAC lines
+along with the INCLUDE line to the output file.  Wgttpo_emin does something
+similar, but adjusts EMIN instead of EQUAD.  The target of 2 for Wmax
+is just kind-of conventional wisdom and users should feel free to 
+change it.  It could be a command-line value or flag option, but it 
+isn't (yet).  The wgttpo_equad script, instead, adds EQUAD until the
+reduced-chisq is between 1.00 and 1.01.
+
+The fitting will take place using whatever fit flags are set in the par file.
+If you have lots of toa files each of short duration, it may be better 
+to turn the fitting flags off, assuming you like the starting solution.
+
+The output file is always called wgttpo.out.  In principle, running
+tempo -f <par file> wgttpo.out
+(with or without fitting) should give you an overall reduced-chisq of 1.0.
+In practice, it is often necessary to iterate the process: 
+wgttpo, obswgt, wgttpo, obswgt will show you how things evolve.
+Once you are happy with wgttpo.out, you can copy it to a more permanent
+file name.
+
+Caveat: the scripts are not smart about recognizing when the "best" EFAC
+is less than 1.  Yes, this would be an easy enough fix, but it's useful to
+be aware of when it happens, as it indicates overestimated error bars.
+If you're determined to use thos toas as-is, it might be better to edit
+the output file to change those specific EFAC lines to 1.0.
+

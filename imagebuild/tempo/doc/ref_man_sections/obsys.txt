@@ -1,0 +1,59 @@
+OBSERVATORY COORDINATE FILE (typically 'obsys.dat')
+
+This file contains geographical locations of observatories.  There is
+one line per observatory.  
+
+Historically, the information in the first line was used
+for TOAs tagged with observatory number 1, the second line for number
+2, and so on.  The tenth line corresponds to observatory 'a', the
+eleventh to 'b', and so on.  This behavior is still invoked
+if column 71 (observatory number) is blanked.  However, an
+observatory number ('1'-'9' or 'a'-'z') in column 71 will now
+override the default assignment (based on position in the file).
+
+    Col       Item
+   -----     ---------------
+    1-15     coordinate 1
+   16-30     coordinate 2
+   31-45     coordinate 3
+   48-48     flag
+   51-62     observatory name
+   71-71     observatory one-letter code
+   74-75     observatory two-letter code
+
+If the flag is blank or zero, the coordinates are taken to be latitude
+(ddmmss.ss), longitude (ddmmss.ss), and elevation (m).  If the flag is
+non-blank, the coordinates are taken as X, Y, Z (m) about the
+geocenter.
+
+Each observatory can have a one-letter code and/or a two-letter code.
+
+If an observatoy does not have a one-letter code, a dash ("-") should
+be entered in place of the one-letter code.
+
+Internally within tempo, the following integers are used for the
+observatory codes.  These are also the observatory numbers written
+to polyco.dat.
+
+  code    number    notes
+   @        -1     solar system barycenter; not included in obsys.dat
+   0         0     geocenter; not included in obsys.dat
+   1         1
+   2         2
+   .         .
+   .         .
+   .         .
+   9         9
+   a        10
+   b        11
+   .         .
+   .         .
+   .         .
+   z        35
+   -        36     1st observatory in obsys.dat with no one-digit code listed
+   -        37     2nd observatory in obsys.dat with no one-digit code listed
+   -        38     3rd observatory in obsys.dat with no one-digit code listed
+   .         .
+   .         .
+   .         .    maximum value NOBSMAX in dim.h
+

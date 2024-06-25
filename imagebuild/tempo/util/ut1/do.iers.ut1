@@ -1,0 +1,169 @@
+#!/usr/bin/perl
+
+# started with puppsr version dated 1 August 2006
+# modified for Mac laptop 22 June 2007
+
+# use: do.iers.ut1 infile
+
+# infile = bulletinb.xxx, downloaded from ftp://hpiers.obspm.fr/iers/bul/bulb/
+
+$docvs = 0;  #   set true to check updated $TEMPO entry into CVS
+
+$ftpfile = "/usr/local/apache2/htdocs/ftp/pub/tempo11/ut1.dat";
+$ftpfile = "/bogus/filename";   # file doesn't exist so ftp won't be done
+
+
+die "use: do.iers.ut1 infile\n" if ($#ARGV<0);
+
+$infile = $ARGV[0];
+die "\nError: No such file as $infile\n" if (!(-e $infile));
+open (A,$infile);
+
+$_ = <A> until (/BULLETIN B/);
+$bullno = (split)[2];
+
+# CHECK FOR LEAP SECTIONS USING DATA IN SECTION 1
+
+$_=<A> until (/Final Bulletin B values/);
+
+while (<A>) {
+  last if (/Note\./);
+  next if (/^ *$/ || /Bulletin/);
+  ($mjd,$ut1off,$ut1offx) = (split)[2,5,6];
+  $nleap{$mjd} = $ut1off-$ut1offx;
+}
+
+# NOW GET THE CLOCK OFFSETS.  
+
+# FIRST, GET ANYTHING WHICH CAN BE FOUND IN SECTION 2 (SMOOTHED VALUES)
+
+$_=<A> until (/SMOOTHED VALUES/);
+
+<A>; <A>; <A>; <A>; <A>;
+
+$mkey = "";
+
+while (<A>) {
+  last if (/^     /);
+  ($mjd,$ut1off) = (split)[2,5];
+  &printoff;
+}
+
+close A;
+
+open (A,$infile);
+
+# SECOND, GET VALUES FROM SECTION 1.  THE VALUES ACTUALLY USED WILL BE
+# FROM THE "PRELIINARY EXTENSION" SECTION, HOWEVER IT IS SOMETIMES
+# NECESSARY TO READ THROUGH THE "FINAL BULLETIN B VALUES" SECTION IN
+# ORDER TO FIND THE ENTRY FOR $mjdlast
+
+$_=<A> until (/Final Bulletin B values/);
+
+$_=<A> until ((split)[2]==$mjdlast);
+
+while (<A>) {
+  next if (/^\s$/ || /Bulletin/);
+  last if (/Note/);
+  ($mjd,$ut1off) = (split)[2,6]; # now $ut1off includes leap seconds
+  $nleap{$mjd} = 0.;
+  &printoff;
+}  
+
+close A;
+
+$outstring{$mkey} = $outstring{$mkey} . " ";
+
+# if less than 6 values on the final line, fill the
+# number-of-values field at the end of the line
+@tmp = split(" ",$outstring{$mkey});
+$nvar  = $#tmp;
+if ($nvar!=6) {
+  $outstring{$mkey} = sprintf "%-59s%2.2d", $outstring{$mkey}, $nvar; ###
+}
+
+$TEMPO = @ENV{'TEMPO'};
+$tempofile = "$TEMPO/clock/ut1.dat";
+$tempofilebak = "$TEMPO/clock/ut1.dat_bak";
+if (-e $tempofile) {
+  print "Update tempo file $tempofile?  [Yes] ";
+  $yesno = <STDIN>;
+  chomp $yesno;
+  $tflag = 0;
+  if ($yesno =~ /^y/i || $yesno =~ /^$/) {
+    $tflag = 1;
+    $lowestmjd = (sort keys outstring)[0];
+    system ("cd $TEMPO/clock; cvs edit ut1.dat\n") if ($docvs); 
+    system ("mv $tempofile $tempofilebak\n");
+    open (B,"$tempofilebak");
+    open (C,">$tempofile");  
+    # copy two header lines  
+    $tmp = <B>; 
+    print C $tmp;
+    $tmp = <B>; 
+    print C $tmp;      
+    while (<B>) {
+      $mjd = (split)[0];
+      last if ($mjd==$lowestmjd);
+      die "Error: reached mjd $mjd in $tempofilebak, but never matched lowest \n".
+        "mjd in bulletin b, $lowestmjd.  To recover from this error, manually\n".
+          "move $tempofilebak back to $tempofile, and then manually edit it." 
+            if ($mjd>$lowestmjd);
+      print C $_;
+    }
+    print "Leftover bits of the old $tempofile that are superseded:\n";
+    print $_;
+    while (<B>) {
+      print $_;
+    }
+    print "New UT1 offsets added to $tempofile:\n";      
+  }
+  foreach $mjd (sort keys outstring) {
+    print $outstring{$mjd}."\n";
+    print C $outstring{$mjd}."\n" if ($tflag);
+  }
+  if ($tflag) {
+    close C;
+      system ("cd $TEMPO/clock; cvs commit -m 'update with bulletin B $bullno' ut1.dat") if ($docvs);
+    print "run check.ut1 on $tempofile?  [Yes] ";
+    $yesno = <STDIN>;
+    chomp $yesno;
+    if ($yesno =~ /^y/i || $yesno =~ /^$/) {
+      system ("check.ut1 < $TEMPO/clock/ut1.dat");
+    }
+    if (-e $ftpfile) {
+      print "update $ftpfile?  [Yes] ";
+      $yesno = <STDIN>;
+      chomp $yesno;
+      if ($yesno =~ /^y/i || $yesno =~ /^$/) {
+        system ("cp $tempofile $ftpfile");
+      }
+    }
+    $aofile = "/share/nice/tempo/clock/ut1.dat";
+    print "update $aofile at Arecibo?  [Yes] ";
+    $yesno = <STDIN>;
+    chomp $yesno;
+    if ($yesno =~ /^y/i || $yesno =~ /^$/) {
+      system ("scp -p $tempofile nice\@remote.naic.edu:$aofile");
+    }
+  }
+}
+
+sub printoff {
+  if ($mjd%5==4) {
+    die "Error: unknown no. of leap sec for mjd $mjd\n"  if (!defined($nleap{$mjd}));
+    if ($mjd%30==19) {
+      $mkey = $mjd;
+      $outstring{$mkey} = sprintf("%10d",$mjd);
+    }
+    else {
+      $outstring{$mkey} = $outstring{$mkey}." " if ($mkey ne "");
+    }
+    if ($mkey ne "") {
+      $outstring{$mkey} = 
+        $outstring{$mkey}.sprintf("%7.0f",10000*($nleap{$mjd}-$ut1off));
+      $mjdlast = $mjd;
+    }
+    
+  }
+}

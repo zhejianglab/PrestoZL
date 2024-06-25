@@ -1,0 +1,12 @@
+AUTHORS
+
+J. H. Taylor, R. N. Manchester, D. J. Nice, J. M. Weisberg, A. Irwin, N. Wex
+and others.  Ephemeris routines by E. M. Standish, NASA/JPL.
+
+SEE ALSO
+
+lk, matrix, tdbtt, ....
+
+BUGS
+
+There are no bugs, only features.  And plenty of 'em.

@@ -1,0 +1,56 @@
+
+Usage: tempo [options] [filename]
+
+options:
+  -a            Write Earth-Sun-Pulsar angle for each TOA to file phisun.tmp
+  -b            Give zero weight to any TOA not in an existing DMX range
+  -c            Do all requested iterations, even if apparently converged
+  -C            Write GLS data covariance matrix to datacov.tmp
+  -d<path>      Path to 'tempo.cfg', default: environment variable 'TEMPO'
+  -e            Write barycenter-topocenter doppler factors to doppler.tmp
+  -D            Write design matrix to design.tmp (unformatted)
+  -f<par>       Over-rides the default parameter file name with <par>
+  -g[O]         GRO mode; 'O' is single-letter observatory code
+  -G            Generalized least squares fit 
+  -h            Help (prints this message)
+  -j            Output JUMP values in xxx.par file
+  -J            Apply JUMPs after barycenter correction (normally done before) 
+  -k            Write dmx range number of each TOA to dmxn.tmp
+  -l<xx>        Max number of parameters to be fit (guides memory allocation)
+  -m<xx>        Max number of TOAs to be fit (guides memory allocation)
+  -no<file>     Write out absolute pulse numbers to file
+  -ni<file>     Get absolute pulse numbers from file
+  -o            'Old-style' parameters at head of <fname>
+  -p            Parameters corrected for pulsar space motion
+  -r            Save the partial-derivatives file, resid1.tmp 
+  -s0           No solar system DM corrections (no value other than '0' allowed)
+  -v            Print out version number
+  -w            less output to tempo.lis; no resid2.tmp
+  -x            Make an export file in ITOA format
+  -z	        Compute polynomial coefficients for predictions 
+  -Z<par>=<val> New method for specifying polynomial coefficient calculations
+                Any -Z parameter invokes this mode and minimizes tempo output
+                -Z parameters are:
+                Parameter: Default:      Description:
+                PSR                      Pulsar name (same as PULSAR)
+                PULSAR                   Pulsar name (same as PSR)
+                OBS                      Observatory (same as SITE)
+                SITE                     Observatory (same as OBS)
+                OUT        polyco.dat    Output file name
+                START      current time  Start time for polyco block
+                NCOEFF     15            Number of coefficients
+                FREQ       1420          Radio frequency of observation
+                SPAN       60            Time span in seconds for polyco block
+                                           (xxxH or xxxM for hours or minutes)
+                TOBS       1             Observing time in hours
+                                           (xxxM or xxxS for minutes or seconds)
+
+For more details, see:
+  http://tempo.sourceforge.net
+For older versions, see:
+  http://www.atnf.csiro.au/research/pulsar/tempo
+For tempo2, see:
+  http://tempo2.sourceforge.net
+
+
+

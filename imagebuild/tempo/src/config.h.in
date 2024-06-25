@@ -1,0 +1,5 @@
+c   config.h - values created by configure
+c   @configure_input@
+        logical ISBIGENDIAN
+        parameter (ISBIGENDIAN = @BIGENDIAN@)
+        parameter (CONFIGVERSION = @VERSION@)

@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+$fname = "224_EOP_C04_14.62-NOW.IAU2000A224.txt";
+$url = "https://datacenter.iers.org/data/latestVersion/";
+system("wget -N " . $url . $fname);
+
+# Read leap secs, assumes we're working in tempo/util/ut1
+@leap = ();
+open(LEAP, "../../clock/leap.sec") or die "No leap.sec\n";
+while (<LEAP>) {
+    chomp;
+    push @leap, $_;
+}
+close LEAP;
+
+$outf = "ut1_tai.dat";
+open(IN, $fname) or die "Couldn't open $fname for read\n";
+open(OUT, ">".$outf) or die "Couldn't open $outf for write\n";
+while (<IN>) {
+    chomp;
+    unless (/^19/ or /^20/) { next; }
+    @in = split;
+    $mjd = $in[3];
+    if ($mjd<40219) { next; }
+    $ut1utc = $in[6];
+    $err = $in[12];
+    $ut1tai = $ut1utc - 10.0;
+    for $l (@leap) {
+        if ($mjd >= $l) { $ut1tai -= 1.0; }
+    }
+    print OUT sprintf("%d %.4f %.4f\n", $mjd, $ut1tai*1e3, $err*1e3);
+}
+close IN;
+close OUT;

@@ -1,0 +1,134 @@
+BINARY MODELS  
+Summary Reference:  Taylor, J. H., & Weisberg, J. M., ApJ 345:454 (1989)
+
+BT    Newtonian orbit at a given epoch, plus secular changes in the 
+      orbital elements and redshift/time-dilation parameter gamma.
+      Reference:  Blanford, R., and Teukolsky, S. A., ApJ 205: 580 (1976)
+
+EH    Relativistic model incorporating short-term periodic terms, including
+      Shapiro time-delay parameter and non-constant periastron advance
+      in the orbital motion, along with the Shapiro time-delay parameter
+      References:  Epstein, R., ApJ 216: 92 (1977)
+                   Epstein, R., ApJ 231: 644 (1979)
+                   Haugan, M. P.  ApJ 296: 1 (1985)
+             
+DD    Theory-independent relativistic model;  includes treatment of
+      short-term periodic terms, Shapiro delay and aberration.
+      References:  Damour, T., and Deruelle, N.  Ann Inst. H. Poincare
+                     (Physique Theorique) 43: 107 (1985)
+                   Damour, T., and Deruelle, N.  Ann Inst. H. Poincare
+                     (Physique Theorique) 44: 263 (1986)
+
+DDGR  Variation of DD model in which general relativity is assumed 
+      correct, so free parameters are (in principle) only m1, m2.
+      Tempo also allows two further free parameters, XPBDOT and XOMDOT,
+      to measure deviations from GR values of PBDOT and OMDOT. 
+      References:  Taylor, J. H., in General Relativity and Gravitation, ed.
+                     M. A. H. MacCallum (Cambridge Univ. Press), p. 209 (1987)
+                   Taylor, J. H., & Weisberg, J. M., ApJ 345:454 (1989)
+
+                   
+
+H88   Re-parametrized EH model 
+      Reference:  Haugan, M. P. 1988.  Preprint.  (See Taylor & Weisberg 1989.)
+
+BT+   BT model with nonlinear periastron advance.
+
+DDT   DDGR modified to test two-parameter tensor-biscalar theories
+      Reference:  Taylor, J. H., Wolszczan, A., Damour, T., and Weisberg, J. M.
+                    Nature, 355: 132 (1992)
+
+MSS   Model for main-sequence/pulsar binaries.
+      Reference:  Wex, N., astro-ph/9706086 (1997).
+
+ELL1  Model for low eccentricity orbits using Laplace parameters
+      (EPS1=e times sin(omega), EPS2=e times cos(omega)) instead of e, omega.
+      Reference:  Lange et al, MNRAS 326: 274 (2001), appendix A
+
+ELL1H Variant on ELL1 which parameterizes Shapiro delay using formalism
+      of Freire & Wex (2010).
+
+BT1P  BT model with two orbits:  the first may be relativistic, the 
+      second must be Keplerian
+
+BT2P  BT model with three orbits:  the first may be relativistic, the
+      second and third must be Keplerian 
+
+BTX   BT model with orbital motion expressed in frequency rather than
+      period.  Orbital frequency may vary, either through instantaneous
+      jumps in binary frequency (jump size FBJ_x at time TFBJ_x) or through a
+      Taylor expansion around T0 (FB0 is orbital frequency in s^-1; FBx is x'th 
+      derivative of binary frequency).  Orbit size may also be written as a 
+      Taylor expansion (XDOT_x is x+1'th derivative of X=A SIN I)
+      Reference:  Nice, D., unpublished
+
+DDS   Variation of DD which uses SHAPMAX = -ln(1-s) instead of s = sin i.  
+      Also incorporates various higher-order effects for use with 0737.
+      These are experimental and should not be trusted yet! (2016 Feb.)
+      References: Kramer et al. Science 314:97 (2006)
+                  Rafikov & Lai PRD 73:063003 (2006)
+
+DDK  Variation of DD which incorporates secular changes in observed 
+     parameters due to proper motion and also annual-orbital parallax.
+     Coded by Willem's van Straten.
+     References: Kopeikin, S. M., ApJ 439:L5 (1995)
+                 Kopeikin, S. M., ApJ 467:L93 (1996)
+                 van Straten, W., and Bailes, M., Radio Pulsars, 
+                       ASP Conference Proceedings, Vol. 302, p. 65 (2003)
+
+DDFWHE Variation of DD which implements the Freire&Wex(2010) orthometric 
+       Shapiro delay parametrization in the high eccentricity case with
+       h3 and varsigma instead of m2 and sini. Implemented by
+       J. Weisberg, Y. Huang, & A. Chael.
+       References: Freire, P. C. C.& Wex, N., MNRAS 409:199 (2010)
+                   Weisberg & Huang, APJ 2016
+
+The following table summarizes the parameters used by each model.  An 'x'
+indicates a parameter fully implemented.  An 'o' indicates the parameter is
+used at a fixed value, but cannot be fitted.  A '*' indicates the parameter
+is used only to calculate other binary parameters, and is then ignored.
+
+
+            BT   EH    DD    DDGR    H88    BT+    DDT    MSS   ELL1   ELL1H   BTX   DDS   DDK   DDFWHE
+A1           x    x     x      x      x      x      x      x      x      x      x     x     x      x
+E            x    x     x      x      x      x      x      x      *      *      x     x     x      x
+T0           x    x     x      x      x      x      x      x      *      *      x     x     x      x
+PB           x    x     x      x      x      x      x      x      x      x      *     x     x      x
+OM           x    x     x      x      x      x      x      x      *      *      x     x     x      x
+TASC         *                                                    x      x                          
+EPS1         *                                                    x      x                          
+EPS2         *                                                    x      x                          
+FB0          *    *     *      *      *      *      *      *      *      *      x     *     *      *
+FB1          *    *     *      *      *      *      *      *      *      *      x     *     *      *
+FB2,FB3,etc.                                                      x             x     *     *       
+OMDOT        x    x     x             x      x             x      x      x      x     x            x  
+OM2DOT                                                     x                    x                   
+XOMDOT                         x                                                                    
+PBDOT        x    x     x             x      x      x      x      x      x      *     x     x      x
+XPBDOT                         x                                                                    
+GAMMA        x    x     x             x      x             x                    x     x     x      x
+MTOT                           x                    x                                               
+M2                      x      x                    x      x      x                   x     x       
+SINI              x     x             x             x      x      x                   x             
+DTHETA                  x                                  x                          x            x
+XDOT         x    x     x      x             x      x      x      x      x      x     x            x
+X2DOT                                                      x                                        
+XDOT_x                                                                          x                   
+EDOT         x    x     x      x             x      x      x      x      x      x     x     x      x
+EPS1DOT                                                           x      x                          
+EPS2DOT                                                           x      x                          
+SHAPMAX                                                                               x             
+SHAPHOF (Experimental)                                                                x             
+VARSIGMA                                                                                           x
+H3                                                                       x                         x
+H4                                                                       x                          
+KOM                                                                                        x        
+KIN                                                                                        x        
+DR                      o                           o      o                                       o
+AFAC                           o                                                                    
+A0                      o                           o      o      o      o                         o
+B0                      o                                  o      o      o                         o
+BP                                                  o                                               
+BPP                                                 o                                               
+
+

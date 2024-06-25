@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+if ($#ARGV==-1) {
+  print "Use: mjd xxxxx\n";
+  $mjd = int(time/86400 + 40587);
+  $date=&damoyr($mjd);
+  print "Today, $date, is mjd $mjd\n";
+} else {
+  $date = &damoyr($ARGV[0]);
+  $yr = sprintf("%8.3f",($ARGV[0]-51544)/365.25+2000.);
+  print "$date     $yr\n";
+}
+
+sub damoyr {
+  local ($mjd) = @_;
+  @month = ("Jan","Feb","Mar","Apr","May","Jun",
+            "Jul","Aug","Sep","Oct","Nov","Dec");
+  @moday = (31,28,31,30,31,30,31,31,30,31,30,31);
+  local($iday) = int($mjd-39126 + 1);
+  local($iyr) = 1966;
+  local ($i, $nd);
+  die "I don't understand dates before 1966.\n" if ($iday<0);
+  $nd=365;
+  while ($iday>$nd) {
+    $iday -=$nd;
+    $iyr++;
+    $nd = 365;
+    $nd++ if (($iyr%4==0 && $iyr%100!=0) || $iyr%400==0);
+  }
+  $moday[1]++ if ($nd==366);
+  $i=0;
+  while($iday>$moday[$i]) {
+    $iday -=$moday[$i];
+    $i++;
+  }
+  sprintf("%2d-%3s-%4d",$iday,$month[$i],$iyr);
+}
+  
+  

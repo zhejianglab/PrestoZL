@@ -1,0 +1,437 @@
+#!/usr/bin/perl -w
+
+use Math::Trig;
+
+# Average a date-sorted residual file to 1 point per day
+# Expects input in the form produced by print_resid.
+# Sample usage:
+#   print_resid | res_avg
+
+# For binary pulsars, in order to problems averaging points with phases that wrap from 1.0 to 0.0
+# (e.g., 0.998,0.999,0.000,0.001), instead of simply averaging the phases, the sums of the sines 
+# of the phases and the sum of the cosines of the phases are both accumulated, then an arctan of
+# the sum is taken to recover the average angle.
+
+($dt, $df, $bflag, $blist, $dfflag, $cflag, $sflag, $zflag, $uflag, $rflag, $infoflag, $infofile, $ecorrfile, $countmin) = &resavg_arg_parse(@ARGV);
+
+&resavg_read;
+
+if ($infoflag) {
+  &resavg_info_read($infofile);
+} else {
+  @infolist = ("") x ($#mjda+1);  # dummy values
+}
+
+chomp(@infolist);
+
+if ($ecorrfile ne "") {
+  &resavg_ecorr_read($ecorrfile);
+} else {
+  %ecorr = ();
+}
+
+# These hold info needed to compute the (W)RMS of the averaged residuals
+$r2_tot = 0.0;
+$wr2_tot = 0.0;
+$wt_tot = 0.0;
+$ct_tot = 0.0;
+foreach $i (@infolist) {
+    $r2_grp{$i} = 0.0;
+    $wr2_grp{$i} = 0.0;
+    $wt_grp{$i} = 0.0;
+    $ct_grp{$i} = 0.0;
+}
+
+# Pop off the first residual, then search for any other residuals
+# residuals that are within the desired time- and frequency ranges.
+# Each residual is removed from the arrays as it is used. 
+# When the arrays are empty, the program is done.
+  
+while ($#mjda>-1) {
+
+  &resavg_clear_variables;
+
+  # start with the first residual
+  $mjdmin= $mjda[0];
+  $mjdmax= $mjda[0];
+  if ($bflag) {
+    for $i (0..$#blist-1) {
+      if ($freqa[0]>=$blist[$i] && $freqa[0]<$blist[$i+1]) {
+        $freqmin = $blist[$i];
+        $freqmax = $blist[$i+1];
+        last;
+      }
+    }
+  } else {
+    $freqmin = $freqa[0];
+    $freqmax = $freqa[0];
+  }
+  $info = $infolist[0];
+  &resavg_use_residual(0);
+
+  # loop through all other residuals
+  # residuals are removed from the arrays as they are used
+  # hence the loop structure for this process is a little convoluted
+  $i = 0;
+  while ($i<=$#mjda) {
+    # is the residual within the desired time range (and optionally frequency range?)
+    if (  $mjda[$i] >= $mjdmax-$dt &&
+          $mjda[$i] <= $mjdmin+$dt &&
+          $infolist[$i] eq $info &&
+        ( !$dfflag  ||  $freqa[$i] >= (1.-$df)*$freqmax ) &&
+        ( !$dfflag  ||  $freqa[$i] <= (1.+$df)*$freqmin ) &&
+        ( !$bflag   ||  $freqa[$i] >= $freqmin && $freqa[$i] < $freqmax ) 
+       ) {
+      # process the residual
+      &resavg_use_residual($i);
+      # expand time or frequency range to include this residual
+      $mjdmin = $mjd0 if ($mjd0<$mjdmin);
+      $mjdmax = $mjd0 if ($mjd0>$mjdmax);
+      $freqmin = $freq0 if ($freq0<$freqmin);
+      $freqmax = $freq0 if ($freq0>$freqmax);
+      # do not increment $i; 'splice' functions have put next residual into $i position
+    } else {
+      $i++;  
+    }
+  }
+
+  # process this batch of residuals (write out the averages, etc.)
+  if ($count>=$countmin) {
+    &resavg_calculate_print;
+  }
+    
+}
+
+if ($ecorrfile ne "") {
+  print sprintf("# Incorporated ECORR values from '%s':\n",
+    $ecorrfile);
+  for $ecorrflag (keys %ecorr) {
+    print sprintf("#   %20s %.3f us\n", $ecorrflag, $ecorr{$ecorrflag});
+  }
+  print "#\n";
+}
+print sprintf("# WRMS = %.3f us\n", sqrt($wr2_tot/$wt_tot));
+print sprintf("#  RMS = %.3f us\n", sqrt($r2_tot/$ct_tot));
+foreach $grp (keys %wr2_grp) {
+    unless ($grp) { next;} # Skip empty group
+    print "#\n";
+    print sprintf("# WRMS($grp) = %.3f us\n", sqrt($wr2_grp{$grp}/$wt_grp{$grp}));
+    print sprintf("#  RMS($grp) = %.3f us\n", sqrt($r2_grp{$grp}/$ct_grp{$grp}));
+}
+
+#-----------------------------------------
+
+sub resavg_arg_parse{
+
+  # parse input line (see $usage below for details)
+  #
+  # the parsing code is set up to allow for:
+  #    -- flags of the form '-a'
+  #    -- flags with parameters of the form '-axxxx'
+  #    -- parameters without flags, simply 'xxxx' (but see below)
+  #
+  # Parameters without flags are accumulated in array @param.  Since the code
+  # does not presently have any use for such parameters, this array is not returned
+  # to the calling program.  Its length is checked and, if it has any entries, it
+  # is flagged as an error.
+
+  my($usage) = 
+  "\n".
+  "Use:\n".
+  "  res_avg [flags]\n" .
+  "\n".
+  "Input:\n".
+  "  time-sorted (optionally frequency-sorted as well) residuals in standard input\n".
+  "\n".
+  "Output:\n".
+  "  list of date, frequency, residual, error, orbital phase, reduced chi^2\n".
+  "\n".
+  "Typical use:\n".
+  "  for a single daily TOA: print_resid | res_avg\n".
+  "  for one TOA per widely separated narrow band: print_resid | res_avg -f0.25\n".
+  "\n".
+  "Flags:\n".
+  "  -bxxx,yyy,zzz,.... divide residuals into bands 0<f<xxx, xxx<f<yyy, etc.\n".
+  "  -c:    calculate weighted avg residual from fit of resid and dm at each epoch\n".
+  "         (experimental!  use with care!)\n".
+  "  -Exxx: read ECORR values from parfile xxx, apply to averaged uncertainties\n".
+  "         (requires -i to be used also).\n". 
+  "  -fxxx: maximum fractional frequency range, abs(f-f0)/f0, over which residuals\n".
+  "         are averaged [default: not used]\n".
+  "  -ixxx: read info.tmp-style file xxx and only average whose entries match\n".
+  "         are averaged [default: not used]\n".
+  "  -h   : help message\n".
+  "  -nxxx: minimum number of residuals to average [default: 1]\n".
+  "  -r   : don't adjust uncertainties using reduced chi^2 of averaged points\n.".
+  "  -txxx: maximum time (in days) over which residuals are averaged, [default: 1]\n".
+  "  -u   : unweighted averages\n".
+  "  -z   : ignore input residuals with zero error\n".
+  "\n"
+;
+
+  my($f);
+  my($par);
+  my(@param)=();
+  
+  # defaults
+  
+  my($dt) = 1;     # max time from first to last TOA in a single average (units=days)
+  
+  my($bflag) = 0;  # flag to use a series of discrete frequency bands
+  my($blist) = (); # list of frequencies at boundaries of frequency bands
+
+  my($dfflag) = 0; # flag to produce separate averages for separate frequency ranges
+  my($df) = 0.25;  # max fracional frequency difference (f-f0)/f0 in a single average
+
+  my($rflag) = 1.; # use reduced chi^2 to adjust uncertainties of average points
+
+  my($cflag) = 0;  # calculate avg residual based on fit of both residual and dm
+  my($uflag) = 0;  # unweighted average
+  my($infoflag) = 0;  # use info file
+  my($infofile) = "";
+  my($ecorrfile) = ""; # Use ECORR from specified par file
+  my($sflag) = 0;  # input residuals in sec (tempo2) not microsec (tempo)
+  my($zflag) = 0;  # ignore zero-error points
+  my($countmin) = 1; # minimum number of residuals to average
+  
+  foreach $par (@_) {
+    if ($par=~/^-/) {           # flags
+      $par = substr($par,1);      #   strip off the leading "-"
+      while ($par ne "") {      #   loop through the string
+        $f = substr($par,0,1);  #     strip off the current flag
+        $par = substr($par,1);    #     process flags:
+        if ($f eq "b")      {#       - 
+          $bflag = 1;
+          @blist = split(",",$par);
+          push @blist, "9.e30";  # a big frequency
+          unshift @blist, "0.";
+          last;
+        } elsif ($f eq "c")      {#       -c
+          $cflag = 1;
+        } elsif ($f eq "E") {#       -E
+          $ecorrfile = $par;
+          last;
+        } elsif ($f eq "f") {#       -f
+          $dfflag = 1;
+          $df = $par;
+          last;
+        } elsif ($f eq "h") {#       -h
+          die $usage;
+        } elsif ($f eq "i") {#       -i
+          $infoflag = 1;
+          $infofile = $par;
+          last;
+        } elsif ($f eq "n") {#       -n
+          $countmin = $par;
+          last;
+        } elsif ($f eq "r") {#       -r
+          $rflag = 0;
+        } elsif ($f eq "s") {#       -s
+          $sflag = 1;
+        } elsif ($f eq "t") {#       -t
+          $dt = $par;
+          last;
+        } elsif ($f eq "u") {#       -u
+          $uflag = 1;
+        } elsif ($f eq "z") {#       -z
+          $zflag = 1;
+        }  else {            #       invalid flag
+          print STDERR "\nERROR: Invalid flag -$f\n\n";
+          die $usage;
+        }
+      }
+    } else {                  # parameters  
+      push @param, $par;        #   push onto parameter list
+    }
+  }
+
+  if ($#param>=0) {
+    print STDERR "\nERROR: following parameters have no meaning: ",join(" ",@param),"\n";
+    die $usage;
+  }
+
+  if ($ecorrfile ne "" and not $infoflag) {
+    print STDERR "\nERROR: -E option requires -i also be used\n";
+    die $usage;
+  }
+
+return $dt, $df, $bflag, $blist, $dfflag, $cflag, $sflag, $zflag, $uflag, $rflag, $infoflag, $infofile, $ecorrfile, $countmin;
+}
+
+#-----------------------------------------
+
+sub resavg_clear_variables{
+  $count = 0;
+  $wtsum = 0;
+  $r2sum = 0;
+  $mjd = $freq = $res = $err = $ophasesin = $ophasecos = 0.0;
+  if ($cflag) {
+    $ff   = 0;
+    $ffff = 0;
+    $ffres = 0;
+  }
+}
+
+
+#-----------------------------------------
+
+sub resavg_calculate_print{
+  # Normalize avgs
+  $mjd  /= $wtsum;
+  $freq /= $wtsum;
+  $res  /= $wtsum;
+  $ophase = atan2($ophasesin,$ophasecos)/(2.*pi);
+  $ophase +=1. if ($ophase<0);
+            # How to compute error....
+  if ($count>1) { 
+      $rchi2 = ($r2sum - $wtsum*$res*$res)/($count-1);
+  } else {
+      $rchi2 = 1.0;
+  }
+  $err = sqrt($err)/$wtsum;
+  if ($rflag) {
+    $err *= sqrt($rchi2);
+  }
+  if ($err==0) {$err = 1};  # $err can be zero if there are multiple identical TOAs
+                            #  (causing rchi2 to be zero).  Shouldn't happen in real data asets,
+                            #  it did once, so check for it
+  
+  # Add in ECORR if we have it
+  if (exists $ecorr{$info}) {
+    $err = sqrt($err*$err + $ecorr{$info}*$ecorr{$info});
+  }
+
+  $wr2_tot += $res*$res*(1.0/($err*$err));
+  $r2_tot += $res*$res;
+  $wt_tot += (1.0/($err*$err));
+  $ct_tot++;
+
+  $wr2_grp{$info} += $res*$res*(1.0/($err*$err));
+  $r2_grp{$info} += $res*$res;
+  $wt_grp{$info} += (1.0/($err*$err));
+  $ct_grp{$info}++;
+
+  if ($cflag) {
+    $a = $wtsum;
+    $b = $ff;
+    $c = $ff;
+    $d = $ffff;
+    $e = $res*$wtsum; # un-do normalization done a few lines above
+    $f = $ffres;
+    $rnew = ($e*$d-$b*$f)/($a*$d-$b*$c);
+    $rnewerr = sqrt($d/($a*$d-$b*$c));  
+  }
+
+  printf "%15.9f %9.4f %+.8e %.4e %11.8f %10.4f %s",
+      $mjd, $freq, $res, $err, $ophase, $rchi2, $info;
+  print printf "  %12.8f  %12.8f", $rnew, $rnewerr if ($cflag);
+  print "\n";
+}
+
+
+#-----------------------------------------
+
+sub resavg_read{
+  # read data from standard input into a series of arrays
+  # (this code really makes me appreciate perl lists)
+  @mjda = ();
+  @freqa = ();
+  @resa = ();
+  @erra = ();
+  @ophasea = ();
+  while (<STDIN>) {
+    chomp;
+    if (/^#/) { next; }
+    ($mjd0, $freq0, $res0, $err0, $ophase0) = split;
+    if ($err0>0 or $zflag==0) {
+      $res0 *= 1.e6 if ($sflag);
+      push @mjda, $mjd0;
+      push @freqa, $freq0;
+      push @resa, $res0;
+      push @erra, $err0;
+      push @ophasea, $ophase0; 
+    }
+  }
+}
+
+sub resavg_info_read{
+  # read info.tmp-style file and place its contents in global array infolist
+  local *INFO;
+  my($infofile) = shift(@_);
+  open INFO, $infofile;
+  @infolist = <INFO>;  
+  close INFO;
+}
+
+sub resavg_ecorr_read{
+  # Read ECORR values from a parfile, associate with TOAs via INFO
+  local *PAR;
+  my($parfile) = shift(@_);
+  my($infotoaflag) = "";
+  my(@ecorrflags) = ();
+  %ecorr = ();
+  open PAR, $parfile;
+  while (<PAR>) {
+    chomp;
+    if (/^#/ or /^C /) { next; }
+    @fields = split;
+    if ($fields[0] eq "INFO") { $infotoaflag = $fields[1]; }
+    elsif ($fields[0] eq "ECORR") {
+      push @ecorrflags, $fields[1];
+      $ecorr{$fields[2]} = $fields[3];
+    }
+  }
+  close PAR;
+  # If any of the ECORR flags are not the same as INFO flag,
+  # warn about it.
+  foreach $ecorrflag (@ecorrflags) {
+    if ($ecorrflag ne $infotoaflag) {
+      print sprintf(
+        "# WARNING: ECORR flag '%s' does not match INFO flag '%s'\n",
+        $ecorrflag, $infotoaflag);
+    }
+  }
+}
+
+#-----------------------------------------
+
+sub resavg_use_residual{
+  # extract data for a single residual and accumulate it into sums
+
+  my($idx) = $_[0];
+
+  # pull values out of arrays
+
+  $mjd0    = splice (@mjda   ,$idx,1);
+  $freq0   = splice (@freqa  ,$idx,1);
+  $res0    = splice (@resa   ,$idx,1);
+  $err0    = splice (@erra   ,$idx,1);
+  $ophase0 = splice (@ophasea,$idx,1);
+
+  if ($uflag) { $err0=1; }  # unweighted: set all errors to 1
+
+  # remove info line
+
+  splice(@infolist,$idx,1);
+
+  # calculate weight
+  $wt0 = 1.0/($err0*$err0);
+
+  # Add into sums
+  $mjd += $mjd0*$wt0;
+  $freq += $freq0*$wt0;
+  $res += $res0*$wt0;
+  $ophasesin += sin($ophase0*2.*pi)*$wt0;
+  $ophasecos += cos($ophase0*2.*pi)*$wt0;
+  $err += $err0*$err0*$wt0*$wt0;
+  $r2sum += $res0*$res0*$wt0;
+  $wtsum += $wt0;
+  $count++;
+  if ($cflag) {
+    $ff    += ($freq0**-2)*$wt0;       # accumulate   1/f^2
+    $ffff  += ($freq0**-4)*$wt0;       # accumulate   1/f^4
+    $ffres += ($freq0**-2)*$res*$wt0;  # accumulate res/f^2
+  }
+
+}
+

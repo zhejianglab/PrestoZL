@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Tempo modifications</title>
+  </head>
+
+  <body>
+    <h1>Tempo modifications</h1>
+    
+    This document lists, in reverse chronological order, some changes
+    made to Tempo since version 11.000.  However, significant major changes
+    are not included here.  Sorry about that.  The 
+    <a href='../reference_manual.html'>Tempo reference manual</a>
+    is usually kept up-to-date, and you can get details of changes
+    from the git log of the source code repository.
+    
+    <ul>
+      <li> CVS Version (Nov 2013)
+        <ul>
+          <li> Tempo2-style flag-based JUMPs are now implemented.
+          <li> -to (TIME) and -padd (PHASE) TOA flags are understood/applied.
+          <li> Add ability to parse Tempo2-format TOAs. 
+          <li> Add FD log-polynomial model for non-dispersive frequency dependent delays.
+          <li> Assorted bug fixes.
+        </ul>
+        <br>
+      <li> Version 12.000 (Jan 2010)
+        <ul>
+            <li> Imported Tempo CVS repository into Sourceforge.
+            <li> Added autoconf/automake based build system.
+            <li> Add -D command line option to output fit design matrix.
+            <li> util/ subdirectory contains potentially useful additional utility programs.
+            <li> Added DMX model for piecewise-constant DM variation.
+            <li> Added command-line based polyco generation mode (-Z).
+            <li> Add annual-orbital parallax to DD binary model.
+            <li> Apply JUMPs in the topocentric frame by default.
+            <li> Assorted small changes and bug fixes.
+        </ul>
+        <br>
+      <li> Version 11.005 (May 2000)
+        <ul>
+          <li> (Includes contributions and fixes from Z. Arzoumanian,
+            R. Dodson, A. Lommen, C. Cutler, E. Splaver, R. Manchester, 
+            D. Nice).
+          <li> Added new binary model BTX, an extension of the BT
+            model:  uses binary frequency (FB) and its derivatives (FB_x) 
+            instead of binary period;  allows many derivatives of orbit
+            size (XDOT_x); allows instantaneous 'jumps' in binary 
+            frequency (FBJ_x, TFBJ_x).
+          <li> Added dynamic memory allocation.  To override default
+            max number of TOAs or parameters use -m or -l, e.g., 
+            "tempo 0833.a -m 200000" for up to 200000 TOAs.  If
+            max number of TOAs is exceeded, tempo will read through
+            the entire TOA file(s), find the total number of TOAs,
+            re-allocate memory on the fly, and start again.  (This
+            is less efficient than specifying the right number in the
+            first place.)
+          <li> Added NTOA (number of toas) and TRES (residual) to output 
+            xxx.par.
+          <li> Added output of "information" lines.  Cards starting with
+            "INFO" may be included in the TOA section of the input file.
+            If such cards are present, an ASCII file "info.tmp" is written 
+            with one line per TOA.  Each line lists the information on the
+            most recent "INFO" card.  This is useful for separating
+            different subsets of data in post-Tempo processing.  For example,
+            if a Tempo file contains TOAs
+            from two data recording systems, put card "INFO 1" before
+            TOAs from system 1 and "INFO 2" before TOAs from system 2.
+            Plotting programs can then read "info.tmp" and determine which
+            TOAs came from which system.  "INFO" cards may have any mix
+            of ASCII characters, including spaces.
+          <li> Added -c option to force iteration even if the rms
+            changes by less than 
+            1 part in 1e4 (the usual stop criterion).  
+          <li> Added "EMAX xxx" and "EMAP yyy" to ignore TOAs with error
+            higher than xxx microseconds or yyy periods.
+          <li> Re-wrote command line parser to allow flexible ordering of
+            options and parameters as well as combination of options
+            (e.g., "tempo -oz" for "tempo -o -z").
+          <li> Improved accuracy of Solar System Shapiro delay calculation.
+            (Formerly used circular model for Earth's orbit.)
+          <li> Allow Princeton-style TOAs with non-blank column 2.  
+          <li> Reworked internal indexing of parameters to ease future
+            addition of new parameters.
+          <li> Use higher-precision MJDs internally when calculating of 
+            polyco.dat ephemerides.  Also treat the precision of polyco.dat
+            reference times with more care, eliminating several-hundred
+	    nanosecond jitter between sets of polynomial coefficients.
+          <li> Numerous minor bug fixes.
+        </ul>
+        <br>
+      <li> Version 11.004 (October 1998)
+        <ul>
+          <li> Added option '-no xxx' to write pulse numbers to file xxx.
+          <li> Added option '-ni xxx' to read pulse numbers from file xxx,
+            used instead of internally calculated pulse numbers
+          <li> Added option '-j' to write offset values to the output parameter
+            file (with form "JUMP_nn").
+          <li> Read in and interpret "JUMP_nn" header parameter.
+          <li> Added 'GAIN' header command to vary the fraction of calculated
+               parameter corrections added to parameters on each iteration.
+          <li> Fixed bug in DDGR fit for MTOT in systems dominated by
+            Shapiro delay.
+          <li> Allow 'INCLUDE' cards in time.dat file.
+          <li> Fixed bug in composite proper motion uncertainty calculation.
+          <li> Incorporate covariances where appropriate in uncertainties
+            of calculated parameters (proper motion, mass function, ....)
+          <li> Added output of calculated binary parameters to parameter file.
+          <li> Minor bug fixes and improvements.
+          <li> tdbgen.f -- added byte reversal for bigendian machines.
+        </ul>
+        <br>
+      <li> Version 11.003 (May 1998)
+          <ul>
+            <li> Minor bug fixes and improvements.
+            <li> More glitches allowed.
+            <li> TASC parameter allowed for binary model BT.
+          </ul>
+        <br>
+	<li> Version 11.002 (March 1998)
+	  <ul>
+	    <li> Added new binary model "ELL1" for low-eccentricity
+	      orbits.  Instead of OMEGA and E, the model fits for
+	      Laplace parameters EPS1 (=E*sin(OMEGA)) and EPS2 (=E*cos(OMEGA)).
+	      Input parameters OMEGA and E will be converted to EPS1
+	      and EPS2 if necessary.  Time of ascending node (T0ASC) must
+	      be used instead of time of periastron passage (T0).  Derivatives
+	      EPS1DOT and EPS2DOT may also be fit.
+	    <li> Model "DD+" renamed "MSS" (for "Main Sequence Star").
+	      Second derivative of OMEGA and X added.
+	    <li> POSEPOCH implemented - epoch (MJD) of position. Defaults to PEPOCH.
+            <li> Control parameters START and FINISH added. On input, if the 
+flag is
+             set, they delimit the MJD range of the fit. On output (in the 
+.par file)
+             they give the actual data range fitted.
+            <li> Improved determination of glitch epoch.
+            <li> Rms fit error added to polyco.dat.
+	    <li> Command line option -h added.
+	  </ul>
+	  <br>
+	<li> Version 11.001 (Jan-Feb 1998)
+	  <ul>
+	    <li> Allow fitting in ecliptic coordinates (BETA, LAMBDA,
+	      PMBETA, PMLAMBDA).
+	    <li> Fixed year-2000 bugs.
+	    <li> Fixed minor bugs found under compilation by g77 and
+	      Microsoft Fortran.
+	  </ul>
+      </ul>
+	  
+      <a href="reference_manual.html"> To the Tempo reference
+         manual.</a><br>
+      <a href="index.html"> Back to main Tempo page.</a><br>
+
+  </body>
+</html>
+
+
+

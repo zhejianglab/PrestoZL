@@ -1,0 +1,77 @@
+Notes on obswgt.pl, DJN, 25-March-2010
+
+Use:
+  obswgt[flags]
+
+  flags:
+     -e: print N_eff=(sum of wgt)^2/(sum of wgt^2) in addition to everything else
+     -f: segregate by frequency bin number [int(freq/100)] as well as info.tmp
+     -m: print start and end MJDs for each set
+
+What is obswgt used for?
+
+When you run tempo on a file with data subsets from multiple sources
+(either multiple frequencies, or multiple backends, or multiple
+observatories), it can be useful to know the rms and chi^2 values of the
+individual subsets of TOAs, and the overall weight of each subset
+in the tempo solution.  Obswgt reports this information.
+
+Specifically, for each data subset, obswgt reports:
+
+1.  The sum of the weights of all of the TOAs for that subset
+    (out of a total 1.00000 for all TOAs in that tempo run)
+2.  The average weight of TOAs in that subset 
+3.  The number of TOAs in that subset
+4.  The raw reduced chi^2 of the points in that subset, calculated
+    as the total chi^2 of those points divided by the number of
+    points in the set. (chi^2/ntoa_in_set)
+5.  The adjusted reduced chi^2 of the points.  This is the raw
+    chi^2 increased by (ntoa/ndof) where ntoa and ndof are the
+    total number of TOAs and the total number of degrees of freedom
+    in the full data set.  Basically this value is a "best guess"  
+    for the true reduced chi^2 of this data set
+6.  Unweighted rms of TOAs in that subset
+7.  Weighted rms of TOAs in that subset
+8.  Name of subset (from info.tmp file; see below)
+
+How to use:
+
+(1) Put INFO lines in your tempo file as described below
+(2) Run tempo on your file
+(3) Run "obswgt"
+
+In your TEMPO input TOA file, insert INFO cards such as:
+
+  INFO GBT800
+   ... list GBT 800 MHz TOAs here
+  INFO GBT1400
+   ... list GBT 1400 MHz TOAs here
+  INFO AO1400
+   ... list Arecibo 1400 MHz TOAs here
+  INFO GBT800
+   ... list GBT 800 MHz TOAs here
+
+When tempo is run on this file, it will produce a file "info.tmp"
+with one line per TOA.  The line associated with a given TOA will
+be the contents of the most recent INFO line before it in the Tempo
+file.  For example, if the first block of GBT 800 MHz TOAs in the
+above example had only three TOAs, and the GBT 1400 MHz block had
+two TOAs, the info.tmp file would start out:
+
+  GBT800
+  GBT800
+  GBT800 
+  GBT1400
+  GBT1400
+  AO1400
+   ...
+  GBT800   [the next block of GBT 800 MHz TOAs]
+   ...
+
+Obswgt reads the info lines from info.tmp along with the residuals from
+tempo output file resid2.tmp and calculates the rms, chi^2 and weight
+described above.  In this example, there would be three lines output,
+one for GBT800 TOAs, one for GBT1400 TOAs, and one for AO1400 TOAs.
+
+Info lines can contain any characters (including spaces).
+

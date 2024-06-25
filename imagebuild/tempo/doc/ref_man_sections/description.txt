@@ -1,0 +1,16 @@
+DESCRIPTION
+
+Tempo is a program for analyzing pulsar timing data.  Pulse times
+of arrival (TOAs), pulsar model parameters, and coded instructions
+are read from one or more input files.  The TOAs are fitted by a
+pulse timing model incorporating transformation to the
+solar-system barycenter, pulsar rotation and spin-down and, where
+necessary, one of several binary models.  Program output includes
+parameter values and uncertainties, residual pulse arrival times,
+chi-squared statistics, and the covariance matrix of the model.
+
+In prediction mode, ephemerides of pulse phase behavior (in the
+form of polynomial expansions) are calculated from input timing
+models.
+
+

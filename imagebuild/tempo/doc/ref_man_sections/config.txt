@@ -1,0 +1,45 @@
+CONFIGURATION AND SUPPORT FILES
+
+The TEMPO environment variable must point to a directory containing
+configuration file tempo.cfg.  In other words, the configuration file
+is $TEMPO/tempo.cfg.
+
+Entries in tempo.cfg are free-format, with the form 'keyword value', where
+value is a directory or file name as appropriate.  Keywords are
+case-insensitive, although file names are not.
+
+tempo.cfg keywords:
+
+CLKDIR          Directory containing clock offset files
+OBS_NIST        Offsets between observatory clock and UTC(NIST)
+UT1             Offsets between UTC and UT1
+NIST_UTC        Offsets between UTC(NIST) and UTC
+NIST_PTB        Offsets between UTC(NIST) and UTC(PTB)
+NIST_AT1        Offsets between UTC(NIST) and AT1
+NIST_TT(BIPM)   Offsets between UTC(NIST) and TT(BIPM)
+NIST_TT(BIPMxx) Offsets between UTC(NIST) and TT(BIPMxx)
+                   where xx is tyipcally the last two digits of a year
+                   (but it could be anything).
+                Up to 20 clock files may be specified.
+                Typically the TT(BIPM) entry would be set up to point to
+                   the same file as the most recent TT(BIPMxx) entry.
+ 
+EPHDIR         Directory containing ephemeris files
+TDBFILE        Offsets between TDB and TT
+EPHFILE        Solar system ephemeris file (from JPL distribution).  
+               There may be up to five EPHFILE entries.  
+               Optional flags:
+                --endian=little or --endian=big 
+                       default is big endian
+                --eph=<ephname> where typical <ephname> is DE200, DE405, etc.
+                       default is first five characters of ephemeris name
+                               
+
+PARDIR      Directory containing <psrname>.par files for prediction mode
+TZDIR       Directory containing 'tz.in' control file for prediction mode
+TZTOT       Name (with absolute path) of parameter file for prediction mode
+            (Used only in 'old-format' mode.)
+
+OBSYS       Name (with absolute path) of observatory coordinate file
+
+

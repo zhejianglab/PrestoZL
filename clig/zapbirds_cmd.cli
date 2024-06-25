@@ -1,0 +1,32 @@
+# Admin data
+
+Name zapbirds
+
+Usage "Allows you to interactively or automatically zap interference from an FFT."
+
+Version [exec date +%d%b%y]
+
+Commandline full_cmd_line
+
+# Options (in order you want them to appear)
+
+Flag    -zap        zap \
+	{Zap the birds in the FFT from 'zapfile' (write to the FFT file)}
+String  -zapfile    zapfile \
+	{A file of freqs and widths to zap from the FFT (when using '-zap')}
+String  -in         inzapfile \
+	{A file containing a list of freqs (Hz) and the # of harmonics to zap}
+String  -out        outzapfile \
+	{A file to write that will contain the freqs and widths (Hz) zapped}
+Double  -baryv      baryv \
+	{The radial velocity component (v/c) towards the target during the obs} \
+	-r -0.1 0.1  -d 0.0
+
+# Rest of command line:
+
+Rest infile {Input file name (no suffix) of floating point fft data.  A '.inf' file of the same name must also exist} \
+        -c 1 16384
+
+
+
+

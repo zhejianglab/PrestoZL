@@ -1,0 +1,73 @@
+#!/usr/bin/perl -w
+
+#   dt
+#
+#   calculates the dispersion delay across a given bandwidth
+#
+#   use: dt (bw) (dm) (f_sky)
+#        dt dm -d (f_sky1) (f_sky2)
+#
+#   first method: calculates dispersion delay difference across bandwidth
+#   bw centered at f_sky.  
+#   second method: calculates dispersion delay difference betwen f_sky1
+#   and f_sky2
+
+$usage =  "\n".
+          "Use: dt (bw) (dm) (f_sky)\n".
+          "     dt (dm) -d (f_sky_1) (f_sky_2)\n".
+          "\n".
+          "Append 'k', 'm', or 'g' to frequency values for kilohertz, ".
+          "megahertz, or\n".
+          "gigahertz.  Default is megahertz.\n".
+          "\n";
+
+$dflag = 0;
+
+foreach $i (0..$#ARGV) {
+  if ($ARGV[$i] eq "-d") {
+    $dflag = 1;
+    die $usage if ($#ARGV<$i+2);
+    ($f1,$f2) = (splice(@ARGV,$i,3))[1,2];
+    last;
+  }
+}
+
+if ($dflag) {
+  die $usage if ($#ARGV!=0);
+  $dm = $ARGV[0];
+  &ensuremhz(\$f1);
+  &ensuremhz(\$f2);
+} else {
+  die $usage if ($#ARGV!=2);
+  ($bw,$dm,$f0) = @ARGV;
+  &ensuremhz(\$bw);
+  &ensuremhz(\$f0);
+  $f1 = $f0-0.5*$bw;
+  $f2 = $f0+0.5*$bw;
+}
+
+$t = 1000. * $dm * (1/($f1*$f1)-1/($f2*$f2)) /  2.41e-4;
+
+print "Smearing time, $f1 MHz to $f2 MHz, is $t milliseconds\n";
+
+# subroutine ensuremhz -- make sure a variable is in megahertz,
+#      not kilohertz or gigahertz.  Units of kilohertz or gigahertz
+#      would be indicated by a k or g appended to the number.
+#      (Uppercase K and G are also allowed).  Units of megahertz
+#      may optionally be indicated by m or M, but default is megahertz
+#      if no letter follows the number.
+# 
+# use: &ensuremhz(\$x)
+#
+# if $x is a number, do nothing to it
+# if $x is a number followed by 'm' or 'M', strip the 'm'/'M'
+# if $x is a number followed by 'k' or 'K', strip the letter and mult by 10^-3
+# if $x is a number followed by 'g' or 'G', strip the letter and mult by 10^-3
+#
+sub ensuremhz {
+  my ($a) = ${$_[0]};
+  $a = 1.e-3*substr($a,0,-1) if ($a=~/k/i);
+  $a = 1.   *substr($a,0,-1) if ($a=~/m/i);
+  $a = 1.e+3*substr($a,0,-1) if ($a=~/g/i);
+  ${$_[0]} = $a;
+}
