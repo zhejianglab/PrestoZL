@@ -63,7 +63,7 @@ If you use the code in your experiment, please cite this repo, thank you.
 ```
 @misc{PrestoZL,
  author = {Zhejiang Lab},
- title = {Zhejiang Lab Presto GPU},
+ title = {PrestoZL，Zhejiang Lab Presto GPU},
  year = {2024},
  howpublished = {\url{https://github.com/zhejianglab/PrestoZL.git}},
  note = {Accessed: 2024-06-24}
