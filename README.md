@@ -48,7 +48,7 @@ Ensure you have Docker installed on your system. You can follow the instructions
 
 
 ## Usage
-The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry point for the PrestoZL version of the Fourier-domain acceleration program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of while loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
+The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry point for the PrestoZL version of the Fourier-domain acceleration program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of while loops（number of rsteps） calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
 ```
 accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
