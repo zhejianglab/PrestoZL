@@ -1,7 +1,7 @@
 # PrestoZL
 PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The difference between this software and Scott Ransom's Presto C lies in the gpu optimization of the most time-consuming Fourier-domain acceleration search module to suit GPU parallel processing pipelines, which significantly accelerating the search procedual. The larger the search parameters `(zmax, wmax)`, the more noticeable the performance improvement, and the search result is equivalent to the Scott Ransom's Presto C.
 
-In **Figure 1**, the GPU version of Fourier-domain acceleration（jerk search） is compared to the logic of accelsearch.c in Presto C. During each iteration of the while loop search, we combine the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one Cuda Kernel, making the search process very efficient. At the same time, we have made a batch modification to the while search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
+In **Figure 1**, the GPU version of Fourier-domain acceleration（jerk search） is compared to the logic of accelsearch.c in Presto C. During each iteration of the r-step loop search, we combine the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one Cuda Kernel, making the search process very efficient. At the same time, we have made a batch modification to the r-step loop search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="600">
   <p>Figure 1. Comparison of the program frameworks of Presto C and PrestoZL in the accelsearch stage</p>
@@ -48,7 +48,7 @@ Ensure you have Docker installed on your system. You can follow the instructions
 
 
 ## Usage
-The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry point for the PrestoZL version of the Fourier-domain acceleration program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of while loops（number of rsteps） calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
+The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry point for the PrestoZL version of the Fourier-domain acceleration program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
 ```
 accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
