@@ -3,7 +3,7 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
 
 In **Figure 1**, the GPU version of Fourier-domain acceleration（jerk search） is compared to the logic of accelsearch.c in Presto C. During each iteration of the while loop search, we combine the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one Cuda Kernel, making the search process very efficient. At the same time, we have made a batch modification to the while search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
 <div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.png" alt="Figure1" width="600">
+  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="600">
   <p>Figure 1. Comparison of the program frameworks of Presto C and PrestoZL in the accelsearch stage</p>
 </div>
 
