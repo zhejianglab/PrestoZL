@@ -816,8 +816,8 @@ __global__ void fuse_add_search_batch_kernel(
 		int pre = 0;
 		for (stage = 1; stage <= stages; stage++)
 		{
-			int batchsize = 1 << (stage - 1);
-			for (int b = 0; b < batchsize; b++)
+			int harmtosum = 1 << (stage - 1);
+			for (int b = 0; b < harmtosum; b++)
 			{
 				SubharmonicMap subh = subhmap[(b + pre) * fundamental_num + f];
 				int harm_fract = subh.harm_fract;
@@ -833,7 +833,7 @@ __global__ void fuse_add_search_batch_kernel(
 				int subharmonic_index = matrix_3d_index(wind, zind, rind, subh.subharmonic_numzs, subh.subharmonic_numrs);
 				tmp += subharmonic_powers_flat[subharmonic_index];
 			}
-			pre += batchsize;
+			pre += harmtosum;
 
 			if (tmp > powcuts_device[stage])
 			{
