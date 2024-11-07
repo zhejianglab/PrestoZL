@@ -18,13 +18,17 @@ We also provide a pipeline version of PrestZL, which eliminates the GPU stalls c
 **Figure 3** and **Figure 4** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and the pipelined version of PrestoZL) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process (Figure 3) and eight concurrent processes on a single GPU (Figure 4). Optimizing GPU programs for multi-process search on the same GPU is challenging, requiring fine-tuned optimization and utilization of GPU computational resources and memory access. Both PrestoZL and the pipelined version of PrestoZL achieve significant performance improvements compare with PRESTO C.
 
 <div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="600">
-  <p>Figure 3. Performance comparison between PRESTO C and different GPU versions in a single process</p>
-</div>
-
-<div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure4.png" alt="Figure4" width="600">
-  <p>Figure 4. Performance comparison between PRESTO C and different GPU versions in eight concurrent processes</p>
+  <table>
+    <tr>
+      <td>
+        <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="400">
+      </td>
+      <td>
+        <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure4.png" alt="Figure4" width="400">
+      </td>
+    </tr>
+  </table>
+  <p>Figure 3. Performance comparison between PRESTO C and different GPU versions</p>
 </div>
 
 ## Build From Docker Image
@@ -59,19 +63,35 @@ Ensure you have Docker installed on your system. You can follow the instructions
    ```
    These commands will create a Docker container named `prestozl_latest` and enter it.
 
+### Compile PrestoZL
+PrestoZL can be compiled in the container as below commands:
+```
+cd /home/soft/presto/src
+make makewisdom
+make
+```
+The command `make makewisdom` only needs to be executed during the first compilation.
+
 
 ## Usage
+### Fourier-domain acceleration
 The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry point for the PrestoZL version of the Fourier-domain acceleration program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
 ```
 accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
 
-To run PrestoZL-pipeline, can use bin/accelsearch_pipeline_cu.py, this is an example to run with batchsize=2, processes=8:
+To run PrestoZL-pipeline, we provide a script at bin/accelsearch_pipeline_cu.py, this is an example to run with batchsize=2, processes=8:
 ```
 python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 20 --wmax 0 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 
 The method of running other parts of Presto is the same with Presto C.
+
+### De-dispersion
+You can use GPU-accelerated version de-dispersion command `prepsubband_cu` to replace `prepsubband`, other arguments are the same as those used in PRESTO C, and the results are also identical. Here's an example:
+```
+prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask test1_rfifind.mask -o ./psb/FRB121102_tracking-M01_0706_ds1_0 FRB121102_tracking-M01_0706_ds1_0.fits
+```
 
 ## Acknowledgement
 The following individuals contributed to this project, (listed in alphabetical order): Chen Huaxi, Ke Yinan, Mao Kuang, Pan Qiuhong, Tang Zhaorong, Tang Xuefei, Wang Qi, Wang Pei
