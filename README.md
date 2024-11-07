@@ -15,7 +15,7 @@ We also provide a pipeline version of PrestZL, which eliminates the GPU stalls c
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-Figure 3 and 4 show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and the pipelined version of PrestoZL) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process (Figure 3) and eight concurrent processes on a single GPU (Figure 4). Optimizing GPU programs for multi-process search on the same GPU is challenging, requiring fine-tuned optimization and utilization of GPU computational resources and memory access. Both PrestoZL and the pipelined version of PrestoZL achieve significant performance improvements compare with PRESTO C.
+**Figure 3** and **Figure 4** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and the pipelined version of PrestoZL) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process (Figure 3) and eight concurrent processes on a single GPU (Figure 4). Optimizing GPU programs for multi-process search on the same GPU is challenging, requiring fine-tuned optimization and utilization of GPU computational resources and memory access. Both PrestoZL and the pipelined version of PrestoZL achieve significant performance improvements compare with PRESTO C.
 
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="600">
@@ -28,7 +28,7 @@ Figure 3 and 4 show the performance comparison results between different GPU imp
 </div>
 
 ## Build From Docker Image
-You can simply build the PrestoZJ enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
+You can simply build the PrestoZL enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
 
 ### Prerequisites
 
@@ -47,17 +47,17 @@ Ensure you have Docker installed on your system. You can follow the instructions
 
    Use the following command to build the Docker image. Make sure you are in the directory where the Dockerfile is located.
    ```
-   docker build -t prestozj:latest .
+   docker build -t prestozl:latest .
    ```
-   This command will build the Docker image and tag it as `prestozj:latest`.
+   This command will build the Docker image and tag it as `prestozl:latest`.
 3. **Run the Docker Container**:
 
    Once the image is built, you can run a container from it. Here is an example command to run the container interactively.
    ```
-   docker run -itd --name=prestozj_latest --gpus all --network=host prestozj:latest /bin/bash
-   docker exec -it prestozj_latest /bin/bash
+   docker run -itd --name=prestozl_latest --gpus all --network=host prestozl:latest /bin/bash
+   docker exec -it prestozl_latest /bin/bash
    ```
-   These commands will create a Docker container named `prestozj_latest` and enter it.
+   These commands will create a Docker container named `prestozl_latest` and enter it.
 
 
 ## Usage
@@ -65,6 +65,12 @@ The Fourier-domain acceleration (accelsearch_cu.c) section serves as the entry p
 ```
 accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
+
+To run PrestoZL-pipeline, can use bin/accelsearch_pipeline_cu.py, this is an example to run with batchsize=2, processes=8:
+```
+python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 20 --wmax 0 --sigma 3.0 --numharm 16 --batchsize 2
+```
+
 The method of running other parts of Presto is the same with Presto C.
 
 ## Acknowledgement
