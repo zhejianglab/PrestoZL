@@ -2,6 +2,7 @@
 #include "stdint.h"
 #include "string.h"
 #include <errno.h>
+#include <pthread.h>
 
 // Following gives the same as FFTW's fftwf_alignment_of when
 // BYTE_COUNT = 16, which is what we need for SSE.
@@ -51,104 +52,84 @@ void fftwcallsimple(fcomplex * data, long nn, int isign)
     fftwf_destroy_plan(plan);
 }
 
+// 定义缓存大小的宏
+#define CACHE_SIZE 256
 
-void fftwcall(fcomplex * indata, long nn, int isign)
-/* This routine calls the FFTW complex-complex FFT using stored wisdom */
-/* files.  It is VERY fast.  nn does _not_ have to be a power of two   */
-/* size.  indata is a complex array but stored as floats.              */
-{
-    fftwf_plan *plan_forward, *plan_inverse;
-    fftwf_complex *dataptr = (fftwf_complex *) indata;
+// 全局互斥锁
+pthread_mutex_t fftw_lock = PTHREAD_MUTEX_INITIALIZER;
+
+// 定义变量
+fftwf_plan plancache_forward[CACHE_SIZE] = {NULL};
+fftwf_plan plancache_inverse[CACHE_SIZE] = {NULL};
+int aligncache[CACHE_SIZE] = {-99};
+int firsttime = 1;
+int lastslot = 0, lastused[CACHE_SIZE] = {0};
+long nncache[CACHE_SIZE] = {0};
+unsigned int planflag;
+fcomplex *datacopy;
+
+void fftwcall(fcomplex *indata, long nn, int isign) {
+    fftwf_complex *dataptr = (fftwf_complex *)indata;
     int ii, indata_align, slot, incache = 0, oldestplan = 0;
-    //static int goodct = 0, badct = 0;
-    static fftwf_plan plancache_forward[4] = { NULL, NULL, NULL, NULL };
-    static fftwf_plan plancache_inverse[4] = { NULL, NULL, NULL, NULL };
-    static int aligncache[4] = { -99, -99, -99, -99 };
-    static int firsttime = 1;
-    static int lastslot = 0, lastused[4] = { 0, 0, 0, 0 };
-    static long nncache[4] = { 0, 0, 0, 0 };
 
-    // This determines the alignment of the input array.  Allows
-    // more flexible calling of FFTW using its plans.
-    // A return value of 0 is "properly" aligned.
     indata_align = is_aligned(indata, 16);
-    //if (indata_align)
-    //    printf("Data not properly aligned (%d)!\n", indata_align);
 
-    // Call the six-step algorithm if the FFT is too big to be
-    // efficiently handled by FFTW
-    if (nn > BIGFFTWSIZE) {
-        tablesixstepfft(indata, nn, isign);
-        return;
-    }
-    // If calling for the first time, read the wisdom file
-    if (firsttime)
+    if (firsttime) {
+        pthread_mutex_lock(&fftw_lock);
         read_wisdom();
+        pthread_mutex_unlock(&fftw_lock);
+        firsttime = 0;
+    }
 
-    // If we used the same plan during the last few calls, use it
-    // again.  We keep, in effect, a stack of the 4 most recent plans.
     ii = 0;
     slot = lastslot;
-    while (ii < 4) {
+    while (ii < CACHE_SIZE) {
         if (nn == nncache[slot] && indata_align == aligncache[slot]) {
-            plan_forward = &plancache_forward[slot];
-            plan_inverse = &plancache_inverse[slot];
-            lastused[slot] = 0;
-            lastused[(slot + 1) % 4]++;
-            lastused[(slot + 2) % 4]++;
-            lastused[(slot + 3) % 4]++;
-            //printf("Found plan in slot %d (iter = %d):  nn=%ld  align=%d  number=%d\n",
-            //       slot, ii, nn, aligncache[slot], goodct++);
-            lastslot = slot;
             incache = 1;
             break;
         }
-        slot = (slot + 1) % 4;
+        slot = (slot + 1) % CACHE_SIZE;
         ii++;
     }
+
     if (!incache) {
-        unsigned int planflag;
-        fcomplex *datacopy;
-        if (!firsttime) {
-            for (ii = 3; ii >= 0; ii--)
-                if (lastused[ii] >= oldestplan)
-                    oldestplan = ii;
-            // Delete the old plans to prevent memory leaks
-            if (plancache_forward[oldestplan])
-                fftwf_destroy_plan(plancache_forward[oldestplan]);
-            if (plancache_inverse[oldestplan])
-                fftwf_destroy_plan(plancache_inverse[oldestplan]);
+        pthread_mutex_lock(&fftw_lock);
+        for (ii = CACHE_SIZE - 1; ii >= 0; ii--) {
+            if (lastused[ii] > lastused[oldestplan]) {
+                oldestplan = ii;
+            }
         }
-        //printf("Making a new plan for nn=%ld, align=%d (dropping nn=%ld) %d\n",
-        //       nn, indata_align, nncache[oldestplan], badct++);
-        // We don't want to wait around to measure huge transforms
+
+        if (plancache_forward[oldestplan])
+            fftwf_destroy_plan(plancache_forward[oldestplan]);
+        if (plancache_inverse[oldestplan])
+            fftwf_destroy_plan(plancache_inverse[oldestplan]);
+
         planflag = (nn > 16384) ? FFTW_ESTIMATE : FFTW_MEASURE;
-        // FFTW_MEASURE will destroy the input/output data, so copy it
         datacopy = gen_cvect(nn);
         memcpy(datacopy, dataptr, nn * sizeof(fcomplex));
-        // Actually make the plans
-        plancache_forward[oldestplan] =
-            fftwf_plan_dft_1d(nn, dataptr, dataptr, -1, planflag);
-        plancache_inverse[oldestplan] =
-            fftwf_plan_dft_1d(nn, dataptr, dataptr, +1, planflag);
-        // Now copy the input data back
+
+        plancache_forward[oldestplan] = fftwf_plan_dft_1d(nn, dataptr, dataptr, -1, planflag);
+        plancache_inverse[oldestplan] = fftwf_plan_dft_1d(nn, dataptr, dataptr, +1, planflag);
+
         memcpy(dataptr, datacopy, nn * sizeof(fcomplex));
         vect_free(datacopy);
         nncache[oldestplan] = nn;
         aligncache[oldestplan] = indata_align;
-        plan_forward = &plancache_forward[oldestplan];
-        plan_inverse = &plancache_inverse[oldestplan];
         lastused[oldestplan] = 0;
-        lastused[(oldestplan + 1) % 4]++;
-        lastused[(oldestplan + 2) % 4]++;
-        lastused[(oldestplan + 3) % 4]++;
-        lastslot = oldestplan;
+        slot = oldestplan;
+        pthread_mutex_unlock(&fftw_lock);
     }
-    // Call the transform using the "new-array" functionality of FFTW
+
+    lastused[slot] = 0;
+    for (int j = 1; j < CACHE_SIZE; j++) {
+        lastused[(slot + j) % CACHE_SIZE]++;
+    }
+    lastslot = slot;
+
     if (isign == -1) {
-        fftwf_execute_dft(*plan_forward, dataptr, dataptr);
+        fftwf_execute_dft(plancache_forward[slot], dataptr, dataptr);
     } else {
-        fftwf_execute_dft(*plan_inverse, dataptr, dataptr);
+        fftwf_execute_dft(plancache_inverse[slot], dataptr, dataptr);
     }
-    firsttime = 0;
 }

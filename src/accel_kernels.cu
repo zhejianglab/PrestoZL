@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2024 Zhejiang Lab
  *
  * This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ extern "C" extern float ***gen_f3Darr_cu(long nhgts, long nrows, long ncols, cud
 
 extern "C" extern void do_fft_batch(int fftlen, int binoffset, ffdotpows_cu *ffdot_array, subharminfo *shi, fcomplex *pdata_array, int *idx_array, fcomplex *full_tmpdat_array, fcomplex *full_tmpout_array, int batch_size, fcomplex *fkern, cudaStream_t stream);
 
-extern "C" extern void fuse_add_search_batch(ffdotpows_cu *fundamentals, SubharmonicMap *subhmap, int stages, int fundamental_num, cudaStream_t stream, SearchValue *search_results, int *search_nums, long long pre_size, int proper_batch_size);
+extern "C" extern void fuse_add_search_batch(ffdotpows_cu *fundamentals, SubharmonicMap *subhmap, int stages, int fundamental_num, cudaStream_t stream, SearchValue *search_results, int *search_nums, long long pre_size, int proper_batch_size, int max_searchnum, int *too_large);
 
 extern "C" extern kernel **gen_kernmatrix_cu(int numz, int numw);
 
@@ -153,6 +153,8 @@ void clear_cache()
 	{
 		cufftDestroy(cache[i].value);
 	}
+	cacheIndex = 0;
+	cacheSize = 0;
 }
 
 static const char *_cudaGetErrorEnum(cufftResult error)
@@ -431,7 +433,7 @@ __device__ double dinvnr(double *p, double *q)
 #define dennor(x) (r2pi * __expf(nhalf * (x) * (x)))
 
 	double pp = (*p <= *q) ? *p : *q; // Find the minimum value between p and q
-	double strtx = stvaln(&pp);		  
+	double strtx = stvaln(&pp);
 	double xcur = strtx;
 	double cum, ccum, dx;
 	double result;
@@ -439,7 +441,7 @@ __device__ double dinvnr(double *p, double *q)
 	// NEWTON ITERATIONS
 	for (int i = 1; i <= maxit; i++)
 	{
-		cumnor(&xcur, &cum, &ccum); 
+		cumnor(&xcur, &cum, &ccum);
 		dx = (cum - pp) / dennor(xcur);
 		xcur -= dx;
 		if (fabs(dx / xcur) < eps)
@@ -620,10 +622,7 @@ __device__ double gam1(double *a)
 	double q[5] = {
 		.100000000000000e+01, .427569613095214e+00, .158451672430138e+00,
 		.261132021441447e-01, .423244297896961e-02};
-	// double r[9] = {
-	// 	-.422784335098468e+00, -.771330383816272e+00, -.244757765222226e+00,
-	// 	.118378989872749e+00, .930357293360349e-03, -.118290993445146e-01,
-	// 	.223047661158249e-02, .266505979058923e-03, -.132674909766242e-03};
+
 	double gam1, bot, t, top, w;
 
 	double x = *a;
@@ -791,14 +790,16 @@ __global__ void fuse_add_search_batch_kernel(
 	SearchValue *search_results,
 	int *search_nums,
 	long long pre_size,
-	int proper_batch_size)
+	int proper_batch_size,
+	int max_searchnum,
+	int *too_large)
 {
 	int f = blockIdx.x / fundamental_numws;
 	int ii = blockIdx.x % fundamental_numws;
 	int jj = blockIdx.y;
 	int kk = blockIdx.z * blockDim.x + threadIdx.x;
 
-	if (kk < fundamental_numrs)
+	if (kk < fundamental_numrs && *too_large == 0)
 	{
 		int fundamental_index = matrix_3d_index(ii, jj, kk, fundamental_numzs, fundamental_numrs);
 		float tmp = fundamental_powers_flat[f * fundamental_size + fundamental_index];
@@ -838,24 +839,34 @@ __global__ void fuse_add_search_batch_kernel(
 			if (tmp > powcuts_device[stage])
 			{
 				int index = atomicAdd(&search_nums[0], 1);
-				search_results[index].index = (long long)(pre_size) + (long long)(stage * proper_batch_size * fundamental_size + f * fundamental_size + fundamental_index);
-				search_results[index].pow = tmp;
-				float sig = candidate_sigma_cu(tmp, numharms_device[stage], numindeps_device[stage]);
-				search_results[index].sig = sig;
+				if (index >= max_searchnum)
+				{
+					*too_large = 1;
+					return;
+				}
+				else
+				{
+					search_results[index].index = (long long)(pre_size) + (long long)(stage * proper_batch_size * fundamental_size + f * fundamental_size + fundamental_index);
+					search_results[index].pow = tmp;
+					float sig = candidate_sigma_cu(tmp, numharms_device[stage], numindeps_device[stage]);
+					search_results[index].sig = sig;
+				}
 			}
 		}
 	}
 }
 
 void fuse_add_search_batch(ffdotpows_cu *fundamentals,
-								   SubharmonicMap *subhmap,
-								   int stages,
-								   int fundamental_num,
-								   cudaStream_t stream,
-								   SearchValue *search_results,
-								   int *search_nums,
-								   long long pre_size,
-								   int proper_batch_size)
+						   SubharmonicMap *subhmap,
+						   int stages,
+						   int fundamental_num,
+						   cudaStream_t stream,
+						   SearchValue *search_results,
+						   int *search_nums,
+						   long long pre_size,
+						   int proper_batch_size,
+						   int max_searchnum,
+						   int *too_large)
 {
 	int threads = 128;
 	ffdotpows_cu *fundamental = &fundamentals[0];
@@ -875,7 +886,9 @@ void fuse_add_search_batch(ffdotpows_cu *fundamentals,
 		search_results,
 		search_nums,
 		pre_size,
-		proper_batch_size);
+		proper_batch_size,
+		max_searchnum,
+		too_large);
 
 	CUDA_CHECK(cudaGetLastError());
 }
@@ -915,13 +928,13 @@ __global__ void pre_fft_kernel_batch_float4(fcomplex *pdata_array, fcomplex *ful
 	int b = blockIdx.x / ws_len; // batch index
 	int ii = blockIdx.x % ws_len;
 	int jj = blockIdx.y;
-	int kk = blockIdx.z * blockDim.x + threadIdx.x; 
+	int kk = blockIdx.z * blockDim.x + threadIdx.x;
 
 	if (kk < fftlen / 2) // Since float4 is used, the effective length is half of the original
 	{
 		float4 *pdata = (float4 *)(&pdata_array[b * fftlen]);
 		float4 *fdata = (float4 *)(&full_tmpdat_array[b * (fftlen * ws_len * zs_len) + calc_index_dev(ii, jj, ws_len, zs_len, fftlen)]);
-		float4 *fkern = (float4 *)(&fkern_gpu[(ii * zs_len + jj) * fftlen]); 
+		float4 *fkern = (float4 *)(&fkern_gpu[(ii * zs_len + jj) * fftlen]);
 
 		// Read the float4 in pdata and fkern, each contains two complex numbers
 		float4 p = pdata[kk];
@@ -1090,4 +1103,7 @@ void do_fft_batch(int fftlen, int binoffset, ffdotpows_cu *ffdot_array, subharmi
 
 	// Release the allocated resources
 	free(cu_plan_array);
+	free(rs_len_array);
+	cudaFreeAsync(idx_array_device, stream);
+	cudaFreeAsync(rs_len_array_device, stream);
 }

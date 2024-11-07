@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2024 Zhejiang Lab
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,6 +24,22 @@
 #include <assert.h>
 
 #define NEAREST_INT(x) (int)(x < 0 ? x - 0.5 : x + 0.5)
+
+unsigned short **inds_array;
+
+void init_inds_array(int size)
+{
+    inds_array = (unsigned short **)malloc(size * sizeof(unsigned short *));
+    for (int i = 0; i < size; i++)
+    {
+        inds_array[i] = NULL;
+    }
+}
+
+void free_inds_array()
+{
+    free(inds_array);
+}
 
 typedef struct
 {
@@ -250,7 +266,7 @@ void free_subharmonic_cu_batch(SubharmonicMap *ffd_array, int batch_size, int nu
     {
         SubharmonicMap *ffd = &ffd_array[i * batch_size];
         CUDA_CHECK(cudaFreeAsync(ffd->subharmonic_powers, sub_stream));
-        CUDA_CHECK(cudaFreeAsync(ffd->subharmonic_rinds, sub_stream));
+        CUDA_CHECK(cudaFreeAsync(inds_array[i], sub_stream));
     }
 }
 
@@ -425,7 +441,8 @@ void subharm_fderivs_vol_cu_batch(
     fcomplex *full_tmpdat_array,
     fcomplex *full_tmpout_array,
     int batch_size,
-    fcomplex *fkern)
+    fcomplex *fkern,
+    int inds_idx) // size of batch
 {
     // local variables needed
     int ii, numdata, fftlen, binoffset;
@@ -436,9 +453,13 @@ void subharm_fderivs_vol_cu_batch(
 
     // prepare pdata_dev
     fcomplex *pdata_dev;
+    unsigned short *inds;
     fftlen = shi->kern[0][0].fftlen;
     CUDA_CHECK(cudaMallocAsync(&pdata_dev, (size_t)(sizeof(fcomplex) * fftlen * batch_size), stream));
-
+    if (!(numharm == 1 && harmnum == 1))
+    {
+        CUDA_CHECK(cudaMallocAsync(&(inds_array[inds_idx]), (size_t)(obs->corr_uselen * sizeof(unsigned short) * batch_size * 2), stream));
+    }
     // loop through each batch
     for (int b = 0; b < batch_size; b++)
     {
@@ -493,9 +514,7 @@ void subharm_fderivs_vol_cu_batch(
         }
         else
         {
-            unsigned short *inds;
-            CUDA_CHECK(cudaMallocAsync(&inds, (size_t)(obs->corr_uselen * sizeof(unsigned short) * batch_size * 2), stream));
-            deep_copy_ffdotpows_cpu2cu(ffdot, shi, obs->corr_uselen, inds, b, batch_size, stream);
+            deep_copy_ffdotpows_cpu2cu(ffdot, shi, obs->corr_uselen, (inds_array[inds_idx]), b, batch_size, stream);
         }
         /* Determine the largest kernel halfwidth needed to analyze the current subharmonic */
         /* Verified numerically that, as long as we have symmetric z's and w's, */
@@ -589,6 +608,7 @@ void subharm_fderivs_vol_cu_batch(
 
     do_fft_batch(fftlen, binoffset, ffdot_array, shi, pdata_dev, idx_array, full_tmpdat_array, full_tmpout_array, batch_size, fkern, stream);
     CUDA_CHECK(cudaFreeAsync(pdata_dev, stream));
+    free(idx_array);
 }
 
 static accelcand *create_accelcand(float power, float sigma,

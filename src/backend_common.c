@@ -135,8 +135,8 @@ void identify_psrdatatype(struct spectra_info *s, int output)
             s->datatype = UNSET;
     }
     psrdatatype_description(ctmp, s->datatype);
-    if (output)
-        printf("Assuming the data are %s format...\n", ctmp);
+    // if (output)
+    //     printf("Assuming the data are %s format...\n", ctmp);
     free(root);
     free(suffix);
 }

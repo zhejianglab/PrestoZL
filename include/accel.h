@@ -185,3 +185,6 @@ GSList *search_ffdotpows(ffdotpows *ffdot, int numharm,
                          accelobs *obs, GSList *cands);
 void free_accelobs(accelobs *obs);
 int compare(const void *a, const void *b);
+void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, accelobs *obs_ptr, infodata *idata_ptr, Cmdline **cmd_ptr);
+int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr, Cmdline *cmd);
+void accelsearch_CPU2(GSList **cands, accelobs *obs, infodata *idata, Cmdline *cmd);

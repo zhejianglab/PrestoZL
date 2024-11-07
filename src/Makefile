@@ -57,7 +57,7 @@ GENCODE_FLAGS   := -arch=sm_52 \
 CUDA_PATH       ?= /usr/local/cuda
 
 #modify it if necessary
-CUDA_INC_PATH   ?= -I $(CUDA_PATH)/include -I. -I.. -I $(CUDA_PATH)/samples/common/inc/  -I $(CUDA_PATH)/samples/common/inc/ -I$(PRESTO)/include
+CUDA_INC_PATH   ?= -I $(CUDA_PATH)/include -I. -I.. -I $(CUDA_PATH)/samples/common/inc/  -I $(CUDA_PATH)/samples/common/inc/ -I$(PRESTO)/include -I$(PRESTO)/include/triton/core -I$(PRESTO)/include/triton/common -I$(PRESTO)/include/triton/backend
 
 CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
 NVCC            ?= $(CUDA_BIN_PATH)/nvcc
@@ -90,7 +90,7 @@ CFITSIOINC := $(shell pkg-config --cflags cfitsio)
 CFITSIOLINK := $(shell pkg-config --libs cfitsio)
 
 # The standard PRESTO libraries to link into executables
-PRESTOLINK = $(CFITSIOLINK) -L$(PRESTO)/lib -lpresto $(FFTLINK) $(CUDA_LINK_EXTRA_FLAGS) -L $(SYSDIR)/lib/x86_64-linux-gnu -lstdc++
+PRESTOLINK = $(CFITSIOLINK) -L$(PRESTO)/lib -lpresto $(FFTLINK) $(CUDA_LINK_EXTRA_FLAGS) -L $(SYSDIR)/lib/x86_64-linux-gnu -lstdc++ -lpthread
 
 CC = gcc
 #CC = clang-3.6
@@ -110,7 +110,7 @@ CLINKFLAGS = $(CFLAGS) -Wl,-rpath,$(PRESTO)/lib
 
 
 CFLAGS_NVCC = -I$(PRESTO)/include $(GLIBINC) $(CFITSIOINC) $(PGPLOTINC) $(FFTINC) \
-	-g -O3\
+	-O3\
 	-DUSEMMAP -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 CLINKFLAGS_NVCC = $(CFLAGS_NVCC) -L$(PRESTO)/lib
 
@@ -198,7 +198,7 @@ BINARIES = makedata makeinf mjd2cal realfft quicklook\
 	search_bin swap_endian prepdata\
 	check_parkes_raw bary shiftdata dftfold\
 	patchdata readfile toas2dat taperaw\
-	accelsearch accelsearch_cu prepsubband cal2mjd split_parkes_beams\
+	accelsearch libaccelsearch_lib.so libaccelsearch_maxsize.so accelsearch_cu prepsubband prepsubband_cu libprepsubband_maxsize.so cal2mjd split_parkes_beams\
 	dat2sdat sdat2dat downsample rednoise un_sc_td bincand\
 	psrorbit window plotbincand prepfold show_pfd\
 	rfifind zapbirds explorefft exploredat\
@@ -258,8 +258,17 @@ accelsearch: accelsearch_cmd.o accel_utils.o accelsearch.o zapping.o libpresto
 accel_kernels.o: accel_kernels.cu 
 	$(NVCC) $(EXTRA_NVCCFLAGS) $(NVCCFLAGS) $(CUDA_INC_PATH) $(GENCODE_FLAGS) $(GLIBINC) -c $< 
 
-accelsearch_cu: accelsearch_cmd.o accel_utils.o accel_kernels.o zapping.o libpresto accel_utils_cu.o accelsearch_cu.o
-	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ accelsearch_cmd.o accel_utils.o accel_utils_cu.o accelsearch_cu.o zapping.o accel_kernels.o -lcufft $(PRESTOLINK) $(GLIBLINK) -lm $(CUDA_LINK_EXTRA_FLAGS)
+# accelsearch_cu: accelsearch_cmd.o accel_utils.o accel_kernels.o zapping.o libpresto accel_utils_cu.o accelsearch_cu.o
+# 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ accelsearch_cmd.o accel_utils.o accel_utils_cu.o accelsearch_cu.o zapping.o accel_kernels.o -lcufft $(PRESTOLINK) $(GLIBLINK) -lm $(CUDA_LINK_EXTRA_FLAGS)
+
+libaccelsearch_lib.so: accelsearch_cmd.o accel_utils.o accel_kernels.o zapping.o libpresto accel_utils_cu.o accelsearch_lib.c
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ accelsearch_cmd.o accel_utils.o accel_utils_cu.o accelsearch_lib.c zapping.o accel_kernels.o -lcufft $(PRESTOLINK) $(GLIBLINK) -lm $(CUDA_LINK_EXTRA_FLAGS)
+
+libaccelsearch_maxsize.so: accelsearch_maxsize.c
+	$(CC) -shared -fPIC -o $(PRESTO)/lib/libaccelsearch_maxsize.so accelsearch_maxsize.c -lm -lcudart `pkg-config --cflags --libs glib-2.0` -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+
+accelsearch_cu: accelsearch_cu.c
+	$(CC) $(CFLAGS) $(CLINKFLAGS) -L$(PRESTO)/lib -laccelsearch_lib -o $(PRESTO)/bin/$@ accelsearch_cu.c
 
 bary: bary.o libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ bary.o $(PRESTOLINK) -lm
@@ -297,8 +306,17 @@ rfifind: rfifind_cmd.c rfifind_cmd.o rfifind.o rfi_utils.o rfifind_plot.o $(INST
 prepdata: prepdata_cmd.c prepdata_cmd.o prepdata.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepdata.o prepdata_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
 
+prepsubband_kernels.o: prepsubband_kernels.cu 
+	$(NVCC) $(EXTRA_NVCCFLAGS) $(NVCCFLAGS) $(CUDA_INC_PATH) $(GENCODE_FLAGS) $(GLIBINC) -c $< 
+
+prepsubband_cu: prepsubband_cmd.c prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
+	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband_cu.o prepsubband_cmd.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)
+
 prepsubband: prepsubband_cmd.c prepsubband_cmd.o prepsubband.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband.o prepsubband_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
+
+libprepsubband_maxsize.so: prepsubband_maxsize.c $(INSTRUMENTOBJS) libpresto
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/libprepsubband_maxsize.so prepsubband_maxsize.c $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
 
 prepfold: prepfold_cmd.c prepfold_cmd.o prepfold.o prepfold_utils.o prepfold_plot.o least_squares.o polycos.o readpar.o $(INSTRUMENTOBJS) $(PLOT2DOBJS) libpresto
 	$(FC) $(FLINKFLAGS) -o $(PRESTO)/bin/$@ prepfold.o prepfold_utils.o prepfold_plot.o prepfold_cmd.o least_squares.o polycos.o readpar.o $(PLOT2DOBJS) $(INSTRUMENTOBJS) $(LAPACKLINK) $(PRESTOLINK) $(PGPLOTLINK) -lcfitsio -lm
@@ -396,7 +414,7 @@ clean:
 
 cleaner: clean
 	cd ../bin ; rm -f $(BINARIES)
-	rm -f $(PRESTO)/lib/libpresto.* $(PRESTO)/lib/libsla.*
+	rm -f $(PRESTO)/lib/libpresto.* $(PRESTO)/lib/libsla.* $(PRESTO)/lib/libaccelsearch_lib.*
 
 squeaky:  cleaner
 	rm -f *.dat *.fft *.inf fftw_wisdom.txt
