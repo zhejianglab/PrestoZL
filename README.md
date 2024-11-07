@@ -2,7 +2,7 @@
 PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's Presto C is the GPU optimization of the most time-consuming "Jerk Search" module, which is tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters `(zmax, wmax)` increase, the performance improvement becomes more noticeable. **PrestoZL's search results is equivalent to the Scott Ransom's PRESTO C.**
 
 <div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="400">
+  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="500">
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
@@ -15,7 +15,7 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-**We also provide a GPU accelerated version of De-dispersion in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process in within half a minute, while the results are consistent with `prepsubband.c`.
+**We also provide a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`.
 
 **Figure 3** and **Figure 4** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and the pipelined version of PrestoZL) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process and eight concurrent processes on a single GPU. Optimizing GPU programs for multi-process search on the same GPU is challenging, requiring fine-tuned optimization and utilization of GPU computational resources and memory access. Both PrestoZL and the pipelined version of PrestoZL achieve significant performance improvements compare with PRESTO C.
 
