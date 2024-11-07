@@ -1,17 +1,30 @@
 # PrestoZL
-PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The difference between this software and Scott Ransom's Presto C lies in the gpu optimization of the most time-consuming Fourier-domain acceleration search module to suit GPU parallel processing pipelines, which significantly accelerating the search procedual. The larger the search parameters `(zmax, wmax)`, the more noticeable the performance improvement, and **the search result is equivalent to the Scott Ransom's Presto C**.
+PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's Presto C is the GPU optimization of the most time-consuming "Jerk Search" module, which is tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters `(zmax, wmax)` increase, the performance improvement becomes more noticeable. **PrestoZL's search results is equivalent to the Scott Ransom's PRESTO C.**
 
-In **Figure 1**, the GPU version of Fourier-domain acceleration（jerk search） is compared to the logic of accelsearch.c in Presto C. During each iteration of the r-step loop search, we combine the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one Cuda Kernel, making the search process very efficient. At the same time, we have made a batch modification to the r-step loop search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.png" alt="Figure1" width="600">
-  <p>Figure 1. Comparison of the program frameworks of Presto C and PrestoZL in the accelsearch stage</p>
+  <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
-**Figure 2** shows the performance comparison between our GPU accelerated search algorithm, Presto C, and a SOTA proprietary Presto GPU version. PrestoZL demonstrates optimal processing throughput. In the test using a single A40 GPU for accelerated search, because of the well-optimized memory usage, our version supports accelerated search run with 12 concurrent processes on one GPU(A40 40G) at search parameters of wmax=150 and zmax=150.
+**Figure 1** compares the jerk search frameworks of PRESTO C and PrestoZL. During each iteration of the r-step loop search, PrestoZL combines the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one cuda kernel, making the search process very efficient. At the same time, we have made a batch modification to the r-step loop search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
+
+We also provide a pipeline version of PrestZL, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL. The framework enables a three-stage pipeline parallelism when processing consecutive FFT files within the same process. It effectively overlaps CPU computation time with GPU computation, and significantly improving the searching speed.
+
 <div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure2.png" alt="Figure2" width="600">
+  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure2.jpeg" alt="Figure2" width="600">
+  <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
+</div>
+
+Figure 3 and 4 show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and the pipelined version of PrestoZL) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process (Figure 3) and eight concurrent processes on a single GPU (Figure 4). Optimizing GPU programs for multi-process search on the same GPU is challenging, requiring fine-tuned optimization and utilization of GPU computational resources and memory access. Both PrestoZL and the pipelined version of PrestoZL achieve significant performance improvements compare with PRESTO C.
+
+<div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="600">
-  <p>Figure 2. Performance comparison under single process and multi-process</p>
+  <p>Figure 3. Performance comparison between PRESTO C and different GPU versions in a single process</p>
+</div>
+
+<div align="center">
+  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure4.png" alt="Figure4" width="600">
+  <p>Figure 4. Performance comparison between PRESTO C and different GPU versions in eight concurrent processes</p>
 </div>
 
 ## Build From Docker Image
