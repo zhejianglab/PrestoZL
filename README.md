@@ -6,16 +6,16 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
-**Figure 1** compares the jerk search frameworks of PRESTO C and PrestoZL. During each iteration of the r-step loop search, PrestoZL combines the "harmonic summing and candidate search" logic. This combination allows us to complete each round of search within one cuda kernel, making the search process very efficient. At the same time, we have made a batch modification to the r-step loop search. This means that, depending on the GPU's memory capacity and different search parameters, adjustments can be made to achieve the maximum computational throughput.
+**Figure 1** compares the jerk search frameworks of PRESTO C and PrestoZL. During each iteration of the r-step loop search, PrestoZL combines the "harmonic summation and candidate search" logic. It allows us to complete each round of search within one cuda kernel, making the search process very efficient. At the same time, we have made a batch optimization to the r-step loop search. User can adjustment the parameters to achieve the maximum computational throughput according to the GPU's memory capacity.
 
-**We also provide a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing consecutive FFT files within the same process. It effectively overlaps CPU computation time with GPU computation, and significantly improving the searching speed. The inner search logic is the PrestoZL.
+**We also opensource a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing consecutive FFT files within the same process. It effectively overlaps CPU computation time with GPU computation, and significantly improves the searching speed. The inner search logic is the PrestoZL.
 
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure2.jpeg" alt="Figure2" width="600">
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-**We also provide a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`.
+**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`.
 
 **Figure 3** and **Figure 4** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process and eight concurrent processes on a single GPU. Optimizing GPU programs for multi-process search is challenging, requiring finer-grained optimization and utilization of GPU computational resources and memory access. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
 
@@ -76,15 +76,15 @@ The command `make makewisdom` only needs to be executed during the first compila
 ### PrestoZL 
 `accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
 ```
-accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
+accelsearch_cu -zmax 150 -wmax 150 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
 ### PrestoZL-pipeline
-To run PrestoZL-pipeline, you can run a python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of process to run concurrently, `--directory` refers to the input directory that stores the fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
+To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of process to run concurrently, `--directory` refers to the input directory that stores the fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 20 --wmax 0 --sigma 3.0 --numharm 16 --batchsize 2
+python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
-To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same as the `prepsubband` used in PRESTO C. Here's an example:
+To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
 ```
 prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask test1_rfifind.mask -o ./psb/FRB121102_tracking-M01_0706_ds1_0 FRB121102_tracking-M01_0706_ds1_0.fits
 ```
