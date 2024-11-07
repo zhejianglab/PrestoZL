@@ -2,7 +2,7 @@
 PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's Presto C is the GPU optimization of the most time-consuming "Jerk Search" module, which is tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters `(zmax, wmax)` increase, the performance improvement becomes more noticeable. **PrestoZL's search results is equivalent to the Scott Ransom's PRESTO C.**
 
 <div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.png" alt="Figure1" width="600">
+  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="600">
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
