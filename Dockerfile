@@ -70,7 +70,7 @@ RUN make cleaner
 # Now build from scratch
 RUN make libpresto
 WORKDIR /home/soft/presto
-RUN pip3 install /home/soft/presto && \
+RUN pip3 install -U poetry && pip3 install /home/soft/presto && \
     sed -i 's/env python/env python3/' /home/soft/presto/bin/*py && \
     python3 tests/test_presto_python.py
 
