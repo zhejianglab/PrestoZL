@@ -18,7 +18,6 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
 **We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`.
 
 **Figure 3** and **Figure 4** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute under a single process and eight concurrent processes on a single GPU. Optimizing GPU programs for multi-process search is challenging, requiring finer-grained optimization and utilization of GPU computational resources and memory access. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
-
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="600">
   <p>Figure 3. Performance comparison between PRESTO C and different GPU versions under a single process</p>
@@ -28,7 +27,7 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure4.png" alt="Figure4" width="600">
   <p>Figure 4. Performance comparison between PRESTO C and different GPU versions under 8 concurrent processes</p>
 </div>
-
+*Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
 
 ## Build From Docker Image
 You can simply build the PrestoZL enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
