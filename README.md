@@ -90,7 +90,7 @@ accelsearch_cu -zmax 150 -wmax 150 -sigma 5.0 -numharm 16 -batchsize 2 tracking-
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of process to run concurrently, `--directory` refers to the input directory that stores the fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
+accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
