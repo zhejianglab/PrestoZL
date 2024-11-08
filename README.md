@@ -75,10 +75,8 @@ Ensure you have Docker installed on your system. You can follow the instructions
 PrestoZL can be compiled in the container as below commands:
 ```
 cd /home/soft/presto/src
-make makewisdom
 make
 ```
-The command `make makewisdom` only needs to be executed during the first compilation.
 
 
 ## Usage
