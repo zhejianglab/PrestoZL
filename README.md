@@ -29,6 +29,16 @@ PrestoZL is a highly optimized GPU-based pulsar search and analysis software dev
 </div>
 *Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
 
+## Use Pre-built Docker Image
+
+We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**. You can skip the build steps below and directly use:
+
+```bash
+docker pull zjlabastro/prestozl:latest
+docker run -itd --name=prestozl_latest --gpus all --network=host zjlabastro/prestozl:latest /bin/bash
+docker exec -it prestozl_latest /bin/bash
+```
+
 ## Build From Docker Image
 You can simply build the PrestoZL enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
 
@@ -80,7 +90,7 @@ accelsearch_cu -zmax 150 -wmax 150 -sigma 5.0 -numharm 16 -batchsize 2 tracking-
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of process to run concurrently, `--directory` refers to the input directory that stores the fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-python accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
+accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
