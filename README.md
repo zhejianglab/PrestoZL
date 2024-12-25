@@ -1,12 +1,13 @@
 # PrestoZL
-PrestoZL is a highly optimized GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It is developed based on [Scott Ransom's Presto C code](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's Presto C is the GPU optimization of the most time-consuming "Jerk Search" module, which is tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters `(zmax, wmax)` increase, the performance improvement becomes more noticeable. **PrestoZL's search results is equivalent to the Scott Ransom's PRESTO C.**
+PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's PRESTO lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters (zmax, wmax) increase, the performance improvement becomes more pronounced. **PrestoZL maintains the search logical equivalence with PRESTO's Jerk Search.** 
+
 
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure1.jpg" alt="Figure1" width="500">
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
-**Figure 1** compares the jerk search frameworks of PRESTO C and PrestoZL. During each iteration of the r-step loop search, PrestoZL combines the "harmonic summation and candidate search" logic. It allows us to complete each round of search within one cuda kernel, making the search process very efficient. At the same time, we have made a batch optimization to the r-step loop search. User can adjustment the parameters to achieve the maximum computational throughput according to the GPU's memory capacity.
+**Figure 1** compares the Jerk Search frameworks of PRESTO and PrestoZL. During each iteration of the r-step loop search, PrestoZL fuses the "ALL the harmonic summing and candidate search" logic into one GPU kernel, making the search process very efficient. At the same time, we have made a batch optimization to the r-step loop search. User can adjustment the parameters to achieve the maximum computational throughput according to your GPU.
 
 **We also opensource a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing consecutive FFT files within the same process. It effectively overlaps CPU computation time with GPU computation, and significantly improves the searching speed. The inner search logic is the PrestoZL.
 
