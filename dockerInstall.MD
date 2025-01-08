@@ -1,6 +1,6 @@
 ## **Docker Installation Guide**  
 
-Below is a detailed guide for installing Docker on Linux, Windows, and macOS:  
+Below is a detailed guide for installing Docker on Linux
 
 ---
 
@@ -73,6 +73,18 @@ Install the NVIDIA Container Toolkit packages:
 ```bash
 sudo apt-get install -y nvidia-container-toolkit
 ```
+Configuring Docker
+Configure the container runtime by using the nvidia-ctk command:
+```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+```
+The nvidia-ctk command modifies the /etc/docker/daemon.json file on the host. The file is updated so that Docker can use the NVIDIA Container Runtime.
+
+Restart the Docker daemon:
+```bash
+sudo systemctl restart docker
+```
+
 Others please refer to [Nvidia docs](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installing-with-apt)
 ----------------
 
