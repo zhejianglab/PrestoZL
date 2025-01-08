@@ -28,7 +28,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 
 ## Use Pre-built Docker Image(Recommand)
 
-We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Once you have Docker installed on your system, the image can be fetched as follow:
+We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
 
 ```bash
 docker pull zjlabastro/prestozl:latest
@@ -42,7 +42,7 @@ You can simply build the PrestoZL enviroment from docker image. We have provided
 
 ### Prerequisites
 
-Ensure you have Docker installed on your system. You can follow the instructions [here](https://docs.docker.com/get-docker/) to install Docker.
+Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker.
 
 ### Steps to Build the Docker Image
 
