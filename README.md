@@ -1,5 +1,5 @@
 # PrestoZL
-PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO](https://github.com/scottransom/presto). The key difference between PrestoZL and Scott Ransom's PRESTO lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines. This optimization significantly accelerates the search process. As the search parameters (zmax, wmax) increase, the performance improvement becomes more pronounced. **PrestoZL maintains the search logical equivalence with PRESTO's Jerk Search.** 
+PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO](https://github.com/scottransom/presto/tree/v4.0). The key difference between PrestoZL and Scott Ransom's PRESTO lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of PrestoZL can be accelerated by several tens of times faster than PRESTO, while maintaining the search logical and signal recovery capability fully consistent with PRESTO's Jerk Search.** 
 
 
 <div align="center">
@@ -16,7 +16,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`.
+**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`. The logic and results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
 
 **Figure 3** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute on a single GPU. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
 <div align="center">
@@ -38,6 +38,7 @@ docker exec -it prestozl_latest /bin/bash
 
 ## Build From Docker Image
 You can simply build the PrestoZL enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
+
 
 ### Prerequisites
 
