@@ -26,7 +26,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 
 *Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
 
-## Use Pre-built Docker Image
+## Use Pre-built Docker Image(Recommand)
 
 We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Once you have Docker installed on your system, the image can be fetched as follow:
 
@@ -79,7 +79,7 @@ make
 
 ## Usage
 ### PrestoZL 
-`accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the Presto C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the Presto C . Here's an example:
+`accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the PRESTO C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
 accelsearch_cu -zmax 150 -wmax 150 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
@@ -98,15 +98,17 @@ The method of running other parts of PRESTO is the same with PRESTO C.
 ## Acknowledgement
 The following individuals contributed to this project, (listed in alphabetical order): Chen Huaxi, Yinan Ke, Mao Kuang, Pan Qiuhong, Tang Zhaorong, Tang Xuefei, Wang Qi, Wang Pei
 
-If you have any question, be free to contact me:  maok@zhejianglab.com
+If you have any question, be free to contact me:  maok@zhejianglab.org
 
 If you use the code in your experiment, please cite this repo, thank you.
+
 ```
 @misc{PrestoZL,
- author = {Zhejiang Lab},
- title = {PrestoZL，Zhejiang Lab Presto GPU},
- year = {2024},
- howpublished = {\url{https://github.com/zhejianglab/PrestoZL.git}},
- note = {Accessed: 2024-06-24}
+  author = {Zhejiang Lab},
+  title = {PrestoZL，GPU version of PRESTO},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/zhejianglab/PrestoZL.git}},
 }
 ```
