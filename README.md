@@ -32,7 +32,7 @@ There are three ways to set up the PrestoZL running environment.
 
 We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
 
-Download pre-built docker image from dockerhub
+Download pre-built docker image from dockerhub. If you have trouble in visiting dockerhub, you can downnload the Image from our [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3)
 ```
 docker pull zjlabastro/prestozl:latest
 ```
