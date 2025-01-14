@@ -30,3 +30,10 @@ Ensure you have Docker installed on your system. You can follow the instructions
    docker exec -it prestozl_latest /bin/bash
    ```
    These commands will create a Docker container named `prestozl_latest` and enter it.
+
+4. *** Compile PrestoZL***:
+   PrestoZL can be compiled in the container as below commands:
+   ```
+   cd /home/soft/presto/src
+   make
+   ```
