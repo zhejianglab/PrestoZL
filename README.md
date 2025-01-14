@@ -39,7 +39,7 @@ PrestoZL can be compiled as below:
 cd /YourPathtoPrestoZL/src
 make cleaner & make
 ```
-Set the Runing Path
+Set the new Environment Path(replace the path of PRESTO)
 ```
 nano ~/.bashrc
 export PATH="/YourPathtoPrestoZL/bin:${PATH}"
