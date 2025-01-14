@@ -16,7 +16,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, while keeping the results consistent with `prepsubband.c`. The logic and results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
+**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, and the logic and results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
 
 **Figure 3** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute on a single GPU. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
 <div align="center">
@@ -80,22 +80,26 @@ We have provided `Dockerfile` to support build the PrestoZL enviroment by yourse
 ### PrestoZL 
 `accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the PRESTO C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
-accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
+accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 yourFFTfile.fft
+```
+To use multiple processes(set by `-P`) to run process many FFT files in `/yourPathtoFFTfiles` concurrently:
+```
+ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 50 -wmax 100 -sigma 3.0 -numharm 16 -batchsize 8
 ```
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of concurrent running process in a GPU, each process is an FFT file processing pipeline, `--directory` refers to the directory of the input fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-accelsearch_pipeline_cu.py --pool_size 8 --directory yourdirectorytoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 2
+accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
 ```
-prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask test1_rfifind.mask -o /path/to/outputdir/withprefix FRB121102_tracking-M01_0706_ds1_0.fits
+prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask your_rfifind.mask -o /path/to/outputdir/withprefix /yourpathtoFITSfiles/my.fits
 ```
-The method of running other parts of PRESTO is the same with PRESTO C.
+The usage of other commands are the same with PRESTO.
 
 ## Acknowledgement
-The following individuals contributed to this project, (listed in alphabetical order): Chen Huaxi, Yinan Ke, Mao Kuang, Pan Qiuhong, Tang Zhaorong, Tang Xuefei, Wang Qi, Wang Pei
+The following individuals contributed to this project, (listed in alphabetical order): Chen Huaxi, Mao Kuang, Pan Qiuhong, Tang Zhaorong, Tang Xuefei, Wang Qi, Wang Pei
 
 If you have any question, be free to contact me:  maok@zhejianglab.org
 
