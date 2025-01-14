@@ -30,7 +30,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 There are three ways to set up the PrestoZL running environment. 
 ## 1. Use Pre-built Docker Image(Recommand)
 
-We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
+We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. Ensure you have Docker and nvidia-container-toolkit installed on your system, you can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD). Then the image can be fetched as follow:
 
 Download pre-built docker image from dockerhub. If you have trouble in visiting dockerhub, you can downnload the Image from our [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3)
 ```
@@ -52,9 +52,14 @@ If you have PRESTO(v4.0 preferred) running environment, all the environment depe
 
 First Download and Install CUDA toolkit 11.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
 
-Set the Running Path
+Clone the repository to your local machine if you haven't already.
 ```
-nano ~/.bashrc
+git clone https://github.com/zhejianglab/PrestoZL.git
+```
+
+Set the running path
+```
+vim ~/.bashrc
 export PRESTO=/YourPathtoPrestoZL
 export PATH=/YourPathtoPrestoZL/bin:${PATH}
 export LD_LIBRARY_PATH=/YourPathtoPrestoZL/lib/:$LD_LIBRARY_PATH
