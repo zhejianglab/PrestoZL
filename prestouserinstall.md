@@ -1,5 +1,5 @@
-## 2. For Pre PRESTO user(Not Tested)
-Because PrestoZL only include the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, all the environment dependencies are ready expect the CUDA toolkit. 
+## 2. For PRESTO user
+Because PrestoZL only add the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, you only need to install the CUDA toolkit and do some setting. 
 
 **Attention：The PRESTO environment on your machine may not be compatible with PrestoZL**.
 
