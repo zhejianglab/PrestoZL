@@ -86,11 +86,10 @@ If you use the code in your experiment, please cite this repo, thank you.
 
 ```
 @misc{PrestoZL,
-  author = {Zhejiang Lab},
-  title = {PrestoZL，GPU version of PRESTO},
-  year = {2024},
+  author = {ZhejiangLab},
+  title = {PrestoZL GPU version of PRESTO},
   publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/zhejianglab/PrestoZL.git}},
+  url = {https://github.com/zhejianglab/PrestoZL.git},
+  year = {2024}
 }
 ```
