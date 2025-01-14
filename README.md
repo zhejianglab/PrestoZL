@@ -46,11 +46,11 @@ docker exec -it prestozl_latest /bin/bash
 ```
 
 ## 2. For PRESTO user without Docker
-If you have PRESTO running environment on your machine, and really DO NOT want to use Docker. Try the solution [here](https://github.com/zhejianglab/PrestoZL/blob/main/prestouserinstall.md).
+If you have PRESTO environment on your machine, and really DO NOT want to use Docker. Try the solution [here](https://github.com/zhejianglab/PrestoZL/blob/main/prestouserinstall.md).
 
 
 ## 3. Build From Dockerfile
-We have provided `Dockerfile` to support build the PrestoZL Image by yourself. You can follow the instruction [here](https://github.com/zhejianglab/PrestoZL/blob/main/Build%20From%20Docker%20Image.MD).
+We have provided `Dockerfile` to build the PrestoZL Image by yourself. Follow the instruction [here](https://github.com/zhejianglab/PrestoZL/blob/main/Build%20From%20Docker%20Image.MD).
 
 
 ## Usage
