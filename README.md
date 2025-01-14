@@ -1,5 +1,5 @@
 # PrestoZL
-PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO](https://github.com/scottransom/presto/tree/v4.0). The key difference between PrestoZL and Scott Ransom's PRESTO lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of PrestoZL can be accelerated by several tens of times faster than PRESTO, while maintaining the search logical and signal recovery capability fully consistent with PRESTO's Jerk Search.** 
+PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO v4.0](https://github.com/scottransom/presto/tree/v4.0). The key difference between them lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of PrestoZL can be accelerated by several tens of times faster than PRESTO, while maintaining the search logical and signal recovery capability fully consistent with PRESTO's Jerk Search.** 
 
 
 <div align="center">
@@ -7,9 +7,9 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
-**Figure 1** compares the Jerk Search frameworks of PRESTO and PrestoZL. During each iteration of the r-step loop search, PrestoZL fuses the "ALL the harmonic summing and candidate search" logic into one GPU kernel, making the search process very efficient. At the same time, we have made a batch optimization to the r-step loop search. User can adjustment the parameters to achieve the maximum computational throughput according to your GPU.
+**Figure 1** compares the Jerk Search frameworks of PRESTO and PrestoZL. During each iteration of the `r-step` loop, PrestoZL fuses the "ALL the harmonic summing and candidate search" logic into one GPU kernel, making the search process very efficient. We also support batch the calculation of several `rstep` into one. User can adjustment the `batchsize` parameters to achieve the maximum computational throughput according to your GPU.
 
-**We also opensource a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing consecutive FFT files within the same process. It effectively overlaps CPU computation time with GPU computation, and significantly improves the searching speed. The inner search logic is the PrestoZL.
+**We also opensource a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing **consecutive FFT files** within the same process. It effectively overlaps CPU computation time with GPU computation among next, current and previous processing FFT files. The inner search logic is the PrestoZL.
 
 <div align="center">
   <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure2.jpeg" alt="Figure2" width="600">
@@ -74,24 +74,24 @@ make cleaner && make
 ```
 If the file `fftw_wisdom.txt` does not exist in `/YourPathtoPrestoZL/lib`, please navigate to `/YourPathtoPrestoZL/src` and execute the command `make makewisdom`.
 
-## 3. Build From Docker Image
-We have provided `Dockerfile` to support build the PrestoZL enviroment by yourself. You can follow the instruction [here](https://github.com/zhejianglab/PrestoZL/blob/main/Build%20From%20Docker%20Image.MD).
+## 3. Build From Dockerfile
+We have provided `Dockerfile` to support build the PrestoZL Image by yourself. You can follow the instruction [here](https://github.com/zhejianglab/PrestoZL/blob/main/Build%20From%20Docker%20Image.MD).
 
 
 ## Usage
 ### PrestoZL 
-`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
+`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching the calculation of several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
-accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 yourFFTfile.fft
+accelsearch_cu -zmax 50 -wmax 50 -sigma 5.0 -numharm 16 -batchsize 8 yourFFTfile.fft
 ```
 To use multiple processes(set by `-P`) to process many FFT files in `/yourPathtoFFTfiles` concurrently:
 ```
-ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 50 -wmax 100 -sigma 3.0 -numharm 16 -batchsize 8
+ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 50 -wmax 50 -sigma 3.0 -numharm 16 -batchsize 8
 ```
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of concurrent running process in a GPU, each process is an FFT file processing pipeline, `--directory` refers to the directory of the input fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 2
+accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 8
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO. Here's an example:
