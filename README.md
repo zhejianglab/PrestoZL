@@ -82,7 +82,7 @@ We have provided `Dockerfile` to support build the PrestoZL enviroment by yourse
 ```
 accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 yourFFTfile.fft
 ```
-To use multiple processes(set by `-P`) to run process many FFT files in `/yourPathtoFFTfiles` concurrently:
+To use multiple processes(set by `-P`) to process many FFT files in `/yourPathtoFFTfiles` concurrently:
 ```
 ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 50 -wmax 100 -sigma 3.0 -numharm 16 -batchsize 8
 ```
