@@ -66,30 +66,11 @@ CUDA_PATH       ?= /your/path/to/cuda
 You can use default `GENCODE_FLAGS setting`, but if it goes wrong, set according to your GPU.
 
 Compile PrestoZL
-PrestoZL can be compiled as below:
 ```
 cd /YourPathtoPrestoZL/src
 make cleaner && make
 ```
 If the file `fftw_wisdom.txt` does not exist in `/YourPathtoPrestoZL/lib`, please navigate to `/YourPathtoPrestoZL/src` and execute the command `make makewisdom`.
-
-
-## 2. Use Pre-built Docker Image(Recommand)
-
-We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
-
-Download pre-built docker image from dockerhub
-```
-docker pull zjlabastro/prestozl:latest
-```
-Run a Containter from the Image. -v can mount directories from host into a container, which can be used to share Fits data.
-```
-docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/host/dir:/path/to/container/dir zjlabastro/prestozl:latest /bin/bash
-```
-Get into the Container and run PrestoZL.
-```
-docker exec -it prestozl_latest /bin/bash
-```
 
 ## 3. Build From Docker Image
 We have provided `Dockerfile` to support build the PrestoZL enviroment by yourself. You can follow the instruction [here](https://github.com/zhejianglab/PrestoZL/blob/main/Build%20From%20Docker%20Image.MD).
@@ -99,17 +80,17 @@ We have provided `Dockerfile` to support build the PrestoZL enviroment by yourse
 ### PrestoZL 
 `accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the PRESTO C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
-accelsearch_cu -zmax 150 -wmax 150 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
+accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 tracking-M01_0047_DM9.15.fft
 ```
 ### PrestoZL-pipeline
-To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of process to run concurrently, `--directory` refers to the input directory that stores the fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
+To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of concurrent running process in a GPU, each process is an FFT file processing pipeline, `--directory` refers to the directory of the input fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-accelsearch_pipeline_cu.py --pool_size 8 --directory ffts --zmax 150 --wmax 150 --sigma 3.0 --numharm 16 --batchsize 2
+accelsearch_pipeline_cu.py --pool_size 8 --directory yourdirectorytoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
 ```
-prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask test1_rfifind.mask -o ./psb/FRB121102_tracking-M01_0706_ds1_0 FRB121102_tracking-M01_0706_ds1_0.fits
+prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask test1_rfifind.mask -o /path/to/outputdir/withprefix FRB121102_tracking-M01_0706_ds1_0.fits
 ```
 The method of running other parts of PRESTO is the same with PRESTO C.
 
