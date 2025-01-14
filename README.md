@@ -46,7 +46,9 @@ docker exec -it prestozl_latest /bin/bash
 ```
 
 ## 2. For Pre PRESTO user(May Not Success)
-If you have PRESTO(v4.0 prefered) running environment, all the environment dependencies are ready expect the CUDA toolkit. **Attention：The PRESTO environment set up on your machine may not be compatible with PrestoZL**.
+If you have PRESTO(v4.0 preferred) running environment, all the environment dependencies are ready expect the CUDA toolkit. 
+
+**Attention：The PRESTO environment on your machine may not be compatible with PrestoZL**.
 
 First Download and Install CUDA toolkit 11.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
 
