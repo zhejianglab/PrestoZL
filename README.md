@@ -26,9 +26,9 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 
 *Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
 
-# PrestoZL Environment
+## PrestoZL Environment Setting
 There are three ways to set up the PrestoZL running environment. 
-## For Pre PRESTO user(May Not Success)
+## 1. For Pre PRESTO user(May Not Success)
 If you have PRESTO(v4.0 prefered) running environment, all the environment dependencies are ready expect the CUDA toolkit. **Attention：The PRESTO environment set up on your machine may not be compatible with PrestoZL**.
 
 First Download and Install CUDA toolkit V1.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
@@ -46,7 +46,7 @@ export PATH="/YourPathtoPrestoZL/bin:${PATH}"
 source ~/.bashrc
 ```
 
-## Use Pre-built Docker Image(Recommand)
+## 2. Use Pre-built Docker Image(Recommand)
 
 We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
 
@@ -63,7 +63,7 @@ Get into the Container and run PrestoZL.
 docker exec -it prestozl_latest /bin/bash
 ```
 
-## Build From Docker Image
+## 3. Build From Docker Image
 You can simply build the PrestoZL enviroment from docker image. We have provided `Dockerfile`, and tested it on Ubuntu 20.04 with CUDA 11.7.1 .
 
 
