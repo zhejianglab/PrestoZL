@@ -84,37 +84,12 @@ Restart the Docker daemon:
 ```bash
 sudo systemctl restart docker
 ```
-
+DONE
 Others please refer to [Nvidia docs](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installing-with-apt)
 ----------------
 
-## **2. Install Docker Desktop on Windows**
 
-1. Download Docker Desktop from the [official website](https://www.docker.com/products/docker-desktop/).  
-2. Run the installer and follow the prompts.  
-3. After installation, restart your computer.  
-4. Verify the installation:
-   ```cmd
-   docker --version
-   docker run hello-world
-   ```
-
----
-
-## **3. Install Docker Desktop on macOS**
-
-1. Download Docker Desktop from the [official website](https://www.docker.com/products/docker-desktop/).  
-2. Open the downloaded `.dmg` file and drag Docker to the Applications folder.  
-3. Launch Docker Desktop and complete the setup.  
-4. Verify the installation:
-   ```bash
-   docker --version
-   docker run hello-world
-   ```
-
----
-
-## **4. Common Docker Commands**
+## **2. Common Docker Commands**
 
 ### **Basic Commands**
 ```bash
@@ -143,7 +118,7 @@ docker build -t myapp .            # Build an image from a Dockerfile
 
 ---
 
-## **5. Uninstall Docker (Linux)**  
+## **3. Uninstall Docker (Linux)**  
 ```bash
 sudo apt purge docker-ce docker-ce-cli containerd.io
 sudo rm -rf /var/lib/docker
