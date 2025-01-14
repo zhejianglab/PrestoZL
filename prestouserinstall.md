@@ -28,6 +28,7 @@ You can use default `GENCODE_FLAGS` setting, but if it goes wrong, set according
 Compile PrestoZL
 ```
 cd /YourPathtoPrestoZL/src
+make makewisdom   % Only need to make when compiling for the first time
 make cleaner && make
 ```
-If the file `fftw_wisdom.txt` does not exist in `/YourPathtoPrestoZL/lib`, please navigate to `/YourPathtoPrestoZL/src` and execute the command `make makewisdom`.
+
