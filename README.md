@@ -26,6 +26,8 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 
 *Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
 
+# PrestoZL Environment
+There are three ways to set up the PrestoZL running environment. 
 ## For Pre PRESTO user(May Not Success)
 If you have PRESTO(v4.0 prefered) running environment, all the environment dependencies are ready expect the CUDA toolkit. **Attention：The PRESTO environment set up on your machine may not be compatible with PrestoZL**.
 
