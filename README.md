@@ -63,7 +63,7 @@ Modify `Makefile` in `src`.
 ```
 CUDA_PATH       ?= /your/path/to/cuda
 ```
-You can use default `GENCODE_FLAGS setting`, but if it goes wrong, set according to your GPU.
+You can use default `GENCODE_FLAGS` setting, but if it goes wrong, set according to your GPU.
 
 Compile PrestoZL
 ```
@@ -78,7 +78,7 @@ We have provided `Dockerfile` to support build the PrestoZL enviroment by yourse
 
 ## Usage
 ### PrestoZL 
-`accelsearch_cu.c` serves as the entry point for the PrestoZL version of the jerk search program. The command has been expanded from the PRESTO C to include a batchsize parameter, which controls the number of rstep loops calculated on the GPU in each iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
+`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
 accelsearch_cu -zmax 50 -wmax 100 -sigma 5.0 -numharm 16 -batchsize 2 yourFFTfile.fft
 ```
@@ -92,7 +92,7 @@ To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipe
 accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 2
 ```
 ### De-dispersion
-To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO C. Here's an example:
+To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO. Here's an example:
 ```
 prepsubband_cu -nobary -numout 262144 -nsub 3280 -lodm 59.4 -dmstep 0.1 -numdms 564 -downsamp 1 -mask your_rfifind.mask -o /path/to/outputdir/withprefix /yourpathtoFITSfiles/my.fits
 ```
