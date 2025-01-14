@@ -28,12 +28,29 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 
 ## PrestoZL Environment Setting
 There are three ways to set up the PrestoZL running environment. 
-## 1. For Pre PRESTO user(May Not Success)
+## 1. Use Pre-built Docker Image(Recommand)
+
+We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. You can skip the `Build From Docker Image` steps below. Ensure you have Docker installed on your system. You can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD) to install Docker. Once you have Docker installed on your system, the image can be fetched as follow:
+
+Download pre-built docker image from dockerhub
+```
+docker pull zjlabastro/prestozl:latest
+```
+Run a Containter from the Image. -v can mount directories from host into a container, which can be used to share Fits data.
+```
+docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/host/dir:/path/to/container/dir zjlabastro/prestozl:latest /bin/bash
+```
+Get into the Container and run PrestoZL.
+```
+docker exec -it prestozl_latest /bin/bash
+```
+
+## 2. For Pre PRESTO user(May Not Success)
 If you have PRESTO(v4.0 prefered) running environment, all the environment dependencies are ready expect the CUDA toolkit. **Attention：The PRESTO environment set up on your machine may not be compatible with PrestoZL**.
 
 First Download and Install CUDA toolkit 11.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
 
-Set the Runing Path
+Set the Running Path
 ```
 nano ~/.bashrc
 export PRESTO=/YourPathtoPrestoZL
@@ -41,6 +58,12 @@ export PATH=/YourPathtoPrestoZL/bin:${PATH}
 export LD_LIBRARY_PATH=/YourPathtoPrestoZL/lib/:$LD_LIBRARY_PATH
 source ~/.bashrc
 ```
+
+Modify `Makefile` in `src`. 
+```
+CUDA_PATH       ?= /your/path/to/cuda
+```
+You can use default `GENCODE_FLAGS setting`, but if it goes wrong, set according to your GPU.
 
 Compile PrestoZL
 PrestoZL can be compiled as below:
