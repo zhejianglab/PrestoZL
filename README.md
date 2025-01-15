@@ -38,9 +38,9 @@ docker pull zjlabastro/prestozl:latest
 ```
 *If you have trouble in visiting dockerhub, you can downnload the Image from [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3)
 
-Run a Containter from the Image. -v can mount directories from host into a container, which can be used to share Fits data.
+Run a Containter from the Image. `-v` can mount directories from host file system into a docker container for data share.
 ```
-docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/host/dir:/path/to/container/dir zjlabastro/prestozl:latest /bin/bash
+docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/your/host/dir:/home/soft/prestodata zjlabastro/prestozl:latest /bin/bash
 ```
 Get into the Container and run PrestoZL.
 ```
