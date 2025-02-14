@@ -1,5 +1,5 @@
 # PrestoZL
-PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon [Scott Ransom's PRESTO v4.0](https://github.com/scottransom/presto/tree/v4.0). The key difference between them lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of PrestoZL can be accelerated by several tens of times faster than PRESTO, while maintaining the search logical and signal recovery capability fully consistent with PRESTO's Jerk Search.** 
+PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It builds upon Scott Ransom's PRESTO v4.0. The key difference between them lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of PrestoZL can be accelerated by several tens of times faster than PRESTO, while maintaining the search logical and signal recovery capability fully consistent with [PRESTO C 4.0's Jerk Search](https://github.com/scottransom/presto/tree/v4.0).** 
 
 
 <div align="center">
@@ -7,7 +7,7 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
   <p>Figure 1. Comparison of the Jerk Search Frameworks of PRESTO C and PrestoZL</p>
 </div>
 
-**Figure 1** compares the Jerk Search frameworks of PRESTO and PrestoZL. During each iteration of the `r-step` loop, PrestoZL fuses the "ALL the harmonic summing and candidate search" logic into one GPU kernel, making the search process very efficient. We also support batch the calculation of several `rstep` into one. User can adjustment the `batchsize` parameters to achieve the maximum computational throughput according to your GPU.
+**Figure 1** compares the Jerk Search frameworks of PRESTO C and PrestoZL. During each iteration of the `r-step` loop, PrestoZL fuses the "ALL the harmonic summing and candidate search" logic into one GPU kernel, making the search process very efficient. We also support batch the calculation of several `rstep` into one. User can adjustment the `batchsize` parameters to achieve the maximum computational throughput according to your GPU.
 
 **We also opensource a pipelined version of PrestZL，named PrestoZL-pipeline**, which eliminates the GPU stalls caused by extensive CPU computations. **Figure 2** illustrates the parallel framework of PrestoZL-pipeline. The framework enables a three-stage pipeline parallelism when processing **consecutive FFT files** within the same process. It effectively overlaps CPU computation time with GPU computation among next, current and previous processing FFT files. The inner search logic is the PrestoZL.
 
@@ -47,7 +47,7 @@ Get into the Container and run PrestoZL.
 docker exec -it prestozl_latest /bin/bash
 ```
 
-### 2. For PRESTO user without Docker
+### 2. For PRESTO C user without Docker
 If you have PRESTO environment on your machine, and really DO NOT want to use Docker. Try the solution [here](https://github.com/zhejianglab/PrestoZL/blob/main/prestouserinstall.md).
 
 
