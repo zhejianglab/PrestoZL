@@ -42,6 +42,8 @@ enter the container,then
 cd /home/soft/presto
 git fetch origin
 git pull origin main
+cd /home/soft/presto/src
+make clean && make
 ```
 Run a Containter from the Image. `-v` can mount directories from host file system into a docker container for data share.
 ```
