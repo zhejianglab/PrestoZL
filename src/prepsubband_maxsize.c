@@ -9,7 +9,7 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-void prepsubband_maxsize(int nsub, double lodm, double dmstep, int numdms, int downsamp, char *fitsfilename){
+double prepsubband_maxsize(int nsub, double lodm, double dmstep, int numdms, int downsamp, char *fitsfilename){
     int spectra_per_subint = 1024;
     struct spectra_info s;
     spectra_info_set_defaults(&s);
@@ -43,7 +43,9 @@ void prepsubband_maxsize(int nsub, double lodm, double dmstep, int numdms, int d
     total_size += cudaMalloc_size;
 
     double td = total_size / (1024.0 * 1024.0);
-    printf("%.3f\n", td);
+    // printf("%.3f\n", td);
+    close_rawfiles(&s);
+    return td;
 }
 
 int main(int argc, char *argv[])
@@ -54,6 +56,7 @@ int main(int argc, char *argv[])
     int numdms = atoi(argv[4]);
     int downsamp = atoi(argv[5]);
     char *fitsfilename = argv[6];
-    prepsubband_maxsize(nsub, lodm, dmstep, numdms, downsamp, fitsfilename);
+    double size = prepsubband_maxsize(nsub, lodm, dmstep, numdms, downsamp, fitsfilename);
+    printf("%.3f\n", size);
     return 0;
 }

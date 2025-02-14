@@ -548,7 +548,7 @@ long long get_cufftPlan_size()
     return cufftPlan_size;
 }
 
-void accelsearch_maxsize(int arg1, int arg2, int arg3, int arg4, char* arg5){
+double accelsearch_maxsize(int arg1, int arg2, int arg3, int arg4, char* arg5){
     subharminfo **subharminfs;
     int zmax = arg1;
     int wmax = arg2;
@@ -608,11 +608,19 @@ void accelsearch_maxsize(int arg1, int arg2, int arg3, int arg4, char* arg5){
     total_size += (size_t)(obs_corr_uselen * sizeof(unsigned short) * batchsize * 2) * 15 + (size_t)(sizeof(fcomplex) * 4096 * batchsize) * 16 + batchsize * sizeof(int) * 2;
     total_size = total_size*1.1;
     double td = total_size / (1024.0 * 1024.0);
-    printf("%.3f\n", td);
+    // double pn = 12000/td;
+    // printf("total_size: %.3f MB\n", td);
+    // printf("12 G max process num:%d\n", (int)floor(pn));
+    // pn = 24000/td;
+    // printf("24 G max process num:%d\n", (int)floor(pn));
+    // printf("%.3f\n", td);
+    fclose(fftfile);
+    return td;
 }
 int main(int argc, char *argv[])
 {
     // cudaFree(0);
-    accelsearch_maxsize(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);
+    double size = accelsearch_maxsize(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);
+    printf("%.3f\n", size);
     return 0;
 }

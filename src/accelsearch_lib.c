@@ -75,7 +75,7 @@ void fuse_add_search_batch(ffdotpows_cu *fundamentals,
                            int fundamental_num,
                            cudaStream_t stream,
                            SearchValue *search_results,
-                           int *search_nums,
+                           unsigned long long int *search_nums,
                            long long pre_size,
                            int proper_batch_size,
                            int max_searchnum,
@@ -92,12 +92,13 @@ GSList *insert_to_cands(
     double *numindeps,
     GSList *cands,
     SearchValue *search_results,
-    int *search_num,
-    int single_batch_size,
+    unsigned long long int *search_num,
+    long long single_batch_size,
+    int numharmstages,
     cudaStream_t main_stream,
     cudaStream_t sub_stream);
 
-void sort_search_results(SearchValue *search_results, int search_num);
+void sort_search_results(SearchValue *search_results, unsigned long long int search_num);
 void clear_cache();
 void subharm_fderivs_vol_cu_batch(
     ffdotpows_cu *ffdot_array,
@@ -487,7 +488,7 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
     int fundamental_numws = subharminfs[0][0].numkern_wdim;
     int fundamental_numzs = subharminfs[0][0].numkern_zdim;
     int fundamental_numrs = obs.corr_uselen;
-    int fundamental_size = fundamental_numrs * fundamental_numzs * fundamental_numws;
+    long long fundamental_size = fundamental_numrs * fundamental_numzs * fundamental_numws;
     int *subw_host = malloc(single_loop * fundamental_numws * sizeof(int *));
     float *powcuts_host = (float *)malloc(obs.numharmstages * sizeof(float *));
     int *numharms_host = (int *)malloc(obs.numharmstages * sizeof(int *));
@@ -639,9 +640,9 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
         cudaMallocAsync(&search_results_base, search_results_size, sub_stream);
         SearchValue *search_results = search_results_base;
 
-        int *search_nums;
-        CUDA_CHECK(cudaMalloc((void **)&search_nums, sizeof(int)));
-        CUDA_CHECK(cudaMemsetAsync(search_nums, 0, sizeof(int), sub_stream));
+        unsigned long long int *search_nums;
+        CUDA_CHECK(cudaMalloc((void **)&search_nums, sizeof(unsigned long long int)));
+        CUDA_CHECK(cudaMemsetAsync(search_nums, 0, sizeof(unsigned long long int), sub_stream));
 
         /* Reset indices if needed and search for real */
         if (obs.numharmstages > 1)
@@ -652,6 +653,9 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
             long long single_batch_size = obs.numharmstages * proper_batch_size * fundamental_size;
             int current_batch = -1;
             long long *fundamental_rlos = (long long *)malloc(batch_size * sizeof(long long *));
+            SearchValue *search_results_host;
+            long long total_search_num = 0;
+            long long search_results_host_size = 0;
 
             for (int j = 0; j < batch_size; j += proper_batch_size)
             {
@@ -777,33 +781,88 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
                     return 1;
                 }
 
-                int *search_nums_current = (int *)malloc(sizeof(int));
-                CUDA_CHECK(cudaMemcpyAsync(search_nums_current, search_nums, sizeof(int), cudaMemcpyDeviceToHost, main_stream));
-                int search_num = search_nums_current[0];
+                unsigned long long int *search_nums_current = (unsigned long long int *)malloc(sizeof(unsigned long long int));
+                CUDA_CHECK(cudaMemcpyAsync(search_nums_current, search_nums, sizeof(unsigned long long int), cudaMemcpyDeviceToHost, main_stream));
+                unsigned long long int search_num = search_nums_current[0];
                 if (search_num > search_num_array * search_num_base * single_search_size / (sizeof(SearchValue) * 2))
                 {
-                    search_num_array++;
-                    SearchValue *search_results_append;
-                    cudaMallocAsync(&search_results_append, search_num_array * search_num_base * single_search_size, sub_stream);
-                    cudaMemcpyAsync(search_results_append, search_results_base, search_num * sizeof(SearchValue), cudaMemcpyDeviceToDevice, sub_stream);
-                    search_results = search_results_append;
-                    cudaFreeAsync(search_results_base, sub_stream);
-                    search_results_base = search_results_append;
-                    max_searchnum = search_num_array * search_num_base * single_search_size / sizeof(SearchValue) * 0.75;
+                    // Too much data in search_results, transferring back to CPU
+                    // Sort the data first because indices in later batches are always greater than earlier ones, so partial sorting won't affect overall order.
+                    sort_search_results(search_results, search_num); 
+                    if (total_search_num == 0)                       // search_results_host memory has not been allocated yet
+                    {
+                        search_results_host_size = search_num_array * search_num_base * single_search_size;
+                        search_results_host = (SearchValue *)malloc(search_results_host_size);
+                        cudaStreamSynchronize(main_stream);
+                        CUDA_CHECK(cudaMemcpy(search_results_host, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                        total_search_num = search_num;
+                        CUDA_CHECK(cudaMemsetAsync(search_nums, 0, sizeof(unsigned long long int), sub_stream));
+                    }
+                    else if ((search_num + total_search_num) * sizeof(SearchValue) < search_results_host_size) // Previously allocated memory for search_results_host is sufficient
+                    {
+                        cudaStreamSynchronize(main_stream);
+                        CUDA_CHECK(cudaMemcpy(search_results_host + total_search_num, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                        total_search_num += search_num;
+                        CUDA_CHECK(cudaMemsetAsync(search_nums, 0, sizeof(unsigned long long int), sub_stream));
+                    }
+                    else // Previously allocated memory for search_results_host is insufficient to store search_num + total_search_num elements
+                    {
+                        // 1. Allocate larger contiguous memory
+                        search_results_host_size += search_num_array * search_num_base * single_search_size;
+                        SearchValue *search_results_host_append;
+                        search_results_host_append = (SearchValue *)malloc(search_results_host_size);
+                        // 2. Copy existing data in search_results_host to the new memory
+                        memcpy(search_results_host_append, search_results_host, total_search_num * sizeof(SearchValue));
+                        // 3. Transfer search_num elements from GPU to the new memory
+                        cudaStreamSynchronize(main_stream);
+                        CUDA_CHECK(cudaMemcpy(search_results_host_append + total_search_num, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                        // 4. Free the old memory
+                        free(search_results_host);
+                        // 5. Update the pointer
+                        search_results_host = search_results_host_append;
+                        // 6. Update total_search_num and search_nums
+                        total_search_num += search_num;
+                        CUDA_CHECK(cudaMemsetAsync(search_nums, 0, sizeof(unsigned long long int), sub_stream));
+                    }
                 }
                 free_subharmonic_cu_batch(subharmonics_add_host, current_batch_size, num_expand, sub_stream);
                 free_ffdotpows_cu_batch(fundamentals, current_batch_size, sub_stream);
             }
             cudaStreamSynchronize(main_stream);
-            int *search_nums_host = (int *)malloc(sizeof(int));
-            CUDA_CHECK(cudaMemcpy(search_nums_host, search_nums, sizeof(int), cudaMemcpyDeviceToHost));
-            int search_num = search_nums_host[0];
-            SearchValue *search_results_host;
+            unsigned long long int *search_nums_host = (unsigned long long int *)malloc(sizeof(unsigned long long int));
+            CUDA_CHECK(cudaMemcpy(search_nums_host, search_nums, sizeof(unsigned long long int), cudaMemcpyDeviceToHost));
+            unsigned long long int search_num = search_nums_host[0];
+            
             if (search_num > 0)
             {
                 sort_search_results(search_results, search_num);
+                if (total_search_num == 0) // search_results_host memory has not been allocated yet
+                {
                 search_results_host = (SearchValue *)malloc(search_num * sizeof(SearchValue));
                 CUDA_CHECK(cudaMemcpy(search_results_host, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                total_search_num = search_num;
+                }
+                else if ((search_num + total_search_num) * sizeof(SearchValue) < search_results_host_size) // Previously allocated memory for search_results_host is sufficient
+                {
+                    CUDA_CHECK(cudaMemcpy(search_results_host + total_search_num, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                    total_search_num += search_num;
+                }
+                else // Previously allocated memory for search_results_host is insufficient to store search_num + total_search_num elements
+                {
+                    // 1. Allocate larger contiguous memory
+                    SearchValue *search_results_host_append;
+                    search_results_host_append = (SearchValue *)malloc((search_num + total_search_num) * sizeof(SearchValue));
+                    // 2. Copy existing data in search_results_host to the new memory
+                    memcpy(search_results_host_append, search_results_host, total_search_num * sizeof(SearchValue));
+                    // 3. Transfer search_num elements from GPU to the new memory
+                    CUDA_CHECK(cudaMemcpy(search_results_host_append + total_search_num, search_results, search_num * sizeof(SearchValue), cudaMemcpyDeviceToHost));
+                    // 4. Free the old memory
+                    free(search_results_host);
+                    // 5. Update the pointer
+                    search_results_host = search_results_host_append;
+                    // 6. Update total_search_num
+                    total_search_num += search_num;
+                }
             }
             cudaFreeAsync(full_tmpdat_array, sub_stream);
             cudaFreeAsync(search_results, sub_stream);
@@ -816,7 +875,7 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
             CUDA_CHECK(cudaStreamDestroy(main_stream));
             CUDA_CHECK(cudaStreamDestroy(sub_stream));
 
-            cands = insert_to_cands(fundamental_numrs, fundamental_numzs, fundamental_numws, fundamental_rlos, fundamental_zlo, fundamental_wlo, proper_batch_size, numindeps_host, cands, search_results_host, search_num, single_batch_size, main_stream, sub_stream);
+            cands = insert_to_cands(fundamental_numrs, fundamental_numzs, fundamental_numws, fundamental_rlos, fundamental_zlo, fundamental_wlo, proper_batch_size, numindeps_host, cands, search_results_host, total_search_num, single_batch_size, obs.numharmstages, main_stream, sub_stream);
 
             freeMap(map, &max_map_size);
             free(subharmonics_add_host);

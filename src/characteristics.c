@@ -4,11 +4,11 @@ double extended_equiv_gaussian_sigma(double logp);
 double log_asymtotic_incomplete_gamma(double a, double z);
 double log_asymtotic_gamma(double z);
 
-float get_numphotons(FILE * file)
-  /* Return the total number of photons in the FFT file      */
-  /* i.e.  it returns the value of the 0th frequency bin.    */
-  /* Arguments:                                              */
-  /*   'file' is a pointer to the file you want to access.   */
+float get_numphotons(FILE *file)
+/* Return the total number of photons in the FFT file      */
+/* i.e.  it returns the value of the 0th frequency bin.    */
+/* Arguments:                                              */
+/*   'file' is a pointer to the file you want to access.   */
 {
     float nph;
 
@@ -22,19 +22,18 @@ float get_numphotons(FILE * file)
     return nph;
 }
 
-
-double get_localpower(fcomplex * data, long numdata, double r)
-  /* Return the local power level at specific FFT frequency.  */
-  /* Arguments:                                               */
-  /*   'data' is a pointer to a complex FFT.                  */
-  /*   'numdata' is the number of complex points in 'data'.   */
-  /*   'r' is the Fourier frequency in data that we want to   */
-  /*      interpolate.                                        */
+double get_localpower(fcomplex *data, long numdata, double r)
+/* Return the local power level at specific FFT frequency.  */
+/* Arguments:                                               */
+/*   'data' is a pointer to a complex FFT.                  */
+/*   'numdata' is the number of complex points in 'data'.   */
+/*   'r' is the Fourier frequency in data that we want to   */
+/*      interpolate.                                        */
 {
     double powargr, powargi, sum = 0.0;
     long ii, binsperside, lo1, lo2, hi1, hi2, intfreq;
 
-    intfreq = (long) floor(r);
+    intfreq = (long)floor(r);
     binsperside = NUMLOCPOWAVG / 2;
 
     /* Set the bounds of our summation */
@@ -69,23 +68,22 @@ double get_localpower(fcomplex * data, long numdata, double r)
         sum += POWER(data[ii].r, data[ii].i);
     for (ii = lo2; ii < hi2; ii++)
         sum += POWER(data[ii].r, data[ii].i);
-    sum /= (double) NUMLOCPOWAVG;
+    sum /= (double)NUMLOCPOWAVG;
     return sum;
 }
 
-
-double get_localpower3d(fcomplex * data, long numdata, double r, double z, double w)
-  /* Return the local power level around a specific FFT           */
-  /* frequency, f-dot, and f-dotdot.                              */
-  /* Arguments:                                                   */
-  /*   'data' is a pointer to a complex FFT.                      */
-  /*   'numdata' is the number of complex points in 'data'.       */
-  /*   'r' is the Fourier frequency in data that we want to       */
-  /*      interpolate.                                            */
-  /*   'z' is the Fourier Frequency derivative (# of bins the     */
-  /*       signal smears over during the observation).            */
-  /*   'w' is the Fourier Frequency 2nd derivative (change in the */
-  /*       Fourier f-dot during the observation).                 */
+double get_localpower3d(fcomplex *data, long numdata, double r, double z, double w)
+/* Return the local power level around a specific FFT           */
+/* frequency, f-dot, and f-dotdot.                              */
+/* Arguments:                                                   */
+/*   'data' is a pointer to a complex FFT.                      */
+/*   'numdata' is the number of complex points in 'data'.       */
+/*   'r' is the Fourier frequency in data that we want to       */
+/*      interpolate.                                            */
+/*   'z' is the Fourier Frequency derivative (# of bins the     */
+/*       signal smears over during the observation).            */
+/*   'w' is the Fourier Frequency 2nd derivative (change in the */
+/*       Fourier f-dot during the observation).                 */
 {
     double powargr, powargi, sum = 0.0;
     double lo1, lo2, hi1, hi2, freq;
@@ -113,46 +111,47 @@ double get_localpower3d(fcomplex * data, long numdata, double r, double z, doubl
     if (hi2 < 0.0)
         hi2 = 0.0;
     if (lo1 > numdata)
-        lo1 = (double) numdata;
+        lo1 = (double)numdata;
     if (lo2 > numdata)
-        lo2 = (double) numdata;
+        lo2 = (double)numdata;
     if (hi1 > numdata)
-        hi1 = (double) numdata;
+        hi1 = (double)numdata;
     if (hi2 > numdata)
-        hi2 = (double) numdata;
+        hi2 = (double)numdata;
 
     /* Perform the summation */
 
-    for (freq = lo1; freq < hi1; freq += 1.0) {
+    for (freq = lo1; freq < hi1; freq += 1.0)
+    {
         rzw_interp(data, numdata, freq, z, w, kern_half_width, &ans);
         sum += POWER(ans.r, ans.i);
     }
-    for (freq = lo2; freq < hi2; freq += 1.0) {
+    for (freq = lo2; freq < hi2; freq += 1.0)
+    {
         rzw_interp(data, numdata, freq, z, w, kern_half_width, &ans);
         sum += POWER(ans.r, ans.i);
     }
-    sum /= (double) NUMLOCPOWAVG;
+    sum /= (double)NUMLOCPOWAVG;
     return sum;
 }
 
-
-void get_derivs3d(fcomplex * data, long numdata, double r,
-                  double z, double w, double localpower, rderivs * result)
-  /* Return an rderives structure that contains the power,      */
-  /* phase, and their first and second derivatives at a point   */
-  /* in the F/F-dot/F-dortdot volume.                           */
-  /* Arguments:                                                 */
-  /*   'data' is a pointer to a complex FFT.                    */
-  /*   'numdata' is the number of complex points in 'data'.     */
-  /*   'r' is the Fourier frequency in data that we want to     */
-  /*      interpolate.                                          */
-  /*   'z' is the Fourier Frequency derivative (# of bins the   */
-  /*       signal smears over during the observation).          */
-  /*   'w' is the Fourier Frequency 2nd derivative (change in   */
-  /*       the Fourier f-dot during the observation).           */
-  /*   'localpower' is the local power level around the signal. */
-  /*   'result' is a pointer to an rderivs structure that will  */
-  /*       contain the results.                                 */
+void get_derivs3d(fcomplex *data, long numdata, double r,
+                  double z, double w, double localpower, rderivs *result)
+/* Return an rderives structure that contains the power,      */
+/* phase, and their first and second derivatives at a point   */
+/* in the F/F-dot/F-dortdot volume.                           */
+/* Arguments:                                                 */
+/*   'data' is a pointer to a complex FFT.                    */
+/*   'numdata' is the number of complex points in 'data'.     */
+/*   'r' is the Fourier frequency in data that we want to     */
+/*      interpolate.                                          */
+/*   'z' is the Fourier Frequency derivative (# of bins the   */
+/*       signal smears over during the observation).          */
+/*   'w' is the Fourier Frequency 2nd derivative (change in   */
+/*       the Fourier f-dot during the observation).           */
+/*   'localpower' is the local power level around the signal. */
+/*   'result' is a pointer to an rderivs structure that will  */
+/*       contain the results.                                 */
 {
     /* h = Length of delta for derivatives (See Num Recip p. 186)  */
     /* This is optimized for single precision powers and phases.   */
@@ -165,7 +164,8 @@ void get_derivs3d(fcomplex * data, long numdata, double r,
     /* Read the powers and phases: */
 
     kern_half_width = w_resp_halfwidth(z, w, HIGHACC);
-    for (ii = 0, f = r - twoh; ii < 5; ii++, f += h) {
+    for (ii = 0, f = r - twoh; ii < 5; ii++, f += h)
+    {
         rzw_interp(data, numdata, f, z, w, kern_half_width, &ans);
         pwr[ii] = POWER(ans.r, ans.i);
         phs[ii] = RADIAN_PHASE(ans.r, ans.i);
@@ -173,7 +173,8 @@ void get_derivs3d(fcomplex * data, long numdata, double r,
 
     /* Ensure there are no discontinuities in the phase values: */
 
-    for (ii = 0; ii < 4; ii++) {
+    for (ii = 0; ii < 4; ii++)
+    {
         if (fabs(phs[ii + 1] - phs[ii]) > PI)
             phs[ii + 1] -= TWOPI;
     }
@@ -189,30 +190,31 @@ void get_derivs3d(fcomplex * data, long numdata, double r,
     result->locpow = localpower;
 }
 
-
-void calc_props(rderivs data, double r, double z, double w, fourierprops * result)
-  /* Return a fourierprops structure that contains the various  */
-  /* properties of a signal described by Middleditch, Deich,    */
-  /* and Kulkarni in _Isolated_Pulsars_, 1993, p372.            */
-  /* Arguments:                                                 */
-  /*   'data' is a pointer to an rderivs structure containing   */
-  /*       derivative information about the peak in question.   */
-  /*   'r' is the Fourier frequency in data that we want to     */
-  /*      interpolate.                                          */
-  /*   'z' is the Fourier Frequency derivative (# of bins the   */
-  /*       signal smears over during the observation).          */
-  /*   'w' is the Fourier Frequency second derivative.          */
-  /*   'result' is a pointer to an fourierprops structure that  */
-  /*       will contain the results.                            */
+void calc_props(rderivs data, double r, double z, double w, fourierprops *result)
+/* Return a fourierprops structure that contains the various  */
+/* properties of a signal described by Middleditch, Deich,    */
+/* and Kulkarni in _Isolated_Pulsars_, 1993, p372.            */
+/* Arguments:                                                 */
+/*   'data' is a pointer to an rderivs structure containing   */
+/*       derivative information about the peak in question.   */
+/*   'r' is the Fourier frequency in data that we want to     */
+/*      interpolate.                                          */
+/*   'z' is the Fourier Frequency derivative (# of bins the   */
+/*       signal smears over during the observation).          */
+/*   'w' is the Fourier Frequency second derivative.          */
+/*   'result' is a pointer to an fourierprops structure that  */
+/*       will contain the results.                            */
 {
     double tmppow, tmpd2pow;
 
     /* Protect against division-by-zero */
-    if (fabs(data.pow) < DBLCORRECT) {
+    if (fabs(data.pow) < DBLCORRECT)
+    {
         printf("\n data.pow = %f (out-of-bounds) in calc_props().\n\n", data.pow);
         exit(-1);
     }
-    if (data.locpow < DBLCORRECT) {
+    if (data.locpow < DBLCORRECT)
+    {
         printf("\n data.locpow = %f (out-of-bounds) in calc_props().\n\n",
                data.locpow);
         exit(-1);
@@ -241,7 +243,7 @@ void calc_props(rderivs data, double r, double z, double w, fourierprops * resul
     result->w = w;
     /* Fourier frequency second derivative error */
     result->werr = 6.0 * sqrt(105.0) /
-        (PI * result->pur * result->pur * result->pur * sqrt(tmppow));
+                   (PI * result->pur * result->pur * result->pur * sqrt(tmppow));
     /* Normalized power */
     result->pow = tmppow;
     /* Normalized power error */
@@ -262,26 +264,27 @@ void calc_props(rderivs data, double r, double z, double w, fourierprops * resul
     result->locpow = data.locpow;
 }
 
-
-void calc_binprops(fourierprops * props, double T, int lowbin,
-                   int nfftbins, binaryprops * result)
-  /* Return a binaryprops structure that contains the various     */
-  /* estimates of the binary pulsar system from a mini-FFT.       */
-  /* Arguments:                                                   */
-  /*   'props' is a pointer to the candidate's fourierprops.      */
-  /*   'T' is the total length (sec) of the original time series. */
-  /*   'lowbin' is the Fourier bin number from the original FFT   */
-  /*      the lowest bin in the mini-FFT.                         */
-  /*   'nfftbins' is the number of bins in the mini-FFT.          */
-  /*   'absnorm' is the value of the power normalization          */
-  /*      constant for this mini-FFT.                             */
-  /*   'result' is the returned binaryprops structure.            */
+void calc_binprops(fourierprops *props, double T, int lowbin,
+                   int nfftbins, binaryprops *result)
+/* Return a binaryprops structure that contains the various     */
+/* estimates of the binary pulsar system from a mini-FFT.       */
+/* Arguments:                                                   */
+/*   'props' is a pointer to the candidate's fourierprops.      */
+/*   'T' is the total length (sec) of the original time series. */
+/*   'lowbin' is the Fourier bin number from the original FFT   */
+/*      the lowest bin in the mini-FFT.                         */
+/*   'nfftbins' is the number of bins in the mini-FFT.          */
+/*   'absnorm' is the value of the power normalization          */
+/*      constant for this mini-FFT.                             */
+/*   'result' is the returned binaryprops structure.            */
 {
-    if (T <= 0.0) {
+    if (T <= 0.0)
+    {
         printf("\n T = %f (out-of-bounds) in calc_binprops().\n\n", T);
         exit(-1);
     }
-    if (nfftbins <= 0) {
+    if (nfftbins <= 0)
+    {
         printf("\n nfftbins = %d (out-of-bounds) in calc_binprops().\n\n", nfftbins);
         exit(-1);
     }
@@ -319,14 +322,14 @@ void calc_binprops(fourierprops * props, double T, int lowbin,
     result->z = 0.4 * nfftbins * props->pur / result->rbin;
     /* Phase modulation amplitude error (radians) */
     result->zerr = 2.0 * result->z *
-        sqrt(pow(props->purerr / props->pur, 2.0) +
-             pow(result->rbinerr / result->rbin, 2.0));
+                   sqrt(pow(props->purerr / props->pur, 2.0) +
+                        pow(result->rbinerr / result->rbin, 2.0));
     /* Orbital semi-major axis estimate (lt-sec) */
     result->asinic = result->z / (result->fpsr * TWOPI);
     /* Orbital semi-major axis error estimate (lt-sec) */
     result->asinicerr = result->asinic *
-        sqrt(pow(result->zerr / result->z, 2.0) +
-             pow(result->fpsrerr / result->fpsr, 2.0));
+                        sqrt(pow(result->zerr / result->z, 2.0) +
+                             pow(result->fpsrerr / result->fpsr, 2.0));
     /* Mini-FFT bin where signal was detected */
     result->rdetect = props->r;
     /* Error in Mini-FFT bin where signal was detected */
@@ -347,18 +350,18 @@ void calc_binprops(fourierprops * props, double T, int lowbin,
     result->cenerr = props->cenerr;
 }
 
-
-void calc_rzwerrs(fourierprops * props, double T, rzwerrs * result)
-  /* Calculate periods, frequencies, their derivatives        */
-  /* and their errors.                                        */
-  /* Arguments:                                               */
-  /*   'props' is a pointer to a fourierprops structure.      */
-  /*   'T' is the length of the data set in sec (i.e. N*dt).  */
-  /*   'result' is a pointer to the returned rzwerrs struct.  */
+void calc_rzwerrs(fourierprops *props, double T, rzwerrs *result)
+/* Calculate periods, frequencies, their derivatives        */
+/* and their errors.                                        */
+/* Arguments:                                               */
+/*   'props' is a pointer to a fourierprops structure.      */
+/*   'T' is the length of the data set in sec (i.e. N*dt).  */
+/*   'result' is a pointer to the returned rzwerrs struct.  */
 {
     double tmp, T2, T3, r2, r4, z2, sr2, sz2;
 
-    if (T <= 0.0) {
+    if (T <= 0.0)
+    {
         printf("\n T = %f (out-of-bounds) in calc_rzwerrs().\n\n", T);
         exit(-1);
     }
@@ -390,14 +393,14 @@ void calc_rzwerrs(fourierprops * props, double T, rzwerrs * result)
     else
         result->pdd = (2 * z2 - props->r * props->w) / (T * r2 * props->r);
     result->pdderr = sqrt((props->werr * props->werr * r4 + 16 * sz2 * r2 +
-                           4 * tmp * tmp * sr2) / (r4 * r4 * T2));
+                           4 * tmp * tmp * sr2) /
+                          (r4 * r4 * T2));
 }
-
 
 double extended_equiv_gaussian_sigma(double logp)
 /*
   extended_equiv_gaussian_sigma(double logp):
-      Return the equivalent gaussian sigma corresponding to the 
+      Return the equivalent gaussian sigma corresponding to the
           natural log of the cumulative gaussian probability logp.
           In other words, return x, such that Q(x) = p, where Q(x)
           is the cumulative normal distribution.  This version uses
@@ -414,7 +417,6 @@ double extended_equiv_gaussian_sigma(double logp)
     return t - num / denom;
 }
 
-
 double log_asymtotic_incomplete_gamma(double a, double z)
 /*
   log_asymtotic_incomplete_gamma(double a, double z):
@@ -426,7 +428,8 @@ double log_asymtotic_incomplete_gamma(double a, double z)
     double x = 1.0, newxpart = 1.0, term = 1.0;
     int ii = 1;
 
-    while (fabs(newxpart) > 1e-15) {
+    while (fabs(newxpart) > 1e-15)
+    {
         term *= (a - ii);
         newxpart = term / pow(z, ii);
         x += newxpart;
@@ -446,21 +449,21 @@ double log_asymtotic_gamma(double z)
 
     x = (z - 0.5) * log(z) - z + 0.91893853320467267;
     y = 1.0 / (z * z);
-    x += (((-5.9523809523809529e-4 * y
-            + 7.9365079365079365079365e-4) * y
-           - 2.7777777777777777777778e-3) * y + 8.3333333333333333333333e-2) / z;
+    x += (((-5.9523809523809529e-4 * y + 7.9365079365079365079365e-4) * y - 2.7777777777777777777778e-3) * y + 8.3333333333333333333333e-2) / z;
     return x;
 }
-
 
 double equivalent_gaussian_sigma(double logp)
 /* Return the approximate significance in Gaussian sigmas */
 /* corresponding to a natural log probability logp        */
 {
     double x;
-    if (logp < -600.0) {
-        x = extended_equiv_gaussian_sigma(logp);   
-    } else {
+    if (logp < -600.0)
+    {
+        x = extended_equiv_gaussian_sigma(logp);
+    }
+    else
+    {
         int which, status;
         double p, q, bound, mean = 0.0, sd = 1.0;
         q = exp(logp);
@@ -469,12 +472,18 @@ double equivalent_gaussian_sigma(double logp)
         status = 0;
         /* Convert to a sigma */
         cdfnor(&which, &p, &q, &x, &mean, &sd, &status, &bound);
-        if (status) {
-            if (status == -2) {
+        if (status)
+        {
+            if (status == -2)
+            {
                 x = 0.0;
-            } else if (status == -3) {
+            }
+            else if (status == -3)
+            {
                 x = 38.5;
-            } else {
+            }
+            else
+            {
                 printf("\nError in cdfnor() (candidate_sigma()):\n");
                 printf("   status = %d, bound = %g\n", status, bound);
                 printf("   p = %g, q = %g, x = %g, mean = %g, sd = %g\n\n",
@@ -494,9 +503,12 @@ double equivalent_gaussian_sigma2(double logp)
 /* corresponding to a natural log probability logp        */
 {
     double x;
-    if (logp < -600.0) {
-        x = extended_equiv_gaussian_sigma(logp);   
-    } else {
+    if (logp < -600.0)
+    {
+        x = extended_equiv_gaussian_sigma(logp);
+    }
+    else
+    {
         int which, status;
         double p, q, bound, mean = 0.0, sd = 1.0;
         q = exp(logp);
@@ -505,12 +517,18 @@ double equivalent_gaussian_sigma2(double logp)
         status = 0;
         /* Convert to a sigma */
         cdfnor2(&which, &p, &q, &x, &mean, &sd, &status, &bound);
-        if (status) {
-            if (status == -2) {
+        if (status)
+        {
+            if (status == -2)
+            {
                 x = 0.0;
-            } else if (status == -3) {
+            }
+            else if (status == -3)
+            {
                 x = 38.5;
-            } else {
+            }
+            else
+            {
                 printf("\nError in cdfnor() (candidate_sigma()):\n");
                 printf("   status = %d, bound = %g\n", status, bound);
                 printf("   p = %g, q = %g, x = %g, mean = %g, sd = %g\n\n",
@@ -525,24 +543,27 @@ double equivalent_gaussian_sigma2(double logp)
         return x;
 }
 
-
 double chi2_logp(double chi2, double dof)
 /* Return the natural log probability corresponding to a chi^2 value */
 /* of chi2 given dof degrees of freedom. */
 {
     double logp;
 
-    if (chi2 <= 0.0) {
+    if (chi2 <= 0.0)
+    {
         return -INFINITY;
     }
 
-    if (chi2 / dof > 15.0 || (dof > 150 && chi2 / dof > 6.0)) {
+    if (chi2 / dof > 15.0 || (dof > 150 && chi2 / dof > 6.0))
+    {
         // printf("Using asymtotic expansion...\n");
         // Use some asymtotic expansions for the chi^2 distribution
         //   this is eqn 26.4.19 of A & S
         logp = log_asymtotic_incomplete_gamma(0.5 * dof, 0.5 * chi2) -
-            log_asymtotic_gamma(0.5 * dof);
-    } else {
+               log_asymtotic_gamma(0.5 * dof);
+    }
+    else
+    {
         int which, status;
         double p, q, bound, df = dof, x = chi2;
 
@@ -551,7 +572,8 @@ double chi2_logp(double chi2, double dof)
         /* Determine the basic probability */
         // cdfchi(&which, &p, &q, &x, &df, &status, &bound);
         cdfchi(&which, &p, &q, &x, &df, &status, &bound);
-        if (status) {
+        if (status)
+        {
             printf("\nError in cdfchi() (chi2_logp()):\n");
             printf("   status = %d, bound = %g\n", status, bound);
             printf("   p = %g, q = %g, x = %g, df = %g\n\n", p, q, x, df);
@@ -569,17 +591,21 @@ double chi2_logp2(double chi2, double dof)
 {
     double logp;
 
-    if (chi2 <= 0.0) {
+    if (chi2 <= 0.0)
+    {
         return -INFINITY;
     }
 
-    if (chi2 / dof > 15.0 || (dof > 150 && chi2 / dof > 6.0)) {
+    if (chi2 / dof > 15.0 || (dof > 150 && chi2 / dof > 6.0))
+    {
         // printf("Using asymtotic expansion...\n");
         // Use some asymtotic expansions for the chi^2 distribution
         //   this is eqn 26.4.19 of A & S
         logp = log_asymtotic_incomplete_gamma(0.5 * dof, 0.5 * chi2) -
-            log_asymtotic_gamma(0.5 * dof);
-    } else {
+               log_asymtotic_gamma(0.5 * dof);
+    }
+    else
+    {
         int which, status;
         double p, q, bound, df = dof, x = chi2;
 
@@ -588,7 +614,8 @@ double chi2_logp2(double chi2, double dof)
         /* Determine the basic probability */
         // cdfchi(&which, &p, &q, &x, &df, &status, &bound);
         cdfchi2(&which, &p, &q, &x, &df, &status, &bound);
-        if (status) {
+        if (status)
+        {
             printf("\nError in cdfchi() (chi2_logp()):\n");
             printf("   status = %d, bound = %g\n", status, bound);
             printf("   p = %g, q = %g, x = %g, df = %g\n\n", p, q, x, df);
@@ -606,7 +633,8 @@ double chi2_sigma(double chi2, double dof)
 {
     double logp;
 
-    if (chi2 <= 0.0) {
+    if (chi2 <= 0.0)
+    {
         return 0.0;
     }
     // Get the natural log probability
@@ -616,7 +644,6 @@ double chi2_sigma(double chi2, double dof)
     return equivalent_gaussian_sigma(logp);
 }
 
-
 double candidate_sigma(double power, int numsum, double numtrials)
 /* Return the approximate significance in Gaussian       */
 /* sigmas of a candidate of numsum summed powers,        */
@@ -624,7 +651,8 @@ double candidate_sigma(double power, int numsum, double numtrials)
 {
     double logp, chi2, dof;
 
-    if (power <= 0.0) {
+    if (power <= 0.0)
+    {
         return 0.0;
     }
     // Get the natural log probability
@@ -639,7 +667,6 @@ double candidate_sigma(double power, int numsum, double numtrials)
     return equivalent_gaussian_sigma2(logp);
 }
 
-
 double power_for_sigma(double sigma, int numsum, double numtrials)
 /* Return the approximate summed power level required */
 /* to get a Gaussian significance of 'sigma', taking  */
@@ -652,7 +679,8 @@ double power_for_sigma(double sigma, int numsum, double numtrials)
     status = 0;
     x = sigma;
     cdfnor(&which, &p, &q, &x, &mean, &sd, &status, &bound);
-    if (status) {
+    if (status)
+    {
         printf("\nError in cdfnor() (power_for_sigma()):\n");
         printf("   cdfstatus = %d, bound = %g\n\n", status, bound);
         printf("   p = %g, q = %g, x = %g, mean = %g, sd = %g\n\n", p, q, x, mean,
@@ -665,7 +693,8 @@ double power_for_sigma(double sigma, int numsum, double numtrials)
     df = 2.0 * numsum;
     status = 0;
     cdfchi(&which, &p, &q, &x, &df, &status, &bound);
-    if (status) {
+    if (status)
+    {
         printf("\nError in cdfchi() (power_for_sigma()):\n");
         printf("   status = %d, bound = %g\n", status, bound);
         printf("   p = %g, q = %g, x = %g, df = %g, scale = %g\n\n",
@@ -675,7 +704,6 @@ double power_for_sigma(double sigma, int numsum, double numtrials)
     return 0.5 * x;
 }
 
-
 double chisqr(double *data, int numdata, double avg, double var)
 /* Calculates the chi-square of the 'data' which has average */
 /* 'avg', and variance 'var'.                                */
@@ -683,14 +711,14 @@ double chisqr(double *data, int numdata, double avg, double var)
     double dtmp, chitmp, chixmeas = 0.0;
     int ii;
 
-    for (ii = 0; ii < numdata; ii++) {
+    for (ii = 0; ii < numdata; ii++)
+    {
         dtmp = data[ii];
         chitmp = dtmp - avg;
         chixmeas += (chitmp * chitmp);
     }
     return chixmeas / var;
 }
-
 
 double z2n(double *data, int numdata, double var, int n)
 /* Calculates the Z^2_n of the 'data' which has variance 'var'. */
@@ -700,19 +728,20 @@ double z2n(double *data, int numdata, double var, int n)
     double dph = TWOPI / numdata;
     int ii, kk;
 
-    for (kk = 1; kk <= n; kk++){
-      double A = 0.0, B = 0.0;
-      for (ii = 0; ii < numdata; ii++) {
-          dtmp = data[ii];
-          ph = ii * dph;
-          A += dtmp * cos(kk * ph);
-          B += dtmp * sin(kk * ph);
-      }
-      z2nmeas += A * A + B * B;
+    for (kk = 1; kk <= n; kk++)
+    {
+        double A = 0.0, B = 0.0;
+        for (ii = 0; ii < numdata; ii++)
+        {
+            dtmp = data[ii];
+            ph = ii * dph;
+            A += dtmp * cos(kk * ph);
+            B += dtmp * sin(kk * ph);
+        }
+        z2nmeas += A * A + B * B;
     }
     return z2nmeas / numdata / var;
 }
-
 
 void switch_f_and_p(double in, double ind, double indd,
                     double *out, double *outd, double *outdd)
@@ -732,7 +761,6 @@ void switch_f_and_p(double in, double ind, double indd,
     else
         *outdd = 2.0 * ind * ind / (dtmp * in) - indd / dtmp;
 }
-
 
 /* Optional non-macro definitions of power and phase */
 /*

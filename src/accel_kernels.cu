@@ -60,11 +60,11 @@ extern "C" extern float ***gen_f3Darr_cu(long nhgts, long nrows, long ncols, cud
 
 extern "C" extern void do_fft_batch(int fftlen, int binoffset, ffdotpows_cu *ffdot_array, subharminfo *shi, fcomplex *pdata_array, int *idx_array, fcomplex *full_tmpdat_array, fcomplex *full_tmpout_array, int batch_size, fcomplex *fkern, cudaStream_t stream);
 
-extern "C" extern void fuse_add_search_batch(ffdotpows_cu *fundamentals, SubharmonicMap *subhmap, int stages, int fundamental_num, cudaStream_t stream, SearchValue *search_results, int *search_nums, long long pre_size, int proper_batch_size, int max_searchnum, int *too_large);
+extern "C" extern void fuse_add_search_batch(ffdotpows_cu *fundamentals, SubharmonicMap *subhmap, int stages, int fundamental_num, cudaStream_t stream, SearchValue *search_results, unsigned long long int *search_nums, long long pre_size, int proper_batch_size, int max_searchnum, int *too_large);
 
 extern "C" extern kernel **gen_kernmatrix_cu(int numz, int numw);
 
-extern "C" extern void sort_search_results(SearchValue *search_results, int search_num);
+extern "C" extern void sort_search_results(SearchValue *search_results, unsigned long long int search_num);
 
 extern "C" extern void init_constant_device(int *subw_host, int subw_size, float *powcuts_host, int *numharms_host, double *numindeps_host, int numharmstages_size);
 
@@ -786,9 +786,9 @@ __global__ void fuse_add_search_batch_kernel(
 	SubharmonicMap *subhmap,
 	int stages,
 	int fundamental_num,
-	int fundamental_size,
+	long long fundamental_size,
 	SearchValue *search_results,
-	int *search_nums,
+	unsigned long long int *search_nums,
 	long long pre_size,
 	int proper_batch_size,
 	int max_searchnum,
@@ -807,8 +807,13 @@ __global__ void fuse_add_search_batch_kernel(
 		int stage = 0;
 		if (tmp > powcuts_device[stage])
 		{
-			int index = atomicAdd(&search_nums[0], 1);
-			search_results[index].index = (long long)(pre_size) + (long long)(stage * proper_batch_size * fundamental_size + f * fundamental_size + fundamental_index);
+			unsigned long long int index = atomicAdd(&search_nums[0], 1ULL);
+			if (index >= max_searchnum)
+			{
+				*too_large = 1;
+				return;
+			}
+			search_results[index].index = (long long)(pre_size) + (long long)(stage * fundamental_size + f * (stages + 1) * fundamental_size + fundamental_index);
 			search_results[index].pow = tmp;
 			float sig = candidate_sigma_cu(tmp, numharms_device[stage], numindeps_device[stage]);
 			search_results[index].sig = sig;
@@ -838,7 +843,7 @@ __global__ void fuse_add_search_batch_kernel(
 
 			if (tmp > powcuts_device[stage])
 			{
-				int index = atomicAdd(&search_nums[0], 1);
+				unsigned long long int index = atomicAdd(&search_nums[0], 1ULL);
 				if (index >= max_searchnum)
 				{
 					*too_large = 1;
@@ -846,7 +851,7 @@ __global__ void fuse_add_search_batch_kernel(
 				}
 				else
 				{
-					search_results[index].index = (long long)(pre_size) + (long long)(stage * proper_batch_size * fundamental_size + f * fundamental_size + fundamental_index);
+					search_results[index].index = (long long)(pre_size) + (long long)(stage * fundamental_size + f * (stages + 1) * fundamental_size + fundamental_index);
 					search_results[index].pow = tmp;
 					float sig = candidate_sigma_cu(tmp, numharms_device[stage], numindeps_device[stage]);
 					search_results[index].sig = sig;
@@ -862,7 +867,7 @@ void fuse_add_search_batch(ffdotpows_cu *fundamentals,
 						   int fundamental_num,
 						   cudaStream_t stream,
 						   SearchValue *search_results,
-						   int *search_nums,
+						   unsigned long long int *search_nums,
 						   long long pre_size,
 						   int proper_batch_size,
 						   int max_searchnum,
@@ -872,7 +877,7 @@ void fuse_add_search_batch(ffdotpows_cu *fundamentals,
 	ffdotpows_cu *fundamental = &fundamentals[0];
 	dim3 gridDim(fundamental->numws * fundamental_num, fundamental->numzs, (fundamental->numrs + threads - 1) / threads);
 
-	int fundamental_size = fundamental->numws * fundamental->numzs * fundamental->numrs;
+	long long fundamental_size = fundamental->numws * fundamental->numzs * fundamental->numrs;
 
 	fuse_add_search_batch_kernel<<<gridDim, threads, 0, stream>>>(
 		fundamental->numrs,
@@ -991,7 +996,7 @@ struct CompareSearchValue
 	}
 };
 
-void sort_search_results(SearchValue *search_results, int search_num)
+void sort_search_results(SearchValue *search_results, unsigned long long int search_num)
 {
 	// Wrap the raw pointer with thrust::device_ptr so that it can be used in thrust algorithms
 	thrust::device_ptr<SearchValue> dev_ptr(search_results);

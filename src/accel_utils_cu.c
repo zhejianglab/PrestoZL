@@ -865,14 +865,15 @@ GSList *insert_to_cands(
     double *numindeps,
     GSList *cands,
     SearchValue *search_results,
-    int *search_num,
-    int single_batch_size,
+    unsigned long long int *search_num,
+    long long single_batch_size,
+    int numharmstages,
     cudaStream_t main_stream,
     cudaStream_t sub_stream)
 {
     int ii, jj, kk;
 
-    int fundamental_size = fundamental_numrs * fundamental_numzs * fundamental_numws;
+    long long fundamental_size = fundamental_numrs * fundamental_numzs * fundamental_numws;
 
     if (search_num <= 0)
         return cands;
@@ -882,18 +883,15 @@ GSList *insert_to_cands(
     GSList *prev_list = NULL;
     double last_rr = 0;
 
-#ifdef _OPENMP
-#pragma omp parallel for shared(ffdot, powcut, obs, numharm, numindep)
-#endif
     for (int hitnum = 0; hitnum < search_num; hitnum++)
     {
         int current_batch = search_results[hitnum].index / single_batch_size;
-        int in_batch_id = search_results[hitnum].index % single_batch_size;
-        int stage = in_batch_id / (proper_batch_size * fundamental_size);
-        int act_id = in_batch_id % (proper_batch_size * fundamental_size);
+        long long in_batch_id = search_results[hitnum].index % single_batch_size;
+        int b = in_batch_id / (numharmstages * fundamental_size);
+        long long act_id = in_batch_id % (numharmstages * fundamental_size);
+        int stage = act_id / fundamental_size;
         int nh = 1 << stage;
         long long numindep = numindeps[stage];
-        int b = act_id / fundamental_size;
         int fund_id = current_batch * proper_batch_size + b;
         int index = act_id % fundamental_size;
         ii = (int)(index / (fundamental_numzs * fundamental_numrs));
@@ -917,9 +915,7 @@ GSList *insert_to_cands(
             tmp_list = cands;
             prev_list = NULL;
         }
-#ifdef _OPENMP
-#pragma omp critical
-#endif
+
         {
             cands = insert_new_accelcand_last(cands, pow, sig, nh,
                                               rr, zz, ww, &added, &tmp_list, &prev_list);

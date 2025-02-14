@@ -22,78 +22,77 @@ char *Program;
 /*@-null*/
 
 static Cmdline cmd = {
-  /***** -batchsize: Number of batch size to use */
+    /***** -batchsize: Number of batch size to use */
     /* batchsizeP = */ 1,
     /* batchsize = */ 8,
     /* batchsizeC = */ 1,
-  /***** -ncpus: Number of processors to use with OpenMP */
+    /***** -ncpus: Number of processors to use with OpenMP */
     /* ncpusP = */ 1,
     /* ncpus = */ 1,
     /* ncpusC = */ 1,
-  /***** -lobin: The first Fourier frequency in the data file */
+    /***** -lobin: The first Fourier frequency in the data file */
     /* lobinP = */ 1,
     /* lobin = */ 0,
     /* lobinC = */ 1,
-  /***** -numharm: The number of harmonics to sum (power-of-two) */
+    /***** -numharm: The number of harmonics to sum (power-of-two) */
     /* numharmP = */ 1,
     /* numharm = */ 8,
     /* numharmC = */ 1,
-  /***** -zmax: The max (+ and -) Fourier freq deriv to search */
+    /***** -zmax: The max (+ and -) Fourier freq deriv to search */
     /* zmaxP = */ 1,
     /* zmax = */ 200,
     /* zmaxC = */ 1,
-  /***** -wmax: The max (+ and -) Fourier freq double derivs to search */
+    /***** -wmax: The max (+ and -) Fourier freq double derivs to search */
     /* wmaxP = */ 0,
-    /* wmax = */ (int) 0,
+    /* wmax = */ (int)0,
     /* wmaxC = */ 0,
-  /***** -sigma: Cutoff sigma for choosing candidates */
+    /***** -sigma: Cutoff sigma for choosing candidates */
     /* sigmaP = */ 1,
     /* sigma = */ 2.0,
     /* sigmaC = */ 1,
-  /***** -rlo: The lowest Fourier frequency (of the highest harmonic!) to search */
+    /***** -rlo: The lowest Fourier frequency (of the highest harmonic!) to search */
     /* rloP = */ 0,
-    /* rlo = */ (double) 0,
+    /* rlo = */ (double)0,
     /* rloC = */ 0,
-  /***** -rhi: The highest Fourier frequency (of the highest harmonic!) to search */
+    /***** -rhi: The highest Fourier frequency (of the highest harmonic!) to search */
     /* rhiP = */ 0,
-    /* rhi = */ (double) 0,
+    /* rhi = */ (double)0,
     /* rhiC = */ 0,
-  /***** -flo: The lowest frequency (Hz) (of the highest harmonic!) to search */
+    /***** -flo: The lowest frequency (Hz) (of the highest harmonic!) to search */
     /* floP = */ 1,
     /* flo = */ 1.0,
     /* floC = */ 1,
-  /***** -fhi: The highest frequency (Hz) (of the highest harmonic!) to search */
+    /***** -fhi: The highest frequency (Hz) (of the highest harmonic!) to search */
     /* fhiP = */ 1,
     /* fhi = */ 10000.0,
     /* fhiC = */ 1,
-  /***** -inmem: Compute full f-fdot plane in memory.  Very fast, but only for short time series. */
+    /***** -inmem: Compute full f-fdot plane in memory.  Very fast, but only for short time series. */
     /* inmemP = */ 0,
-  /***** -photon: Data is poissonian so use freq 0 as power normalization */
+    /***** -photon: Data is poissonian so use freq 0 as power normalization */
     /* photonP = */ 0,
-  /***** -median: Use block-median power normalization (default) */
+    /***** -median: Use block-median power normalization (default) */
     /* medianP = */ 0,
-  /***** -locpow: Use double-tophat local-power normalization (not usually recommended) */
+    /***** -locpow: Use double-tophat local-power normalization (not usually recommended) */
     /* locpowP = */ 0,
-  /***** -zaplist: A file of freqs+widths to zap from the FFT (only if the input file is a *.[s]dat file) */
+    /***** -zaplist: A file of freqs+widths to zap from the FFT (only if the input file is a *.[s]dat file) */
     /* zaplistP = */ 0,
-    /* zaplist = */ (char *) 0,
+    /* zaplist = */ (char *)0,
     /* zaplistC = */ 0,
-  /***** -baryv: The radial velocity component (v/c) towards the target during the obs */
+    /***** -baryv: The radial velocity component (v/c) towards the target during the obs */
     /* baryvP = */ 1,
     /* baryv = */ 0.0,
     /* baryvC = */ 1,
-  /***** -otheropt: Use the alternative optimization (for testing/debugging) */
+    /***** -otheropt: Use the alternative optimization (for testing/debugging) */
     /* otheroptP = */ 0,
-  /***** -noharmpolish: Do not use 'harmpolish' by default */
+    /***** -noharmpolish: Do not use 'harmpolish' by default */
     /* noharmpolishP = */ 0,
-  /***** -noharmremove: Do not remove harmonically related candidates (never removed for numharm = 1) */
+    /***** -noharmremove: Do not remove harmonically related candidates (never removed for numharm = 1) */
     /* noharmremoveP = */ 0,
-  /***** uninterpreted rest of command line */
+    /***** uninterpreted rest of command line */
     /* argc = */ 0,
-    /* argv = */ (char **) 0,
-  /***** the original command line concatenated */
-    /* full_cmd_line = */ NULL
-};
+    /* argv = */ (char **)0,
+    /***** the original command line concatenated */
+    /* full_cmd_line = */ NULL};
 
 /*@=null*/
 
@@ -101,12 +100,11 @@ static Cmdline cmd = {
 /*@-predboolothers*/
 /*@-boolops*/
 
-
 /******************************************************************/
 /*****
  This is a bit tricky. We want to make a difference between overflow
  and underflow and we want to allow v==Inf or v==-Inf but not
- v>FLT_MAX. 
+ v>FLT_MAX.
 
  We don't use fabs to avoid linkage with -lm.
 *****/
@@ -114,14 +112,17 @@ static void checkFloatConversion(double v, char *option, char *arg)
 {
     char *err = NULL;
 
-    if ((errno == ERANGE && v != 0.0)   /* even double overflowed */
-        ||(v < HUGE_VAL && v > -HUGE_VAL && (v < 0.0 ? -v : v) > (double) FLT_MAX)) {
+    if ((errno == ERANGE && v != 0.0) /* even double overflowed */
+        || (v < HUGE_VAL && v > -HUGE_VAL && (v < 0.0 ? -v : v) > (double)FLT_MAX))
+    {
         err = "large";
-    } else if ((errno == ERANGE && v == 0.0)
-               || (v != 0.0 && (v < 0.0 ? -v : v) < (double) FLT_MIN)) {
+    }
+    else if ((errno == ERANGE && v == 0.0) || (v != 0.0 && (v < 0.0 ? -v : v) < (double)FLT_MIN))
+    {
         err = "small";
     }
-    if (err) {
+    if (err)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of option `%s' to %s to represent\n",
                 Program, arg, option, err);
@@ -140,28 +141,29 @@ int getIntOpt(int argc, char **argv, int i, int *value, int force)
     errno = 0;
     v = strtol(argv[i], &end, 0);
 
-  /***** check for conversion error */
+    /***** check for conversion error */
     if (end == argv[i])
         goto nothingFound;
 
-  /***** check for surplus non-whitespace */
-    while (isspace((int) *end))
+    /***** check for surplus non-whitespace */
+    while (isspace((int)*end))
         end += 1;
     if (*end)
         goto nothingFound;
 
-  /***** check if it fits into an int */
-    if (errno == ERANGE || v > (long) INT_MAX || v < (long) INT_MIN) {
+    /***** check if it fits into an int */
+    if (errno == ERANGE || v > (long)INT_MAX || v < (long)INT_MIN)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of option `%s' to large to represent\n",
                 Program, argv[i], argv[i - 1]);
         exit(EXIT_FAILURE);
     }
-    *value = (int) v;
+    *value = (int)v;
 
     return i;
 
-  nothingFound:
+nothingFound:
     if (!force)
         return i - 1;
 
@@ -182,30 +184,34 @@ int getIntOpts(int argc, char **argv, int i, int **values, int cmin, int cmax)
     int alloced, used;
     char *end;
     long v;
-    if (i + cmin >= argc) {
+    if (i + cmin >= argc)
+    {
         fprintf(stderr,
                 "%s: option `%s' wants at least %d parameters\n",
                 Program, argv[i], cmin);
         exit(EXIT_FAILURE);
     }
 
-                                  /***** 
-    alloc a bit more than cmin values. It does not hurt to have room
-    for a bit more values than cmax.
-  *****/
+    /*****
+alloc a bit more than cmin values. It does not hurt to have room
+for a bit more values than cmax.
+*****/
     alloced = cmin + 4;
-    *values = (int *) calloc((size_t) alloced, sizeof(int));
-    if (!*values) {
-      outMem:
+    *values = (int *)calloc((size_t)alloced, sizeof(int));
+    if (!*values)
+    {
+    outMem:
         fprintf(stderr,
                 "%s: out of memory while parsing option `%s'\n", Program, argv[i]);
         exit(EXIT_FAILURE);
     }
 
-    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++) {
-        if (used == alloced) {
+    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++)
+    {
+        if (used == alloced)
+        {
             alloced += 8;
-            *values = (int *) realloc(*values, alloced * sizeof(int));
+            *values = (int *)realloc(*values, alloced * sizeof(int));
             if (!*values)
                 goto outMem;
         }
@@ -213,32 +219,34 @@ int getIntOpts(int argc, char **argv, int i, int **values, int cmin, int cmax)
         errno = 0;
         v = strtol(argv[used + i + 1], &end, 0);
 
-    /***** check for conversion error */
+        /***** check for conversion error */
         if (end == argv[used + i + 1])
             break;
 
-    /***** check for surplus non-whitespace */
-        while (isspace((int) *end))
+        /***** check for surplus non-whitespace */
+        while (isspace((int)*end))
             end += 1;
         if (*end)
             break;
 
-    /***** check for overflow */
-        if (errno == ERANGE || v > (long) INT_MAX || v < (long) INT_MIN) {
+        /***** check for overflow */
+        if (errno == ERANGE || v > (long)INT_MAX || v < (long)INT_MIN)
+        {
             fprintf(stderr,
                     "%s: parameter `%s' of option `%s' to large to represent\n",
                     Program, argv[i + used + 1], argv[i]);
             exit(EXIT_FAILURE);
         }
 
-        (*values)[used] = (int) v;
-
+        (*values)[used] = (int)v;
     }
 
-    if (used < cmin) {
+    if (used < cmin)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of `%s' should be an "
-                "integer value\n", Program, argv[i + used + 1], argv[i]);
+                "integer value\n",
+                Program, argv[i + used + 1], argv[i]);
         exit(EXIT_FAILURE);
     }
 
@@ -257,18 +265,19 @@ int getLongOpt(int argc, char **argv, int i, long *value, int force)
     errno = 0;
     *value = strtol(argv[i], &end, 0);
 
-  /***** check for conversion error */
+    /***** check for conversion error */
     if (end == argv[i])
         goto nothingFound;
 
-  /***** check for surplus non-whitespace */
-    while (isspace((int) *end))
+    /***** check for surplus non-whitespace */
+    while (isspace((int)*end))
         end += 1;
     if (*end)
         goto nothingFound;
 
-  /***** check for overflow */
-    if (errno == ERANGE) {
+    /***** check for overflow */
+    if (errno == ERANGE)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of option `%s' to large to represent\n",
                 Program, argv[i], argv[i - 1]);
@@ -276,8 +285,8 @@ int getLongOpt(int argc, char **argv, int i, long *value, int force)
     }
     return i;
 
-  nothingFound:
-  /***** !force means: this parameter may be missing.*/
+nothingFound:
+    /***** !force means: this parameter may be missing.*/
     if (!force)
         return i - 1;
 
@@ -298,30 +307,34 @@ int getLongOpts(int argc, char **argv, int i, long **values, int cmin, int cmax)
     int alloced, used;
     char *end;
 
-    if (i + cmin >= argc) {
+    if (i + cmin >= argc)
+    {
         fprintf(stderr,
                 "%s: option `%s' wants at least %d parameters\n",
                 Program, argv[i], cmin);
         exit(EXIT_FAILURE);
     }
 
-                                  /***** 
-    alloc a bit more than cmin values. It does not hurt to have room
-    for a bit more values than cmax.
-  *****/
+    /*****
+alloc a bit more than cmin values. It does not hurt to have room
+for a bit more values than cmax.
+*****/
     alloced = cmin + 4;
-    *values = (long int *) calloc((size_t) alloced, sizeof(long));
-    if (!*values) {
-      outMem:
+    *values = (long int *)calloc((size_t)alloced, sizeof(long));
+    if (!*values)
+    {
+    outMem:
         fprintf(stderr,
                 "%s: out of memory while parsing option `%s'\n", Program, argv[i]);
         exit(EXIT_FAILURE);
     }
 
-    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++) {
-        if (used == alloced) {
+    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++)
+    {
+        if (used == alloced)
+        {
             alloced += 8;
-            *values = (long int *) realloc(*values, alloced * sizeof(long));
+            *values = (long int *)realloc(*values, alloced * sizeof(long));
             if (!*values)
                 goto outMem;
         }
@@ -329,30 +342,32 @@ int getLongOpts(int argc, char **argv, int i, long **values, int cmin, int cmax)
         errno = 0;
         (*values)[used] = strtol(argv[used + i + 1], &end, 0);
 
-    /***** check for conversion error */
+        /***** check for conversion error */
         if (end == argv[used + i + 1])
             break;
 
-    /***** check for surplus non-whitespace */
-        while (isspace((int) *end))
+        /***** check for surplus non-whitespace */
+        while (isspace((int)*end))
             end += 1;
         if (*end)
             break;
 
-    /***** check for overflow */
-        if (errno == ERANGE) {
+        /***** check for overflow */
+        if (errno == ERANGE)
+        {
             fprintf(stderr,
                     "%s: parameter `%s' of option `%s' to large to represent\n",
                     Program, argv[i + used + 1], argv[i]);
             exit(EXIT_FAILURE);
         }
-
     }
 
-    if (used < cmin) {
+    if (used < cmin)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of `%s' should be an "
-                "integer value\n", Program, argv[i + used + 1], argv[i]);
+                "integer value\n",
+                Program, argv[i + used + 1], argv[i]);
         exit(EXIT_FAILURE);
     }
 
@@ -372,24 +387,24 @@ int getFloatOpt(int argc, char **argv, int i, float *value, int force)
     errno = 0;
     v = strtod(argv[i], &end);
 
-  /***** check for conversion error */
+    /***** check for conversion error */
     if (end == argv[i])
         goto nothingFound;
 
-  /***** check for surplus non-whitespace */
-    while (isspace((int) *end))
+    /***** check for surplus non-whitespace */
+    while (isspace((int)*end))
         end += 1;
     if (*end)
         goto nothingFound;
 
-  /***** check for overflow */
+    /***** check for overflow */
     checkFloatConversion(v, argv[i - 1], argv[i]);
 
-    *value = (float) v;
+    *value = (float)v;
 
     return i;
 
-  nothingFound:
+nothingFound:
     if (!force)
         return i - 1;
 
@@ -397,7 +412,6 @@ int getFloatOpt(int argc, char **argv, int i, float *value, int force)
             "%s: missing or malformed float value after option `%s'\n",
             Program, argv[i - 1]);
     exit(EXIT_FAILURE);
-
 }
 
 /**********************************************************************/
@@ -412,29 +426,33 @@ int getFloatOpts(int argc, char **argv, int i, float **values, int cmin, int cma
     char *end;
     double v;
 
-    if (i + cmin >= argc) {
+    if (i + cmin >= argc)
+    {
         fprintf(stderr,
                 "%s: option `%s' wants at least %d parameters\n",
                 Program, argv[i], cmin);
         exit(EXIT_FAILURE);
     }
 
-                                  /***** 
-    alloc a bit more than cmin values.
-  *****/
+    /*****
+alloc a bit more than cmin values.
+*****/
     alloced = cmin + 4;
-    *values = (float *) calloc((size_t) alloced, sizeof(float));
-    if (!*values) {
-      outMem:
+    *values = (float *)calloc((size_t)alloced, sizeof(float));
+    if (!*values)
+    {
+    outMem:
         fprintf(stderr,
                 "%s: out of memory while parsing option `%s'\n", Program, argv[i]);
         exit(EXIT_FAILURE);
     }
 
-    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++) {
-        if (used == alloced) {
+    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++)
+    {
+        if (used == alloced)
+        {
             alloced += 8;
-            *values = (float *) realloc(*values, alloced * sizeof(float));
+            *values = (float *)realloc(*values, alloced * sizeof(float));
             if (!*values)
                 goto outMem;
         }
@@ -442,26 +460,28 @@ int getFloatOpts(int argc, char **argv, int i, float **values, int cmin, int cma
         errno = 0;
         v = strtod(argv[used + i + 1], &end);
 
-    /***** check for conversion error */
+        /***** check for conversion error */
         if (end == argv[used + i + 1])
             break;
 
-    /***** check for surplus non-whitespace */
-        while (isspace((int) *end))
+        /***** check for surplus non-whitespace */
+        while (isspace((int)*end))
             end += 1;
         if (*end)
             break;
 
-    /***** check for overflow */
+        /***** check for overflow */
         checkFloatConversion(v, argv[i], argv[i + used + 1]);
 
-        (*values)[used] = (float) v;
+        (*values)[used] = (float)v;
     }
 
-    if (used < cmin) {
+    if (used < cmin)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of `%s' should be a "
-                "floating-point value\n", Program, argv[i + used + 1], argv[i]);
+                "floating-point value\n",
+                Program, argv[i + used + 1], argv[i]);
         exit(EXIT_FAILURE);
     }
 
@@ -480,18 +500,19 @@ int getDoubleOpt(int argc, char **argv, int i, double *value, int force)
     errno = 0;
     *value = strtod(argv[i], &end);
 
-  /***** check for conversion error */
+    /***** check for conversion error */
     if (end == argv[i])
         goto nothingFound;
 
-  /***** check for surplus non-whitespace */
-    while (isspace((int) *end))
+    /***** check for surplus non-whitespace */
+    while (isspace((int)*end))
         end += 1;
     if (*end)
         goto nothingFound;
 
-  /***** check for overflow */
-    if (errno == ERANGE) {
+    /***** check for overflow */
+    if (errno == ERANGE)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of option `%s' to %s to represent\n",
                 Program, argv[i], argv[i - 1], (*value == 0.0 ? "small" : "large"));
@@ -500,7 +521,7 @@ int getDoubleOpt(int argc, char **argv, int i, double *value, int force)
 
     return i;
 
-  nothingFound:
+nothingFound:
     if (!force)
         return i - 1;
 
@@ -508,7 +529,6 @@ int getDoubleOpt(int argc, char **argv, int i, double *value, int force)
             "%s: missing or malformed value after option `%s'\n",
             Program, argv[i - 1]);
     exit(EXIT_FAILURE);
-
 }
 
 /**********************************************************************/
@@ -522,29 +542,33 @@ int getDoubleOpts(int argc, char **argv, int i, double **values, int cmin, int c
     int alloced, used;
     char *end;
 
-    if (i + cmin >= argc) {
+    if (i + cmin >= argc)
+    {
         fprintf(stderr,
                 "%s: option `%s' wants at least %d parameters\n",
                 Program, argv[i], cmin);
         exit(EXIT_FAILURE);
     }
 
-                                  /***** 
-    alloc a bit more than cmin values.
-  *****/
+    /*****
+alloc a bit more than cmin values.
+*****/
     alloced = cmin + 4;
-    *values = (double *) calloc((size_t) alloced, sizeof(double));
-    if (!*values) {
-      outMem:
+    *values = (double *)calloc((size_t)alloced, sizeof(double));
+    if (!*values)
+    {
+    outMem:
         fprintf(stderr,
                 "%s: out of memory while parsing option `%s'\n", Program, argv[i]);
         exit(EXIT_FAILURE);
     }
 
-    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++) {
-        if (used == alloced) {
+    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++)
+    {
+        if (used == alloced)
+        {
             alloced += 8;
-            *values = (double *) realloc(*values, alloced * sizeof(double));
+            *values = (double *)realloc(*values, alloced * sizeof(double));
             if (!*values)
                 goto outMem;
         }
@@ -552,31 +576,33 @@ int getDoubleOpts(int argc, char **argv, int i, double **values, int cmin, int c
         errno = 0;
         (*values)[used] = strtod(argv[used + i + 1], &end);
 
-    /***** check for conversion error */
+        /***** check for conversion error */
         if (end == argv[used + i + 1])
             break;
 
-    /***** check for surplus non-whitespace */
-        while (isspace((int) *end))
+        /***** check for surplus non-whitespace */
+        while (isspace((int)*end))
             end += 1;
         if (*end)
             break;
 
-    /***** check for overflow */
-        if (errno == ERANGE) {
+        /***** check for overflow */
+        if (errno == ERANGE)
+        {
             fprintf(stderr,
                     "%s: parameter `%s' of option `%s' to %s to represent\n",
                     Program, argv[i + used + 1], argv[i],
                     ((*values)[used] == 0.0 ? "small" : "large"));
             exit(EXIT_FAILURE);
         }
-
     }
 
-    if (used < cmin) {
+    if (used < cmin)
+    {
         fprintf(stderr,
                 "%s: parameter `%s' of `%s' should be a "
-                "double value\n", Program, argv[i + used + 1], argv[i]);
+                "double value\n",
+                Program, argv[i + used + 1], argv[i]);
         exit(EXIT_FAILURE);
     }
 
@@ -591,8 +617,10 @@ int getDoubleOpts(int argc, char **argv, int i, double **values, int cmin, int c
 int getStringOpt(int argc, char **argv, int i, char **value, int force)
 {
     i += 1;
-    if (i >= argc) {
-        if (force) {
+    if (i >= argc)
+    {
+        if (force)
+        {
             fprintf(stderr, "%s: missing string after option `%s'\n",
                     Program, argv[i - 1]);
             exit(EXIT_FAILURE);
@@ -608,7 +636,7 @@ int getStringOpt(int argc, char **argv, int i, char **value, int force)
 
 /**********************************************************************/
 
-int getStringOpts(int argc, char **argv, int i, char * **values, int cmin, int cmax)
+int getStringOpts(int argc, char **argv, int i, char ***values, int cmin, int cmax)
 /*****
   We want to find at least cmin values and at most cmax values.
   cmax==-1 then means infinitely many are allowed.
@@ -616,7 +644,8 @@ int getStringOpts(int argc, char **argv, int i, char * **values, int cmin, int c
 {
     int alloced, used;
 
-    if (i + cmin >= argc) {
+    if (i + cmin >= argc)
+    {
         fprintf(stderr,
                 "%s: option `%s' wants at least %d parameters\n",
                 Program, argv[i], cmin);
@@ -625,19 +654,22 @@ int getStringOpts(int argc, char **argv, int i, char * **values, int cmin, int c
 
     alloced = cmin + 4;
 
-    *values = (char **) calloc((size_t) alloced, sizeof(char *));
-    if (!*values) {
-      outMem:
+    *values = (char **)calloc((size_t)alloced, sizeof(char *));
+    if (!*values)
+    {
+    outMem:
         fprintf(stderr,
                 "%s: out of memory during parsing of option `%s'\n",
                 Program, argv[i]);
         exit(EXIT_FAILURE);
     }
 
-    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++) {
-        if (used == alloced) {
+    for (used = 0; (cmax == -1 || used < cmax) && used + i + 1 < argc; used++)
+    {
+        if (used == alloced)
+        {
             alloced += 8;
-            *values = (char **) realloc(*values, alloced * sizeof(char *));
+            *values = (char **)realloc(*values, alloced * sizeof(char *));
             if (!*values)
                 goto outMem;
         }
@@ -647,7 +679,8 @@ int getStringOpts(int argc, char **argv, int i, char * **values, int cmin, int c
         (*values)[used] = argv[used + i + 1];
     }
 
-    if (used < cmin) {
+    if (used < cmin)
+    {
         fprintf(stderr,
                 "%s: less than %d parameters for option `%s', only %d found\n",
                 Program, cmin, argv[i], used);
@@ -663,7 +696,8 @@ void checkIntLower(char *opt, int *values, int count, int max)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] <= max)
             continue;
         fprintf(stderr,
@@ -679,7 +713,8 @@ void checkIntHigher(char *opt, int *values, int count, int min)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] >= min)
             continue;
         fprintf(stderr,
@@ -695,7 +730,8 @@ void checkLongLower(char *opt, long *values, int count, long max)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] <= max)
             continue;
         fprintf(stderr,
@@ -711,7 +747,8 @@ void checkLongHigher(char *opt, long *values, int count, long min)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] >= min)
             continue;
         fprintf(stderr,
@@ -727,7 +764,8 @@ void checkFloatLower(char *opt, float *values, int count, float max)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] <= max)
             continue;
         fprintf(stderr,
@@ -743,7 +781,8 @@ void checkFloatHigher(char *opt, float *values, int count, float min)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] >= min)
             continue;
         fprintf(stderr,
@@ -759,7 +798,8 @@ void checkDoubleLower(char *opt, double *values, int count, double max)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] <= max)
             continue;
         fprintf(stderr,
@@ -775,7 +815,8 @@ void checkDoubleHigher(char *opt, double *values, int count, double min)
 {
     int i;
 
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         if (values[i] >= min)
             continue;
         fprintf(stderr,
@@ -795,14 +836,16 @@ static char *catArgv(int argc, char **argv)
 
     for (i = 0, l = 0; i < argc; i++)
         l += (1 + strlen(argv[i]));
-    s = (char *) malloc(l);
-    if (!s) {
+    s = (char *)malloc(l);
+    if (!s)
+    {
         fprintf(stderr, "%s: out of memory\n", Program);
         exit(EXIT_FAILURE);
     }
     strcpy(s, argv[0]);
     t = s;
-    for (i = 1; i < argc; i++) {
+    for (i = 1; i < argc; i++)
+    {
         t = t + strlen(t);
         *t++ = ' ';
         strcpy(t, argv[i]);
@@ -818,216 +861,318 @@ void showOptionValues(void)
 
     printf("Full command line is:\n`%s'\n", cmd.full_cmd_line);
 
-  /***** -batchsize: Number of batch size to use */
-    if (!cmd.batchsizeP) {
+    /***** -batchsize: Number of batch size to use */
+    if (!cmd.batchsizeP)
+    {
         printf("-batchsize not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-batchsize found:\n");
-        if (!cmd.batchsizeC) {
+        if (!cmd.batchsizeC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.batchsize);
         }
     }
 
-
-  /***** -ncpus: Number of processors to use with OpenMP */
-    if (!cmd.ncpusP) {
+    /***** -ncpus: Number of processors to use with OpenMP */
+    if (!cmd.ncpusP)
+    {
         printf("-ncpus not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-ncpus found:\n");
-        if (!cmd.ncpusC) {
+        if (!cmd.ncpusC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.ncpus);
         }
     }
 
-  /***** -lobin: The first Fourier frequency in the data file */
-    if (!cmd.lobinP) {
+    /***** -lobin: The first Fourier frequency in the data file */
+    if (!cmd.lobinP)
+    {
         printf("-lobin not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-lobin found:\n");
-        if (!cmd.lobinC) {
+        if (!cmd.lobinC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.lobin);
         }
     }
 
-  /***** -numharm: The number of harmonics to sum (power-of-two) */
-    if (!cmd.numharmP) {
+    /***** -numharm: The number of harmonics to sum (power-of-two) */
+    if (!cmd.numharmP)
+    {
         printf("-numharm not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-numharm found:\n");
-        if (!cmd.numharmC) {
+        if (!cmd.numharmC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.numharm);
         }
     }
 
-  /***** -zmax: The max (+ and -) Fourier freq deriv to search */
-    if (!cmd.zmaxP) {
+    /***** -zmax: The max (+ and -) Fourier freq deriv to search */
+    if (!cmd.zmaxP)
+    {
         printf("-zmax not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-zmax found:\n");
-        if (!cmd.zmaxC) {
+        if (!cmd.zmaxC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.zmax);
         }
     }
 
-  /***** -wmax: The max (+ and -) Fourier freq double derivs to search */
-    if (!cmd.wmaxP) {
+    /***** -wmax: The max (+ and -) Fourier freq double derivs to search */
+    if (!cmd.wmaxP)
+    {
         printf("-wmax not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-wmax found:\n");
-        if (!cmd.wmaxC) {
+        if (!cmd.wmaxC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%d'\n", cmd.wmax);
         }
     }
 
-  /***** -sigma: Cutoff sigma for choosing candidates */
-    if (!cmd.sigmaP) {
+    /***** -sigma: Cutoff sigma for choosing candidates */
+    if (!cmd.sigmaP)
+    {
         printf("-sigma not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-sigma found:\n");
-        if (!cmd.sigmaC) {
+        if (!cmd.sigmaC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.sigma);
         }
     }
 
-  /***** -rlo: The lowest Fourier frequency (of the highest harmonic!) to search */
-    if (!cmd.rloP) {
+    /***** -rlo: The lowest Fourier frequency (of the highest harmonic!) to search */
+    if (!cmd.rloP)
+    {
         printf("-rlo not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-rlo found:\n");
-        if (!cmd.rloC) {
+        if (!cmd.rloC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.rlo);
         }
     }
 
-  /***** -rhi: The highest Fourier frequency (of the highest harmonic!) to search */
-    if (!cmd.rhiP) {
+    /***** -rhi: The highest Fourier frequency (of the highest harmonic!) to search */
+    if (!cmd.rhiP)
+    {
         printf("-rhi not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-rhi found:\n");
-        if (!cmd.rhiC) {
+        if (!cmd.rhiC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.rhi);
         }
     }
 
-  /***** -flo: The lowest frequency (Hz) (of the highest harmonic!) to search */
-    if (!cmd.floP) {
+    /***** -flo: The lowest frequency (Hz) (of the highest harmonic!) to search */
+    if (!cmd.floP)
+    {
         printf("-flo not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-flo found:\n");
-        if (!cmd.floC) {
+        if (!cmd.floC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.flo);
         }
     }
 
-  /***** -fhi: The highest frequency (Hz) (of the highest harmonic!) to search */
-    if (!cmd.fhiP) {
+    /***** -fhi: The highest frequency (Hz) (of the highest harmonic!) to search */
+    if (!cmd.fhiP)
+    {
         printf("-fhi not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-fhi found:\n");
-        if (!cmd.fhiC) {
+        if (!cmd.fhiC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.fhi);
         }
     }
 
-  /***** -inmem: Compute full f-fdot plane in memory.  Very fast, but only for short time series. */
-    if (!cmd.inmemP) {
+    /***** -inmem: Compute full f-fdot plane in memory.  Very fast, but only for short time series. */
+    if (!cmd.inmemP)
+    {
         printf("-inmem not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-inmem found:\n");
     }
 
-  /***** -photon: Data is poissonian so use freq 0 as power normalization */
-    if (!cmd.photonP) {
+    /***** -photon: Data is poissonian so use freq 0 as power normalization */
+    if (!cmd.photonP)
+    {
         printf("-photon not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-photon found:\n");
     }
 
-  /***** -median: Use block-median power normalization (default) */
-    if (!cmd.medianP) {
+    /***** -median: Use block-median power normalization (default) */
+    if (!cmd.medianP)
+    {
         printf("-median not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-median found:\n");
     }
 
-  /***** -locpow: Use double-tophat local-power normalization (not usually recommended) */
-    if (!cmd.locpowP) {
+    /***** -locpow: Use double-tophat local-power normalization (not usually recommended) */
+    if (!cmd.locpowP)
+    {
         printf("-locpow not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-locpow found:\n");
     }
 
-  /***** -zaplist: A file of freqs+widths to zap from the FFT (only if the input file is a *.[s]dat file) */
-    if (!cmd.zaplistP) {
+    /***** -zaplist: A file of freqs+widths to zap from the FFT (only if the input file is a *.[s]dat file) */
+    if (!cmd.zaplistP)
+    {
         printf("-zaplist not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-zaplist found:\n");
-        if (!cmd.zaplistC) {
+        if (!cmd.zaplistC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%s'\n", cmd.zaplist);
         }
     }
 
-  /***** -baryv: The radial velocity component (v/c) towards the target during the obs */
-    if (!cmd.baryvP) {
+    /***** -baryv: The radial velocity component (v/c) towards the target during the obs */
+    if (!cmd.baryvP)
+    {
         printf("-baryv not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-baryv found:\n");
-        if (!cmd.baryvC) {
+        if (!cmd.baryvC)
+        {
             printf("  no values\n");
-        } else {
+        }
+        else
+        {
             printf("  value = `%.40g'\n", cmd.baryv);
         }
     }
 
-  /***** -otheropt: Use the alternative optimization (for testing/debugging) */
-    if (!cmd.otheroptP) {
+    /***** -otheropt: Use the alternative optimization (for testing/debugging) */
+    if (!cmd.otheroptP)
+    {
         printf("-otheropt not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-otheropt found:\n");
     }
 
-  /***** -noharmpolish: Do not use 'harmpolish' by default */
-    if (!cmd.noharmpolishP) {
+    /***** -noharmpolish: Do not use 'harmpolish' by default */
+    if (!cmd.noharmpolishP)
+    {
         printf("-noharmpolish not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-noharmpolish found:\n");
     }
 
-  /***** -noharmremove: Do not remove harmonically related candidates (never removed for numharm = 1) */
-    if (!cmd.noharmremoveP) {
+    /***** -noharmremove: Do not remove harmonically related candidates (never removed for numharm = 1) */
+    if (!cmd.noharmremoveP)
+    {
         printf("-noharmremove not found.\n");
-    } else {
+    }
+    else
+    {
         printf("-noharmremove found:\n");
     }
-    if (!cmd.argc) {
+    if (!cmd.argc)
+    {
         printf("no remaining parameters in argv\n");
-    } else {
+    }
+    else
+    {
         printf("argv =");
-        for (i = 0; i < cmd.argc; i++) {
+        for (i = 0; i < cmd.argc; i++)
+        {
             printf(" `%s'", cmd.argv[i]);
         }
         printf("\n");
@@ -1117,14 +1262,17 @@ Cmdline *parseCmdline(int argc, char **argv)
 
     Program = argv[0];
     cmd.full_cmd_line = catArgv(argc, argv);
-    for (i = 1, cmd.argc = 1; i < argc; i++) {
-        if (0 == strcmp("--", argv[i])) {
+    for (i = 1, cmd.argc = 1; i < argc; i++)
+    {
+        if (0 == strcmp("--", argv[i]))
+        {
             while (++i < argc)
                 argv[cmd.argc++] = argv[i];
             continue;
         }
 
-        if (0 == strcmp("-batchsize", argv[i])) {
+        if (0 == strcmp("-batchsize", argv[i]))
+        {
             int keep = i;
             cmd.batchsizeP = 1;
             i = getIntOpt(argc, argv, i, &cmd.batchsize, 1);
@@ -1133,7 +1281,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-ncpus", argv[i])) {
+        if (0 == strcmp("-ncpus", argv[i]))
+        {
             int keep = i;
             cmd.ncpusP = 1;
             i = getIntOpt(argc, argv, i, &cmd.ncpus, 1);
@@ -1142,7 +1291,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-lobin", argv[i])) {
+        if (0 == strcmp("-lobin", argv[i]))
+        {
             int keep = i;
             cmd.lobinP = 1;
             i = getIntOpt(argc, argv, i, &cmd.lobin, 1);
@@ -1151,7 +1301,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-numharm", argv[i])) {
+        if (0 == strcmp("-numharm", argv[i]))
+        {
             int keep = i;
             cmd.numharmP = 1;
             i = getIntOpt(argc, argv, i, &cmd.numharm, 1);
@@ -1161,7 +1312,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-zmax", argv[i])) {
+        if (0 == strcmp("-zmax", argv[i]))
+        {
             int keep = i;
             cmd.zmaxP = 1;
             i = getIntOpt(argc, argv, i, &cmd.zmax, 1);
@@ -1171,7 +1323,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-wmax", argv[i])) {
+        if (0 == strcmp("-wmax", argv[i]))
+        {
             int keep = i;
             cmd.wmaxP = 1;
             i = getIntOpt(argc, argv, i, &cmd.wmax, 1);
@@ -1181,7 +1334,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-sigma", argv[i])) {
+        if (0 == strcmp("-sigma", argv[i]))
+        {
             int keep = i;
             cmd.sigmaP = 1;
             i = getFloatOpt(argc, argv, i, &cmd.sigma, 1);
@@ -1191,7 +1345,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-rlo", argv[i])) {
+        if (0 == strcmp("-rlo", argv[i]))
+        {
             int keep = i;
             cmd.rloP = 1;
             i = getDoubleOpt(argc, argv, i, &cmd.rlo, 1);
@@ -1200,7 +1355,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-rhi", argv[i])) {
+        if (0 == strcmp("-rhi", argv[i]))
+        {
             int keep = i;
             cmd.rhiP = 1;
             i = getDoubleOpt(argc, argv, i, &cmd.rhi, 1);
@@ -1209,7 +1365,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-flo", argv[i])) {
+        if (0 == strcmp("-flo", argv[i]))
+        {
             int keep = i;
             cmd.floP = 1;
             i = getDoubleOpt(argc, argv, i, &cmd.flo, 1);
@@ -1218,7 +1375,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-fhi", argv[i])) {
+        if (0 == strcmp("-fhi", argv[i]))
+        {
             int keep = i;
             cmd.fhiP = 1;
             i = getDoubleOpt(argc, argv, i, &cmd.fhi, 1);
@@ -1227,27 +1385,32 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-inmem", argv[i])) {
+        if (0 == strcmp("-inmem", argv[i]))
+        {
             cmd.inmemP = 1;
             continue;
         }
 
-        if (0 == strcmp("-photon", argv[i])) {
+        if (0 == strcmp("-photon", argv[i]))
+        {
             cmd.photonP = 1;
             continue;
         }
 
-        if (0 == strcmp("-median", argv[i])) {
+        if (0 == strcmp("-median", argv[i]))
+        {
             cmd.medianP = 1;
             continue;
         }
 
-        if (0 == strcmp("-locpow", argv[i])) {
+        if (0 == strcmp("-locpow", argv[i]))
+        {
             cmd.locpowP = 1;
             continue;
         }
 
-        if (0 == strcmp("-zaplist", argv[i])) {
+        if (0 == strcmp("-zaplist", argv[i]))
+        {
             int keep = i;
             cmd.zaplistP = 1;
             i = getStringOpt(argc, argv, i, &cmd.zaplist, 1);
@@ -1255,7 +1418,8 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-baryv", argv[i])) {
+        if (0 == strcmp("-baryv", argv[i]))
+        {
             int keep = i;
             cmd.baryvP = 1;
             i = getDoubleOpt(argc, argv, i, &cmd.baryv, 1);
@@ -1265,40 +1429,45 @@ Cmdline *parseCmdline(int argc, char **argv)
             continue;
         }
 
-        if (0 == strcmp("-otheropt", argv[i])) {
+        if (0 == strcmp("-otheropt", argv[i]))
+        {
             cmd.otheroptP = 1;
             continue;
         }
 
-        if (0 == strcmp("-noharmpolish", argv[i])) {
+        if (0 == strcmp("-noharmpolish", argv[i]))
+        {
             cmd.noharmpolishP = 1;
             continue;
         }
 
-        if (0 == strcmp("-noharmremove", argv[i])) {
+        if (0 == strcmp("-noharmremove", argv[i]))
+        {
             cmd.noharmremoveP = 1;
             continue;
         }
 
-        if (argv[i][0] == '-') {
+        if (argv[i][0] == '-')
+        {
             fprintf(stderr, "\n%s: unknown option `%s'\n\n", Program, argv[i]);
             usage();
         }
         argv[cmd.argc++] = argv[i];
-    }                           /* for i */
-
+    } /* for i */
 
     /*@-mustfree */
     cmd.argv = argv + 1;
     /*@=mustfree */
     cmd.argc -= 1;
 
-    if (1 > cmd.argc) {
+    if (1 > cmd.argc)
+    {
         fprintf(stderr, "%s: there should be at least 1 non-option argument(s)\n",
                 Program);
         exit(EXIT_FAILURE);
     }
-    if (16384 < cmd.argc) {
+    if (16384 < cmd.argc)
+    {
         fprintf(stderr, "%s: there should be at most 16384 non-option argument(s)\n",
                 Program);
         exit(EXIT_FAILURE);

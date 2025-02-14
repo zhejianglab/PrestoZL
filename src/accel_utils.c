@@ -1227,7 +1227,9 @@ ffdotpows *subharm_fderivs_vol(int numharm, int harmnum,
     }
 
     // Perform the correlations in a thread-safe manner
-
+#ifdef _OPENMP
+#pragma omp parallel default(none) shared(pdata, shi, fftlen, binoffset, ffdot, invplan)
+#endif
     {
         const float norm = 1.0 / (fftlen * fftlen);
         const int offset = binoffset * ACCEL_NUMBETWEEN;
@@ -1235,7 +1237,10 @@ ffdotpows *subharm_fderivs_vol(int numharm, int harmnum,
         fcomplex *tmpdat = gen_cvect(fftlen);
         fcomplex *tmpout = gen_cvect(fftlen);
         int jj;
-
+#ifdef _OPENMP
+// #pragma omp for collapse(2)  Do we want this somehow?
+#pragma omp for
+#endif
         /* Check, should we add the collapse to parallelize numws and numzs loops? */
         for (ii = 0; ii < ffdot->numws; ii++)
         {
@@ -1248,7 +1253,10 @@ ffdotpows *subharm_fderivs_vol(int numharm, int harmnum,
                 float *outpows = ffdot->powers[ii][jj];
                 // multiply data and kernel
                 // (using floats for better vectorization)
-
+#if (defined(__GNUC__) || defined(__GNUG__)) && \
+    !(defined(__clang__) || defined(__INTEL_COMPILER))
+#pragma GCC ivdep
+#endif
                 for (kk = 0; kk < fftlen * 2; kk += 2)
                 {
                     const float dr = fpdata[kk], di = fpdata[kk + 1];
@@ -1262,7 +1270,10 @@ ffdotpows *subharm_fderivs_vol(int numharm, int harmnum,
                 // Turn the good parts of the result into powers and store
                 // them in the output matrix
                 fdata = (float *)tmpout;
-
+#if (defined(__GNUC__) || defined(__GNUG__)) && \
+    !(defined(__clang__) || defined(__INTEL_COMPILER))
+#pragma GCC ivdep
+#endif
                 for (kk = 0; kk < ffdot->numrs; kk++)
                 {
                     const int ind = 2 * (kk + offset);
