@@ -1,6 +1,7 @@
 ## 2. For PRESTO user
+There are two solutions. 
 
-### 2.1 Start with PrestoZL source code
+### 2.1 First solution:Start with PrestoZL source code
 Because PrestoZL only add the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, you only need to install the CUDA toolkit and do some setting. 
 
 **Attention：The PRESTO environment on your machine may not be compatible with PrestoZL**.
@@ -34,8 +35,8 @@ make makewisdom   % Only need to make when compiling for the first time
 make cleaner && make
 ```
 
-### 2.2 Modify files from FrestoZL to your PRESTO source code
-PrestoZL is based on Scott Ransom's PRESTO v4.0. If your existing PRESTO environment is a newer version and you wish to continue using it, you can integrate the changes from PrestoZL by replacing or modifying the relevant `accelsearch_cu` and `prepsubband_cu` code in your PRESTO source code. The required changes are as follows:
+### 2.2 Second solution: copy files from FrestoZL to your PRESTO source code
+PrestoZL is based on Scott Ransom's PRESTO v4.0. If your existing PRESTO environment is a newer version and you wish to continue using it, You can simply copy the following files from PrestoZL into your PRESTO C's corresponding directory and then recompile. The required changes are as follows:
 
 1. Add new files from PrestoZL to your PRESTO source.
 ```
@@ -73,11 +74,16 @@ src/characteristics.c
 src/dcdflib.c
 src/fftcalls.c
 ```
+3. Download and Install CUDA toolkit 11.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
 
-3. Modify existing files according to the changes in PrestoZL.
+4. Modify existing files according to the changes in PrestoZL.
 ```
 src/Makefile
 ```
 Update your src/Makefile to include the CUDA environment configuration and the compile configuration for `accelsearch_cu` and `prepsubband_cu` according to PrestoZL's src/Makefile.
 
-4. Run `make` again in your PRESTO/src directory.
+5. Run `make` again in your PRESTO/src directory.
+```
+cd /YourPathtoPrestoZL/src
+make cleaner && make
+```
