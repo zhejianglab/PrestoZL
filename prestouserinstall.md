@@ -80,7 +80,7 @@ src/fftcalls.c
 ```
 src/Makefile
 ```
-Update your src/Makefile to include the CUDA environment configuration and the compile configuration for `accelsearch_cu` and `prepsubband_cu` according to PrestoZL's src/Makefile.
+Update your src/Makefile to include the CUDA environment configuration and the compile configuration for `accelsearch_cu` and `prepsubband_cu` according to PrestoZL's src/Makefile，use diff to find the difference.
 
 5. Run `make` again in your PRESTO/src directory.
 ```
