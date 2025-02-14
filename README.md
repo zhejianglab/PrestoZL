@@ -30,17 +30,17 @@ PrestoZL is a highly optimized, GPU-based pulsar search and analysis software de
 There are three ways to set up the PrestoZL running environment. 
 ### 1. Use Pre-built Docker Image(Recommand)
 
-We have prepared a pre-built Docker image: **`zjlabastro/prestozl:latest`**，it is an environment-ready image to run PrestoZL. Ensure you have Docker and nvidia-container-toolkit installed on your system, you can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD). Then the image can be fetched as follow:
+We have prepared a pre-built Docker image: **`zjlabastro/prestozl:v1.0`**，it is an environment-ready image to run PrestoZL. Ensure you have Docker and nvidia-container-toolkit installed on your system, you can follow the instructions [here](https://github.com/zhejianglab/PrestoZL/blob/main/dockerInstall.MD). Then the image can be fetched as follow:
 
 Download pre-built docker image from dockerhub. 
 ```
-docker pull zjlabastro/prestozl:latest
+docker pull zjlabastro/prestozl:v1.0
 ```
 *If you have trouble in visiting dockerhub, you can downnload the Image from [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3)
 
 Run a Containter from the Image. `-v` can mount directories from host file system into a docker container for data share.
 ```
-docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/your/host/dir:/home/soft/prestodata zjlabastro/prestozl:latest /bin/bash
+docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/your/host/dir:/home/soft/prestodata zjlabastro/prestozl:v1.0 /bin/bash
 ```
 Get into the Container and run PrestoZL.
 ```
