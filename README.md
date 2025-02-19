@@ -36,9 +36,9 @@ Download pre-built docker image from dockerhub.
 ```
 docker pull zjlabastro/prestozl:v1.0
 ```
-*If you have trouble in visiting dockerhub, downnload the Image from [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3), and follow readme.txt.
+*If you have trouble in visiting dockerhub, download the Image from [BaiduNetdisk](https://pan.baidu.com/s/11EMfbEFDQdRxn-tpA8EWrw?pwd=jhd3), and follow readme.txt.
 
-Run a Containter from the Image. `-v` can mount directories from host file system into a docker container for data share.
+Run a Containter from the Image. `-v` mounts directories from host file system into the docker container for data share.
 ```
 docker run -itd --name=prestozl_latest --gpus all --network=host -v /path/to/your/host/dir:/home/soft/prestodata zjlabastro/prestozl:v1.0 /bin/bash
 ```
