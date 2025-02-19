@@ -1,33 +1,5 @@
 ## 2. For PRESTO user
 There are two solutions. 
-**Attention：PrestoZL environment is tested on Ubuntu 20.04, later versions of Ubuntu may have environment dependency issues and may not be compatible with PrestoZL**.
-
-If you are using Ubuntu 22.04, you may encounter a compilation error during the `make` process due to a macro conflict between CUDA and GLib over the `__noinline__` definition. The error message looks like this:
-```
-/usr/include/glib-2.0/glib/gmacros.h:249:28: error: missing ')' after "__has_attribute"
-  249 | #if g_macro__has_attribute(__noinline__)
-      |                            ^~~~~~~~~~~~
-In file included from /usr/local/cuda-11.8/include/device_types.h:59,
-                 from /usr/local/cuda-11.8/include/builtin_types.h:56,
-                 from /usr/local/cuda-11.8/include/cuda_runtime.h:91,
-                 from <command-line>:
-/usr/local/cuda-11.8/include/crt/host_defines.h:83:23: error: missing binary operator before token "("
-   83 |         __attribute__((noinline))
-      |                       ^
-/usr/include/glib-2.0/glib/gmacros.h:249:28: note: in expansion of macro ‘__noinline__’
-  249 | #if g_macro__has_attribute(__noinline__)
-      |                            ^~~~~~~~~~~~
-make: *** [Makefile:250: accel_kernels.o] Error 1
-```
-
-For a solution, refer to this [issue](https://gitlab.gnome.org/GNOME/glib/-/issues/2555) , you can add the following line at the beginning of `include/accel.h`:
-```
-#undef __noinline__
-
-#include <glib.h>
-#include "presto.h"
-#include "accelsearch_cmd.h"
-```
 
 ### 2.1 First solution:Start with PrestoZL source code
 Because PrestoZL only add the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, you only need to install the CUDA toolkit and do some setting. 
@@ -60,6 +32,7 @@ cd /YourPathtoPrestoZL/src
 make makewisdom   % Only need to make when compiling for the first time
 make cleaner && make
 ```
+**If you are using Ubuntu 22.04，you may encounter an "__noinline__" issue, for solution, GO TO 2.3**
 
 ### 2.2 Second solution: copy files from FrestoZL to your PRESTO source code
 PrestoZL is based on Scott Ransom's PRESTO v4.0. If your existing PRESTO environment is a newer version and you wish to continue using it, You can simply copy the following files from PrestoZL into your PRESTO C's corresponding directory and then recompile. The required changes are as follows:
@@ -113,3 +86,34 @@ Update your src/Makefile to include the CUDA environment configuration and the c
 cd /YourPathtoPrestoZL/src
 make cleaner && make
 ```
+**If you are using Ubuntu 22.04，you may encounter an "__noinline__" issue, for solution, GO TO 2.3**
+
+
+### 2.3  Issue for Ubuntu 22.04
+If you are using Ubuntu 22.04, you may encounter a compilation error during the `make` process due to a macro conflict between CUDA and GLib over the `__noinline__` definition. The error message looks like this:
+```
+/usr/include/glib-2.0/glib/gmacros.h:249:28: error: missing ')' after "__has_attribute"
+  249 | #if g_macro__has_attribute(__noinline__)
+      |                            ^~~~~~~~~~~~
+In file included from /usr/local/cuda-11.8/include/device_types.h:59,
+                 from /usr/local/cuda-11.8/include/builtin_types.h:56,
+                 from /usr/local/cuda-11.8/include/cuda_runtime.h:91,
+                 from <command-line>:
+/usr/local/cuda-11.8/include/crt/host_defines.h:83:23: error: missing binary operator before token "("
+   83 |         __attribute__((noinline))
+      |                       ^
+/usr/include/glib-2.0/glib/gmacros.h:249:28: note: in expansion of macro ‘__noinline__’
+  249 | #if g_macro__has_attribute(__noinline__)
+      |                            ^~~~~~~~~~~~
+make: *** [Makefile:250: accel_kernels.o] Error 1
+```
+
+For a solution,  you can add the following line at the beginning of `include/accel.h`:
+```
+#undef __noinline__
+
+#include <glib.h>
+#include "presto.h"
+#include "accelsearch_cmd.h"
+```
+solution from here [issue](https://gitlab.gnome.org/GNOME/glib/-/issues/2555) ,
