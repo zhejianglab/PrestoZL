@@ -1,10 +1,9 @@
 ## 2. For PRESTO user
 There are two solutions. 
+**Attention：PrestoZL environment is tested on Ubuntu 20.04, later versions of Ubuntu may have environment dependency issues and may not be compatible with PrestoZL**.
 
 ### 2.1 First solution:Start with PrestoZL source code
 Because PrestoZL only add the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, you only need to install the CUDA toolkit and do some setting. 
-
-**Attention：The PRESTO environment on your machine may not be compatible with PrestoZL**.
 
 First Download and Install CUDA toolkit 11.8 From [here](https://developer.nvidia.com/cuda-11-8-0-download-archive).
 
