@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Copyright (c) 2024 Zhejiang Lab
 
@@ -33,11 +33,17 @@ from functools import wraps
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(processName)s - %(levelname)s - %(message)s')
 
 # Load dynamic link library
-lib_path = os.getenv('LD_LIBRARY_PATH', '/home/soft/presto/lib')
-lib_file = os.path.join(lib_path, 'libaccelsearch_lib.so')
+lib_paths = os.getenv('LD_LIBRARY_PATH', '/home/soft/presto/lib').split(':')
+lib_file = None
 
-if not os.path.exists(lib_file):
-    raise FileNotFoundError(f"Shared library not found: {lib_file}")
+for path in lib_paths:
+    test_file = os.path.join(path, 'libaccelsearch_lib.so')
+    if os.path.exists(test_file):
+        lib_file = test_file
+        break
+
+if lib_file is None:
+    raise FileNotFoundError(f"Shared library 'libaccelsearch_lib.so' not found in any of the paths: {lib_paths}")
 
 lib = CDLL(lib_file)
 
@@ -306,33 +312,36 @@ class Worker:
     def task_t1(self, input_queue, output_queue, thread_id):
         while not self.stop_event.is_set():
             try:
-                data = input_queue.get(block=False, timeout=0.1)
-                logging.debug(f"t1 get data: {data}")
-                task_id, args = data
-                with self.global_lock:
-                    self.task_status_dict[task_id] = self.process.pid
-                    self.task_map[task_id] = args
+                # Use exception handling to safely get data
+                try:
+                    data = input_queue.pop(0)
+                    logging.debug(f"t1 get data: {data}")
+                    task_id, args = data
+                    with self.global_lock:
+                        self.task_status_dict[task_id] = self.process.pid
+                        self.task_map[task_id] = args
 
-                start_time = time.time()  # Start timing
-                logging.debug(f'Task T1 starts on {args[-1]}.')
-                argc = len(args)
-                argv = (c_char_p * argc)(*map(lambda s: s.encode('utf-8'), args))
+                    start_time = time.time()  # Start timing
+                    logging.debug(f'Task T1 starts on {args[-1]}.')
+                    argc = len(args)
+                    argv = (c_char_p * argc)(*map(lambda s: s.encode('utf-8'), args))
 
-                obs = AccelObs()
-                idata = Infodata()
-                cmd = Cmdline()
-                subharminfs = POINTER(POINTER(Subharminfo))()
-                pcmd = pointer(cmd)
+                    obs = AccelObs()
+                    idata = Infodata()
+                    cmd = Cmdline()
+                    subharminfs = POINTER(POINTER(Subharminfo))()
+                    pcmd = pointer(cmd)
 
-                self.update_timestamp(thread_id)
+                    self.update_timestamp(thread_id)
 
-                self.accelsearch_CPU1(argc, argv, byref(subharminfs), byref(obs), byref(idata), byref(pcmd))
-                self.cancel_timestamp(thread_id)
-                elapsed_time = time.time() - start_time  # Calculate elapsed time
-                logging.debug(f'Task T1 executed in {elapsed_time:.2f} seconds.')  # Log elapsed time
-                output_queue.put((task_id, subharminfs, obs, idata, pcmd, args))
-            except Empty:
-                 time.sleep(0.1)
+                    self.accelsearch_CPU1(argc, argv, byref(subharminfs), byref(obs), byref(idata), byref(pcmd))
+                    self.cancel_timestamp(thread_id)
+                    elapsed_time = time.time() - start_time  # Calculate elapsed time
+                    logging.debug(f'Task T1 executed in {elapsed_time:.2f} seconds.')  # Log elapsed time
+                    output_queue.put((task_id, subharminfs, obs, idata, pcmd, args))
+                except IndexError:  # This exception is thrown when list is empty
+                    time.sleep(0.1)
+                    continue
             except Exception as e:
                 logging.error(f"Error in task T1: {str(e)}")
         logging.info(f"Finish t1 in thread {self.process.name}")
@@ -407,7 +416,7 @@ class Pool:
         :param recreate_pool_timeout_seconds: Time interval to recreate the thread pool (seconds). Purpose: To avoid memory leaks.
         """
         manager = multiprocessing.Manager()
-        self.task_queue = multiprocessing.Queue()
+        self.task_queue = multiprocessing.Manager().list()
         self.task_status_dict = manager.dict()
         self.result_dict = manager.dict()
         self.task_map = manager.dict()
@@ -432,11 +441,11 @@ class Pool:
         current_time = time.time()
         # self.recreate_pool_timeout_seconds randomly fluctuates
         if current_time - worker.create_time > self.recreate_pool_timeout_seconds * random.uniform(0.8, 1.5):
-            logging.error(f"Pool Timeout detected for Worker#{worker.process.name}.")
+            logging.info(f"Pool Timeout detected for Worker#{worker.process.name} on GPU#{worker.gpu_id}.")
             return True
         for thread_id, last_active_time in list(worker.last_active_times.items()):
             if last_active_time and current_time - last_active_time > self.timeout_seconds:
-                logging.error(f"Process Timeout detected for thread {thread_id} in Worker#{worker.process.name}.")
+                logging.error(f"Process Timeout detected for thread {thread_id} in Worker#{worker.process.name} on GPU#{worker.gpu_id}.")
                 return True
         return False
 
@@ -470,19 +479,19 @@ class Pool:
                                         continue
                                     task = self.task_map[task_id]
                                     logging.info(f"reschedule {(task_id, task)}")
-                                    self.task_queue.put((task_id, task))
+                                    self.task_queue.insert(0, (task_id, task))
                                     del self.task_status_dict[task_id]
                                     del self.task_map[task_id]
                                 self.workers[i] = self.create_worker(worker.gpu_id)  # Replace with a new worker
                             logging.info(f"Worker#{worker.process.name} is replaced with Worker#{self.workers[i].process.name}")
-                            break
+                            continue
             except Exception as e:
-                logging.error(f"An exception occurred in monitor_workers: {e}")
+                logging.error(f"An exception occurred in monitor_workers: {e}", exc_info=True)
                 continue  # Continue the while loop despite the exception
 
     def submit(self, cmd_args):
         self.task_id_counter += 1
-        self.task_queue.put((self.task_id_counter, cmd_args))
+        self.task_queue.append((self.task_id_counter, cmd_args))
         return Future(self.task_id_counter, cmd_args[-1], self.result_dict)
     
     def create_worker(self, gpu_id):
@@ -512,7 +521,7 @@ class Future:
         waiting_total = 0
         while self.task_id not in self.result_dict:
             if waiting_total > timeout:
-                raise TimeoutError("Task {} timed out".format(self.task_id))
+                raise TimeoutError(f"Task {self.task_id} timed out")
             waiting_total += 0.1
             time.sleep(0.1)  # Wait until the result is available
         return self.result_dict[self.task_id]
