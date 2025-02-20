@@ -1,5 +1,5 @@
 ## 2. For PRESTO user
-There are two solutions. 
+There are two solutions. (ubuntu 18.04,20.04,22.04 are tested)
 
 ### 2.1 First solution:Start with PrestoZL source code
 Because PrestoZL only add the cuda toolkit, all others are the same with PRESTO. If you have PRESTO(v4.0 preferred) running environment in your machine, you only need to install the CUDA toolkit and do some setting. 
