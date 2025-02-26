@@ -17,7 +17,7 @@ PrestoZL is particularly suitable for searching pulsars using large (zmax, wmax)
   <p>Figure 2. The three-stage pipeline framework of PrestoZL</p>
 </div>
 
-**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can finish the entire de-dispersion process within half a minute, and the logic and results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
+**We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can be 100 times faster than the CPU based de-dispersion version, and the processing results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
 
 **Figure 3** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute on a single GPU. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
 <div align="center">
