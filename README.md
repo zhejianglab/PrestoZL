@@ -19,13 +19,15 @@ PrestoZL is particularly suitable for searching pulsars using large (zmax, wmax)
 
 **We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can be 100 times faster than the CPU based de-dispersion version, and the processing results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
 
-**Figure 3** show the performance comparison results between different GPU implementations of PRESTO (a SOTA proprietary Presto GPU version, PrestoZL, and PrestoZL-pipeline) and PRESTO C. The metric used for comparison is the number of FFT files processed per minute on a single GPU. Both PrestoZL and PrestoZL-pipeline achieve significant performance improvements compare with PRESTO C.
-<div align="center">
-  <img src="https://github.com/zhejianglab/PrestoZL/raw/main/resource/Figure3.png" alt="Figure3" width="600">
-  <p>Figure 3. Performance comparison between PRESTO C and different GPU versions under a single process</p>
-</div>
+Table below shows the end-to-end processing times of different methods when processing a 1816.77-second observation in M5 dataset (NGC 5904) using a single process. PrestoZL achieves 51.19~56.38 times speedup over PRESTO C.
 
-*Test fits：FAST Dec+2737 02 05 arcdrift-M19 1443.fits,2GB; Test Environment: one A40 40G GPU，20 core CPU.
+| Method              | Process Time | Speedup |
+|---------------------|--------------|---------|
+| PRESTO C            | 9115m 22s    | 1x      |
+| PrestoZL            | 178m 3s      | 51.19x  |
+| PrestoZL-pipeline   | 161m 41s     | 56.38x  |
+
+Test Environment: one A40 40G GPU，20 core CPU.
 
 ## PrestoZL Environment Setting
 There are three ways to set up the PrestoZL running environment. 
