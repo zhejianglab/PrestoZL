@@ -63,9 +63,9 @@ We have provided `Dockerfile` to build the PrestoZL Image by yourself. Follow th
 
 ## Usage
 ### PrestoZL 
-`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching the calculation of several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. **If the GPU memory is limited or larger search parameters are used, we recommend setting the batch size to 1 first and prioritizing an increase in the number of processes**. Other usages remain consistent with the PRRESTO . Here's an example:
+`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching the calculation of several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. **If your GPU memory is limited or use larger search parameters, we recommend to set the batchsize=1 first and prioritizing an increase in the number of processes**. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
-accelsearch_cu -zmax 200 -wmax 50-0 -sigma 5.0 -numharm 16 -batchsize 1 yourFFTfile.fft
+accelsearch_cu -zmax 200 -wmax 500 -sigma 5.0 -numharm 16 -batchsize 1 yourFFTfile.fft
 ```
 To use multiple processes(set by `-P`) to process many FFT files in `/yourPathtoFFTfiles` concurrently:
 ```
