@@ -74,7 +74,7 @@ ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 200 -wmax 5
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of concurrent running process in a GPU, each process is an FFT file processing pipeline, `--directory` refers to the directory of the input fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
 ```
-accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 50 --wmax 50 --sigma 3.0 --numharm 16 --batchsize 8
+accelsearch_pipeline_cu.py --pool_size 8 --directory /yourPathtoFFTfiles --zmax 200 --wmax 500 --sigma 3.0 --numharm 16 --batchsize 1
 ```
 ### De-dispersion
 To run the GPU-accelerated version of de-dispersion, you can use the command `prepsubband_cu`, other arguments are the same with the `prepsubband` used in PRESTO. Here's an example:
