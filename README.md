@@ -63,13 +63,13 @@ We have provided `Dockerfile` to build the PrestoZL Image by yourself. Follow th
 
 ## Usage
 ### PrestoZL 
-`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching the calculation of several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. Other usages remain consistent with the PRRESTO . Here's an example:
+`accelsearch_cu.c` serves as the entry point for the PrestoZL's Jerk Search. The command has been expanded from the PRESTO to include a `batchsize` parameter, which batching the calculation of several `rstep` in each while iteration. This parameter doesn't need to be explicitly set, its default value is **batchsize=8**. The lower the batchsize is ,the less GPU memory will be used. **If the GPU memory is limited or larger search parameters are used, we recommend setting the batch size to 1 first and prioritizing an increase in the number of processes**. Other usages remain consistent with the PRRESTO . Here's an example:
 ```
-accelsearch_cu -zmax 50 -wmax 50 -sigma 5.0 -numharm 16 -batchsize 8 yourFFTfile.fft
+accelsearch_cu -zmax 200 -wmax 50-0 -sigma 5.0 -numharm 16 -batchsize 1 yourFFTfile.fft
 ```
 To use multiple processes(set by `-P`) to process many FFT files in `/yourPathtoFFTfiles` concurrently:
 ```
-ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 50 -wmax 50 -sigma 3.0 -numharm 16 -batchsize 8
+ls /yourPathtoFFTfiles/*.fft |  xargs -P 8 -n 1 accelsearch_cu -zmax 200 -wmax 500 -sigma 3.0 -numharm 16 -batchsize 1
 ```
 ### PrestoZL-pipeline
 To run PrestoZL-pipeline, you can use the python script at `bin/accelsearch_pipeline_cu.py`. `--pool_size` refers to the number of concurrent running process in a GPU, each process is an FFT file processing pipeline, `--directory` refers to the directory of the input fft files, `--batchsize` is as the same meaning with PrestoZL. Here's an example:
