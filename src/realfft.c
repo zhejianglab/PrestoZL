@@ -292,7 +292,7 @@ int realfft_main(int argc, char *argv[])
     free(datfilenm);
     free(tmpfilenm);
     free(outfilenm);
-    exit(0);
+    return 0;
 }
 
 /* 定义共享库接口 */
