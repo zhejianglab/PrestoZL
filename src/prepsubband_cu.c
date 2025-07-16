@@ -77,7 +77,7 @@ static Cmdline *cmd;
 #include "dmalloc.h"
 #endif
 
-int main(int argc, char *argv[])
+int prepsubband_cu_main(int argc, char *argv[])
 {
     /* Any variable that begins with 't' means topocentric */
     /* Any variable that begins with 'b' means barycentric */
@@ -1315,4 +1315,14 @@ static void update_infodata(infodata *idata, long datawrote, long padwrote,
             break;
         }
     }
+}
+
+/* 定义共享库接口 */
+int call_prepsubband_cu(int argc, char *argv[]) {
+    return prepsubband_cu_main(argc, argv);
+}
+
+/* 保留原来的 main 函数 */
+int main(int argc, char *argv[]) {
+    return prepsubband_cu_main(argc, argv);
 }

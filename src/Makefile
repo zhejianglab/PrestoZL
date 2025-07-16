@@ -194,11 +194,11 @@ READFILEOBJS = $(INSTRUMENTOBJS) multibeam.o bpp.o spigot.o \
 
 PLOT2DOBJS = powerplot.o xyline.o
 
-BINARIES = makedata makeinf mjd2cal realfft quicklook\
+BINARIES = makedata makeinf mjd2cal realfft librealfft_lib.so quicklook\
 	search_bin swap_endian prepdata\
 	check_parkes_raw bary shiftdata dftfold\
 	patchdata readfile toas2dat taperaw\
-	accelsearch libaccelsearch_lib.so libaccelsearch_maxsize.so accelsearch_cu prepsubband prepsubband_cu libprepsubband_maxsize.so cal2mjd split_parkes_beams\
+	accelsearch libaccelsearch_lib.so libaccelsearch_maxsize.so accelsearch_cu prepsubband prepsubband_cu libprepsubband_cu_lib.so libprepsubband_maxsize.so cal2mjd split_parkes_beams\
 	dat2sdat sdat2dat downsample rednoise un_sc_td bincand\
 	psrorbit window plotbincand prepfold show_pfd\
 	rfifind zapbirds explorefft exploredat\
@@ -312,6 +312,9 @@ prepsubband_kernels.o: prepsubband_kernels.cu
 prepsubband_cu: prepsubband_cmd.c prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband_cu.o prepsubband_cmd.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)
 
+libprepsubband_cu_lib.so: prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) $(GLIBLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)
+
 prepsubband: prepsubband_cmd.c prepsubband_cmd.o prepsubband.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband.o prepsubband_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
 
@@ -365,6 +368,9 @@ readfile: readfile_cmd.c readfile_cmd.o readfile.o $(READFILEOBJS) libpresto
 
 realfft: realfft_cmd.c realfft_cmd.o realfft.o libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ realfft.o realfft_cmd.o $(PRESTOLINK) -lm
+
+librealfft_lib.so: realfft_cmd.o realfft.o
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ realfft.o realfft_cmd.o $(PRESTOLINK) $(GLIBLINK) -lm
 
 rednoise: rednoise_cmd.c rednoise.o rednoise_cmd.o libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ rednoise.o rednoise_cmd.o $(PRESTOLINK) -lm

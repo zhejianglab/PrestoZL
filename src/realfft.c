@@ -29,7 +29,7 @@
 /*        should end in '.fft'.  Otherwise, it should end   */
 /*        in '.dat'.                                        */
 
-int main(int argc, char *argv[])
+int realfft_main(int argc, char *argv[]) 
 {
     FILE *datfile, *tmpfile = NULL, *outfile;
     char *datdir = NULL, *datfilenm = NULL, *tmpfilenm = NULL, *outfilenm = NULL;
@@ -293,4 +293,14 @@ int main(int argc, char *argv[])
     free(tmpfilenm);
     free(outfilenm);
     exit(0);
+}
+
+/* 定义共享库接口 */
+int call_realfft(int argc, char *argv[]) {
+    return realfft_main(argc, argv);
+}
+
+/* 保留原来的 main 函数 */
+int main(int argc, char *argv[]) {
+    return realfft_main(argc, argv);
 }
