@@ -7,13 +7,9 @@
 #define OUTPUT_DMS 1
 */
 
-#define TEST_EQUAL(a, b) (fabs(a) == 0.0 ? \
-(fabs((a)-(b)) <= 2 * DBL_EPSILON ? 1 : 0) : \
-(fabs((a)-(b))/fabs((a)) <= 2 * DBL_EPSILON ? 1 : 0))
+#define TEST_EQUAL(a, b) (fabs(a) == 0.0 ? (fabs((a) - (b)) <= 2 * DBL_EPSILON ? 1 : 0) : (fabs((a) - (b)) / fabs((a)) <= 2 * DBL_EPSILON ? 1 : 0))
 
-#define TEST_CLOSE(a, b, c) (fabs(a) == 0.0 ? \
-(fabs((a)-(b)) <= (c) ? 1 : 0) : \
-(fabs((a)-(b))/fabs((a)) <= (c) ? 1 : 0))
+#define TEST_CLOSE(a, b, c) (fabs(a) == 0.0 ? (fabs((a) - (b)) <= (c) ? 1 : 0) : (fabs((a) - (b)) / fabs((a)) <= (c) ? 1 : 0))
 
 /* This is a hack that allows the raw profile data */
 /* to be printed on STDOUT so that they can be     */
@@ -53,7 +49,6 @@ void dminmax(double *v, int nsz, double *min, double *max)
     *max = mx;
 }
 
-
 void scaleprof(double *in, float *out, int n, int scalesep, double gmax)
 /* Scales an input vector so that it goes from 0.0 to 1.0 */
 {
@@ -61,22 +56,27 @@ void scaleprof(double *in, float *out, int n, int scalesep, double gmax)
     double norm, min = 1e100, max = -1e100;
 
     dminmax(in, n, &min, &max);
-    if (scalesep) {
+    if (scalesep)
+    {
         /* Each plot is normalized independently */
         norm = 1.0 / (max - min);
-    } else {
+    }
+    else
+    {
         /* All plots are normalized together */
         norm = 1.0 / fabs(gmax);
     }
-    if (TEST_CLOSE(min, max, 1.0e-7)) {
+    if (TEST_CLOSE(min, max, 1.0e-7))
+    {
         for (ii = 0; ii < n; ii++)
             out[ii] = 0.0;
-    } else {
+    }
+    else
+    {
         for (ii = 0; ii < n; ii++)
-            out[ii] = (float) ((in[ii] - min) * norm);
+            out[ii] = (float)((in[ii] - min) * norm);
     }
 }
-
 
 void fscaleprof(float *in, float *out, int n, int scalesep, double gmax)
 /* Scales an input vector so that it goes from 0.0 to 1.0 */
@@ -85,22 +85,27 @@ void fscaleprof(float *in, float *out, int n, int scalesep, double gmax)
     float norm, min = 1e100, max = -1e100;
 
     minmax(in, n, &min, &max);
-    if (scalesep) {
+    if (scalesep)
+    {
         /* Each plot is normalized independently */
         norm = 1.0 / (max - min);
-    } else {
+    }
+    else
+    {
         /* All plots are normalized together */
         norm = 1.0 / gmax;
     }
-    if (TEST_CLOSE(min, max, 1.0e-7)) {
+    if (TEST_CLOSE(min, max, 1.0e-7))
+    {
         for (ii = 0; ii < n; ii++)
             out[ii] = 0.0;
-    } else {
+    }
+    else
+    {
         for (ii = 0; ii < n; ii++)
-            out[ii] = (float) ((in[ii] - min) * norm);
+            out[ii] = (float)((in[ii] - min) * norm);
     }
 }
-
 
 void lininterp(float min, float max, int npts, float *v)
 {
@@ -111,18 +116,18 @@ void lininterp(float min, float max, int npts, float *v)
         v[ii] = ii * step + min;
 }
 
-
 static void autocal2d(float *a, int rn, int cn,
                       float *fg, float *bg, int nlevels, float *levels,
                       float *x1, float *x2, float *y1, float *y2, float *tr)
 {
-    //int i;
+    // int i;
     float dx1, dx2, dy1, dy2;
 
     /* autocalibrate intensity-range. */
-    if (*fg == *bg) {
+    if (*fg == *bg)
+    {
         minmax(a, rn * cn, bg, fg);
-        //fprintf(stderr,"Intensity range:\n  fg=%f\n  bg=%f\n",*fg,*bg);
+        // fprintf(stderr,"Intensity range:\n  fg=%f\n  bg=%f\n",*fg,*bg);
     }
 
     if ((nlevels >= 2) && (levels))
@@ -131,15 +136,17 @@ static void autocal2d(float *a, int rn, int cn,
     /* autocalibrate x-y range. */
     if ((*x1 == *x2) || (*y1 == *y2))
         cpgqwin(&dx1, &dx2, &dy1, &dy2);
-    if (*x1 == *x2) {
+    if (*x1 == *x2)
+    {
         *x1 = dx1;
         *x2 = dx2;
     }
-    if (*y1 == *y2) {
+    if (*y1 == *y2)
+    {
         *y1 = dy1;
         *y2 = dy2;
     }
-    //fprintf(stderr,"Xrange: [%f, %f]\nYrange[%f, %f]\n",*x1,*x2,*y1,*y2);
+    // fprintf(stderr,"Xrange: [%f, %f]\nYrange[%f, %f]\n",*x1,*x2,*y1,*y2);
 
     /* calculate transformation vector. */
     tr[2] = tr[4] = 0.0;
@@ -148,13 +155,13 @@ static void autocal2d(float *a, int rn, int cn,
     tr[5] = (*y2 - *y1) / rn;
     tr[3] = *y1 - 0.5 * tr[5];
 
-    //fprintf(stderr,"Tansformation vector:\n");
-    //for (i=0; i<6; fprintf(stderr,"  tr[%d]=%f\n",i,tr[i]),i++);
+    // fprintf(stderr,"Tansformation vector:\n");
+    // for (i=0; i<6; fprintf(stderr,"  tr[%d]=%f\n",i,tr[i]),i++);
 }
 
 /********************************************/
 
-void write_bestprof(prepfoldinfo * search, foldstats * beststats,
+void write_bestprof(prepfoldinfo *search, foldstats *beststats,
                     float *bestprof, double N, double perr,
                     double pderr, double pdderr, double dofeff)
 {
@@ -162,9 +169,9 @@ void write_bestprof(prepfoldinfo * search, foldstats * beststats,
     char *outfilenm;
     int ii;
 
-    outfilenm = (char *) malloc(strlen(search->pgdev) + 10);
+    outfilenm = (char *)malloc(strlen(search->pgdev) + 10);
     sprintf(outfilenm, "%.*s.bestprof",
-            (int) strlen(search->pgdev) - 7, search->pgdev);
+            (int)strlen(search->pgdev) - 7, search->pgdev);
     outfile = chkfopen(outfilenm, "w");
 
     fprintf(outfile, "# Input file       =  %-s\n", search->filenm);
@@ -200,38 +207,47 @@ void write_bestprof(prepfoldinfo * search, foldstats * beststats,
         if (search->nsub > 1)
             fprintf(outfile, "# Best DM          =  %.3f\n", search->bestdm);
         {
-            if (search->tepoch != 0.0) {
+            if (search->tepoch != 0.0)
+            {
                 fprintf(outfile, "# P_topo (ms)      =  %-17.15g +/- %-.3g\n",
                         search->topo.p1 * 1000.0, perr * 1000.0);
                 fprintf(outfile, "# P'_topo (s/s)    =  %-17.15g +/- %-.3g\n",
                         search->topo.p2, pderr);
                 fprintf(outfile, "# P''_topo (s/s^2) =  %-17.15g +/- %-.3g\n",
                         search->topo.p3, pdderr);
-            } else {
+            }
+            else
+            {
                 fprintf(outfile, "# P_topo (ms)      =  N/A\n");
                 fprintf(outfile, "# P'_topo (s/s)    =  N/A\n");
                 fprintf(outfile, "# P''_topo (s/s^2) =  N/A\n");
             }
-            if (search->bepoch != 0.0) {
+            if (search->bepoch != 0.0)
+            {
                 fprintf(outfile, "# P_bary (ms)      =  %-17.15g +/- %-.3g\n",
                         search->bary.p1 * 1000.0, perr * 1000.0);
                 fprintf(outfile, "# P'_bary (s/s)    =  %-17.15g +/- %-.3g\n",
                         search->bary.p2, pderr);
                 fprintf(outfile, "# P''_bary (s/s^2) =  %-17.15g +/- %-.3g\n",
                         search->bary.p3, pdderr);
-            } else {
+            }
+            else
+            {
                 fprintf(outfile, "# P_bary (ms)      =  N/A\n");
                 fprintf(outfile, "# P'_bary (s/s)    =  N/A\n");
                 fprintf(outfile, "# P''_bary (s/s^2) =  N/A\n");
             }
         }
-        if (TEST_EQUAL(search->orb.p, 0.0)) {
+        if (TEST_EQUAL(search->orb.p, 0.0))
+        {
             fprintf(outfile, "# P_orb (s)        =  N/A\n");
             fprintf(outfile, "# asin(i)/c (s)    =  N/A\n");
             fprintf(outfile, "# eccentricity     =  N/A\n");
             fprintf(outfile, "# w (rad)          =  N/A\n");
             fprintf(outfile, "# T_peri           =  N/A\n");
-        } else {
+        }
+        else
+        {
             fprintf(outfile, "# P_orb (s)        =  %-17.15g\n", search->orb.p);
             fprintf(outfile, "# asin(i)/c (s)    =  %-17.15g\n", search->orb.x);
             fprintf(outfile, "# eccentricity     =  %-17.15g\n", search->orb.e);
@@ -246,10 +262,9 @@ void write_bestprof(prepfoldinfo * search, foldstats * beststats,
     free(outfilenm);
 }
 
-
 void CSS_profs(double *inprofs, double *outprofs,
-               foldstats * instats, int numprofs, int proflen,
-               double *delays, double *sumprof, foldstats * sumstats,
+               foldstats *instats, int numprofs, int proflen,
+               double *delays, double *sumprof, foldstats *sumstats,
                float *timechi, float chifact)
 /* Combine, Scale and Shift 'numprofs' profiles, of length 'proflen',   */
 /* into a single profile of length 'proflen'.  The profiles are         */
@@ -266,7 +281,8 @@ void CSS_profs(double *inprofs, double *outprofs,
 
     /* Convert all the delays to positive offsets from   */
     /* the phase=0 profile bin, in units of profile bins */
-    for (ii = 0; ii < numprofs; ii++) {
+    for (ii = 0; ii < numprofs; ii++)
+    {
         local_delays[ii] = fmod(delays[ii], proflen);
         if (local_delays[ii] < 0.0)
             local_delays[ii] += proflen;
@@ -280,10 +296,11 @@ void CSS_profs(double *inprofs, double *outprofs,
     timechi[0] = 1.0;
 
     /* Loop over the profiles */
-    for (ii = 0; ii < numprofs; ii++) {
+    for (ii = 0; ii < numprofs; ii++)
+    {
 
         /* Calculate the appropriate offset into the profile array */
-        offset = (int) (local_delays[ii] + 0.5);
+        offset = (int)(local_delays[ii] + 0.5);
 
         /* Shift and copy the profiles */
         index = ii * proflen;
@@ -302,8 +319,9 @@ void CSS_profs(double *inprofs, double *outprofs,
 
         /* Calculate the current chi-squared */
         redchi = chisqr(sumprof, proflen, sumstats->prof_avg,
-                        sumstats->prof_var) * rdof * chifact;
-        timechi[ii + 1] = (float) redchi;
+                        sumstats->prof_var) *
+                 rdof * chifact;
+        timechi[ii + 1] = (float)redchi;
     }
 
     /* Profile information gets added together, but */
@@ -314,8 +332,132 @@ void CSS_profs(double *inprofs, double *outprofs,
     vect_free(local_delays);
 }
 
+// 初始化 JSON 文件，写入起始部分
+FILE *init_json_file(const char *pgdev)
+{
+    // 创建 JSON 文件路径
+    char json_path[1024] = {0};
+    const char *suffix = ".ps/CPS";
+    char *pos = strstr(pgdev, suffix);
 
-void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *ppdot)
+    if (pos == NULL)
+    {
+        fprintf(stderr, "Error: pgdev does not contain the expected suffix '%s'\n", suffix);
+        return NULL;
+    }
+
+    size_t json_length = pos - pgdev;
+    strncpy(json_path, pgdev, json_length);
+    strcat(json_path, ".json");
+
+    // 打开 JSON 文件
+    FILE *json_file = fopen(json_path, "w");
+    if (json_file == NULL)
+    {
+        perror("Error opening JSON file");
+        return NULL;
+    }
+
+    // 写入 JSON 起始部分
+    fprintf(json_file, "[\n");
+    fprintf(json_file, "    {\n");
+
+    return json_file;
+}
+
+// JSON 写入函数，自动转义反斜杠，并移除 "\\d" 和 "\\u"
+void write_json_property(FILE *json_file, const char *key, const char *value, int is_last)
+{
+    if (json_file == NULL || key == NULL || value == NULL)
+    {
+        fprintf(stderr, "Error: Invalid arguments to write_json_property\n");
+        return;
+    }
+
+    // 计算转义和过滤后的字符串长度
+    size_t value_len = strlen(value);
+    size_t escaped_len = 0;
+
+    for (size_t i = 0; i < value_len; i++)
+    {
+        if (value[i] == '\\' && (i + 1 < value_len) && (value[i + 1] == 'd' || value[i + 1] == 'u'))
+        {
+            // 跳过 "\\d" 或 "\\u"
+            i++; // 跳过 'd' 或 'u'
+        }
+        else if (value[i] == '\\')
+        {
+            escaped_len += 2; // 单个反斜杠需要转义为两个反斜杠
+        }
+        else
+        {
+            escaped_len += 1; // 其他字符直接计入长度
+        }
+    }
+
+    // 分配缓冲区存储转义和过滤后的字符串
+    char *escaped_value = (char *)malloc(escaped_len + 1); // +1 是为了终止符 '\0'
+    if (escaped_value == NULL)
+    {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        return;
+    }
+
+    // 填充转义和过滤后的字符串
+    size_t j = 0;
+    for (size_t i = 0; i < value_len; i++)
+    {
+        if (value[i] == '\\' && (i + 1 < value_len) && (value[i + 1] == 'd' || value[i + 1] == 'u'))
+        {
+            // 跳过 "\\d" 或 "\\u"
+            i++; // 跳过 'd' 或 'u'
+        }
+        else if (value[i] == '\\')
+        {
+            // 转义反斜杠
+            escaped_value[j++] = '\\';
+            escaped_value[j++] = '\\';
+        }
+        else
+        {
+            // 直接复制其他字符
+            escaped_value[j++] = value[i];
+        }
+    }
+    escaped_value[j] = '\0'; // 添加字符串终止符
+
+    // 写入 JSON 属性
+    if (is_last)
+    {
+        fprintf(json_file, "        \"%s\": \"%s\"\n", key, escaped_value);
+    }
+    else
+    {
+        fprintf(json_file, "        \"%s\": \"%s\",\n", key, escaped_value);
+    }
+
+    // 释放分配的内存
+    free(escaped_value);
+}
+
+// 结束 JSON 文件，写入结束部分
+void finalize_json_file(FILE *json_file)
+{
+    if (json_file == NULL)
+    {
+        fprintf(stderr, "Error: JSON file is NULL\n");
+        return;
+    }
+
+    // 写入 JSON 结束部分
+    fprintf(json_file, "    }\n");
+    fprintf(json_file, "]\n");
+
+    // 关闭文件
+    fclose(json_file);
+}
+
+void prepfold_plot(prepfoldinfo *search, plotflags *flags, int xwin, float *ppdot)
 /* Make the beautiful 1 page prepfold output */
 {
     int ii, jj, profindex = 0, loops = 1, ct, bestidm = 0, bestip = 0, bestipd = 0;
@@ -346,14 +488,19 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
     if (xwin)
         loops = 2;
 
-    if (flags->showfold) {
+    if (flags->showfold)
+    {
         switch_f_and_p(search->fold.p1, search->fold.p2, search->fold.p3,
                        &bestp, &bestpd, &bestpdd);
-    } else if (TEST_EQUAL(search->fold.pow, 1.0)) {     /* Barycentric periods */
+    }
+    else if (TEST_EQUAL(search->fold.pow, 1.0))
+    { /* Barycentric periods */
         bestp = search->bary.p1;
         bestpd = search->bary.p2;
         bestpdd = search->bary.p3;
-    } else {                    /* Topocentric periods */
+    }
+    else
+    { /* Topocentric periods */
         bestp = search->topo.p1;
         bestpd = search->topo.p2;
         bestpdd = search->topo.p3;
@@ -365,7 +512,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
     // in the profile bins caused by fold()
     dofeff = (search->proflen - 1.0) * DOF_corr(dt_per_bin);
     chifact = 1.0 / DOF_corr(dt_per_bin);
-    if (flags->events || flags->samples) {
+    if (flags->events || flags->samples)
+    {
         chifact = 1.0;
         dofeff = search->proflen - 1.0;
     }
@@ -375,23 +523,29 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                                      search->proflen, 50, dofeff);
     printf("Effective number of DOF = %.2f\n", dofeff);
     printf("Off-pulse Reduced chi^2 correction factor = %.2f\n", ftmp);
-    if (flags->fixchi) {
+    if (flags->fixchi)
+    {
         chifact *= ftmp;
     }
 
     /* Find the indices for the best periods, p-dots, and DMs */
-    for (ii = 0; ii < search->numperiods; ii++) {
+    for (ii = 0; ii < search->numperiods; ii++)
+    {
         if (TEST_EQUAL(search->periods[ii], bestp))
             bestip = ii;
         if (TEST_EQUAL(search->pdots[ii], bestpd))
             bestipd = ii;
     }
-    if (search->nsub > 1) {
-        for (ii = 0; ii < search->numdms; ii++) {
+    if (search->nsub > 1)
+    {
+        for (ii = 0; ii < search->numdms; ii++)
+        {
             if (TEST_EQUAL(search->dms[ii], search->bestdm))
                 bestidm = ii;
         }
-    } else {
+    }
+    else
+    {
         bestidm = 0;
     }
 
@@ -399,9 +553,12 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
 #if (0)
     int part, sub, phase;
 
-    for (part = 0; part < search->npart; part++) {
-        for (sub = 0; sub < search->nsub; sub++) {
-            for (phase = 0; phase < search->proflen; phase++) {
+    for (part = 0; part < search->npart; part++)
+    {
+        for (sub = 0; sub < search->nsub; sub++)
+        {
+            for (phase = 0; phase < search->proflen; phase++)
+            {
                 if (part == 30 || sub > 31)
                     search->rawfolds[part * (search->proflen * search->nsub) +
                                      sub * search->proflen + phase] = 0.0;
@@ -413,7 +570,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
     /* Attempt to make show_pfd work on polyco-folded files */
     if (search->fold.pow == 0.0 && ppdot == NULL &&
         bestip == (search->numperiods - 1) / 2 &&
-        bestipd == (search->numperiods - 1) / 2 && !flags->showfold) {
+        bestipd == (search->numperiods - 1) / 2 && !flags->showfold)
+    {
         printf("Assuming this was folded with polycos...\n");
         search->fold.p1 = 1.0 / search->topo.p1;
     }
@@ -430,7 +588,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
     parttime = search->stats[0].numdata * search->dt;
     parttimes = gen_freqs(search->npart + 1, 0.0, parttime);
 
-    {                           /* Generate the data we need for the plots */
+    { /* Generate the data we need for the plots */
         double df, dfd, dfdd = 0.0;
         double *currentprof, *ddprofs = search->rawfolds;
         double *delays, *pd_delays, *pdd_delays;
@@ -440,18 +598,19 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         pd_delays = gen_dvect(search->npart);
         pdd_delays = gen_dvect(search->npart);
         currentprof = gen_dvect(search->proflen);
-        if (search->nsub > 1) {
+        if (search->nsub > 1)
+        {
             ddprofs = gen_dvect(search->npart * search->proflen);
-            ddstats = (foldstats *) malloc(search->npart * sizeof(foldstats));
+            ddstats = (foldstats *)malloc(search->npart * sizeof(foldstats));
         }
 
         /* Calculate the delays for the pdotdot */
-        if (bestpdd != 0.0)     /* bestpdd=0.0 only if there was no searching over pdd */
+        if (bestpdd != 0.0) /* bestpdd=0.0 only if there was no searching over pdd */
             dfdd = switch_pfdotdot(pfold, pdfold, bestpdd) - search->fold.p3;
         for (ii = 0; ii < search->npart; ii++)
             pdd_delays[ii] = fdotdot2phasedelay(dfdd, parttimes[ii]);
 
-        {                       /* Correct for and fold the best profile */
+        { /* Correct for and fold the best profile */
             double *tmp_profs, gmin = 1e100, gmax = -1e100;
 
             bestprof = gen_fvect(2 * search->proflen);
@@ -475,7 +634,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             /* Compute the delays for the best profile */
             for (ii = 0; ii < search->npart; ii++)
                 delays[ii] = (pdd_delays[ii] + fdot2phasedelay(dfd, parttimes[ii]) +
-                              df * parttimes[ii]) * search->proflen;
+                              df * parttimes[ii]) *
+                             search->proflen;
 
             /* Create the best profile */
             timechi = gen_fvect(search->npart + 1);
@@ -488,7 +648,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
 
             /* Create the time vs phase plot data */
             timeprofs = gen_fvect(2 * search->proflen * search->npart);
-            for (ii = 0; ii < search->npart; ii++) {
+            for (ii = 0; ii < search->npart; ii++)
+            {
                 profindex = ii * search->proflen;
                 scaleprof(tmp_profs + profindex, timeprofs + 2 * profindex,
                           search->proflen, flags->scaleparts, gmax);
@@ -498,11 +659,13 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             vect_free(tmp_profs);
         }
 
-        if (ppdot == NULL) {    /* Generate the p-pdot plane */
+        if (ppdot == NULL)
+        { /* Generate the p-pdot plane */
             int ip, ipd;
 
             ppdot2d = gen_fvect(search->numperiods * search->numpdots);
-            for (ipd = 0; ipd < search->numpdots; ipd++) {      /* Loop over the pds */
+            for (ipd = 0; ipd < search->numpdots; ipd++)
+            { /* Loop over the pds */
 
                 /* Compute the error in fdot, and its delays */
                 dfd = switch_pfdot(pfold, search->pdots[ipd]) - search->fold.p2;
@@ -510,13 +673,15 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     pd_delays[ii] =
                         pdd_delays[ii] + fdot2phasedelay(dfd, parttimes[ii]);
 
-                for (ip = 0; ip < search->numperiods; ip++) {   /* Loop over the ps */
+                for (ip = 0; ip < search->numperiods; ip++)
+                { /* Loop over the ps */
                     df = 1.0 / search->periods[ip] - search->fold.p1;
 
                     /* Compute the phase offsets for each subintegration */
                     for (ii = 0; ii < search->npart; ii++)
                         delays[ii] = (pd_delays[ii] +
-                                      df * parttimes[ii]) * search->proflen;
+                                      df * parttimes[ii]) *
+                                     search->proflen;
 
                     /* Combine the profiles usingthe above computed delays */
                     combine_profs(ddprofs, ddstats, search->npart, search->proflen,
@@ -527,7 +692,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             }
         }
 
-        {                       /* Create the p vs chi and pd vs chi plots */
+        { /* Create the p vs chi and pd vs chi plots */
 
             periodchi = gen_fvect(search->numperiods);
             for (ii = 0; ii < search->numperiods; ii++)
@@ -537,7 +702,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 pdotchi[ii] = ppdot2d[ii * search->numperiods + bestip];
         }
 
-        if (search->nsub > 1) { /* For data with subbands */
+        if (search->nsub > 1)
+        { /* For data with subbands */
 
             /* Generate the DM vs chi plot */
             dmchi = gen_fvect(search->numdms);
@@ -549,17 +715,19 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             /* Compute the delays for the best profile */
             for (ii = 0; ii < search->npart; ii++)
                 delays[ii] = (pdd_delays[ii] + fdot2phasedelay(dfd, parttimes[ii]) +
-                              df * parttimes[ii]) * search->proflen;
+                              df * parttimes[ii]) *
+                             search->proflen;
 
             /* De-disperse and fold */
-            for (ii = 0; ii < search->numdms; ii++) {
+            for (ii = 0; ii < search->numdms; ii++)
+            {
                 correct_subbands_for_DM(search->dms[ii], search, ddprofs, ddstats);
                 combine_profs(ddprofs, ddstats, search->npart,
                               search->proflen, delays, currentprof, &currentstats);
                 dmchi[ii] = currentstats.redchi * chifact;
             }
 
-            {                   /* Generate the Subband vs phase plot */
+            { /* Generate the Subband vs phase plot */
                 double *dmdelays, hif, dopplerhif, hifdelay, rdphase;
                 double *tmpprofs, *totdelays, *subbanddelays;
 
@@ -582,13 +750,15 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 vect_free(subbanddelays);
 
                 /* Fold each subband */
-                for (ii = 0; ii < search->nsub; ii++) {
+                for (ii = 0; ii < search->nsub; ii++)
+                {
 
                     /* Create a temporary array filled with just the current subbands profiles */
-                    for (jj = 0; jj < search->npart; jj++) {
+                    for (jj = 0; jj < search->npart; jj++)
+                    {
                         memcpy(tmpprofs + jj * search->proflen,
                                search->rawfolds +
-                               search->proflen * (jj * search->nsub + ii),
+                                   search->proflen * (jj * search->nsub + ii),
                                sizeof(double) * search->proflen);
                         totdelays[jj] = delays[jj] + dmdelays[ii];
                     }
@@ -611,7 +781,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         vect_free(pd_delays);
         vect_free(pdd_delays);
         vect_free(currentprof);
-        if (search->nsub > 1) {
+        if (search->nsub > 1)
+        {
             vect_free(ddprofs);
             free(ddstats);
         }
@@ -635,7 +806,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
      *  Now plot the results
      */
 
-    for (ct = 0; ct < loops; ct++) {
+    for (ct = 0; ct < loops; ct++)
+    {
         float min, max, over;
 
         /*Set the PGPLOT device to an X-Window */
@@ -646,13 +818,14 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         /* Open and prep our device */
 
         cpgopen(search->pgdev);
-        if (!flags->justprofs) {
+        if (!flags->justprofs)
+        {
             cpgpap(10.25, 8.5 / 11.0);
             cpgpage();
             cpgiden();
-        }                       /* else {
-                                   cpgpap(10.0, 1.0);
-                                   } */
+        } /* else {
+             cpgpap(10.0, 1.0);
+             } */
         cpgslw(2);
         cpgsch(0.8);
 
@@ -662,29 +835,32 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         {
             float min, max;
             FILE *proffile;
-/*       printf("\n\ntemplate = Numeric.asarray(["); */
-/*       for (ii = 0; ii < search->proflen; ii++){ */
-/* 	if (ii == search->proflen - 1) */
-/* 	  printf("%.2f])\n\n", bestprof[ii]); */
-/* 	else */
-/* 	  printf("%.2f, ", bestprof[ii]); */
-/*       } */
+            /*       printf("\n\ntemplate = Numeric.asarray(["); */
+            /*       for (ii = 0; ii < search->proflen; ii++){ */
+            /* 	if (ii == search->proflen - 1) */
+            /* 	  printf("%.2f])\n\n", bestprof[ii]); */
+            /* 	else */
+            /* 	  printf("%.2f, ", bestprof[ii]); */
+            /*       } */
             printf("\n\navgs = Numeric.asarray([");
-            for (ii = 0; ii < search->npart; ii++) {
+            for (ii = 0; ii < search->npart; ii++)
+            {
                 if (ii == search->npart - 1)
                     printf("%.2f])\n\n", search->stats[ii].prof_avg);
                 else
                     printf("%.2f, ", search->stats[ii].prof_avg);
             }
             printf("\n\nstdevs = Numeric.asarray([");
-            for (ii = 0; ii < search->npart; ii++) {
+            for (ii = 0; ii < search->npart; ii++)
+            {
                 if (ii == search->npart - 1)
                     printf("%.2f])\n\n", sqrt(search->stats[ii].prof_var));
                 else
                     printf("%.2f, ", sqrt(search->stats[ii].prof_var));
             }
             printf("\n\nmaxvals = Numeric.asarray([");
-            for (ii = 0; ii < search->npart; ii++) {
+            for (ii = 0; ii < search->npart; ii++)
+            {
                 minmax(timeprofs + ii * 2 * search->proflen,
                        search->proflen, &min, &max);
                 if (ii == search->npart - 1)
@@ -699,10 +875,10 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         cpgswin(0.0, 1.999, 0.0, T);
         {
             int mincol, maxcol, numcol, nr, nc;
-            float l[2] = { 0.0, 1.0 };
-            float r[2] = { 1.0, 0.0 };
-            float g[2] = { 1.0, 0.0 };
-            float b[2] = { 1.0, 0.0 };
+            float l[2] = {0.0, 1.0};
+            float r[2] = {1.0, 0.0};
+            float g[2] = {1.0, 0.0};
+            float b[2] = {1.0, 0.0};
             float fg = 0.0, bg = 0.0, tr[6], *levels;
             float x1 = 0.0, y1 = 0.0, x2 = 1.999, y2 = T;
 
@@ -720,12 +896,14 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             cpgimag(timeprofs, nc, nr, 0 + 1, nc, 0 + 1, nr, bg, fg, tr);
             vect_free(levels);
         }
-        if (1) {                /* if 0 skip the chi-squared vs time plot */
+        if (1)
+        { /* if 0 skip the chi-squared vs time plot */
             cpgbox("BCNST", 0.0, 0, "BNST", 0.0, 0);
             // Rescale window and provide ticks for each subint
             cpgswin(0.0, 1.999, 0.0, search->npart);
             cpgbox("", 0.0, 0, "CTSI", 5.0, 5);
-        } else
+        }
+        else
             cpgbox("BCNST", 0.0, 0, "BNST", 0.0, 0);
         cpgmtxt("B", 2.6, 0.5, 0.5, "Phase");
         cpgmtxt("L", 2.1, 0.5, 0.5, "Time (s)");
@@ -733,7 +911,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         /*  Time versus Reduced chisqr */
 
         find_min_max_arr(search->npart + 1, timechi, &min, &max);
-        if (!flags->justprofs) {        /* if 0 skip the chi-squared vs time plot */
+        if (!flags->justprofs)
+        { /* if 0 skip the chi-squared vs time plot */
             if (search->nsub > 1)
                 cpgsvp(0.27, 0.36, 0.09, 0.68);
             else
@@ -755,7 +934,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
         /* Combined best profile */
 
         {
-            float x[2] = { -0.2, 2.0 }, avg[2];
+            float x[2] = {-0.2, 2.0}, avg[2];
             float errx = -0.1, erry = beststats.prof_avg, errlen;
             float *phasetwo = NULL;
 
@@ -771,7 +950,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             phasetwo = gen_freqs(2 * search->proflen, 0.0, 1.0 / search->proflen);
             cpgline(2 * search->proflen, phasetwo, bestprof);
             vect_free(phasetwo);
-            if (!flags->justprofs) {
+            if (!flags->justprofs)
+            {
                 cpgsls(4);
                 avg[0] = avg[1] = beststats.prof_avg;
                 cpgline(2, x, avg);
@@ -780,12 +960,12 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 cpgerr1(6, errx, erry, errlen, 2);
                 cpgpt(1, &errx, &erry, 5);
                 // Only do the following for radio data
-                if (search->lofreq > 0.0 && search->chan_wid > 0.0) {
+                if (search->lofreq > 0.0 && search->chan_wid > 0.0)
+                {
                     float fmid, tdms, tdt, tcbw, ttot = 0.0;
                     // Middle observing freq
                     fmid =
-                        search->lofreq + 0.5 * (search->numchan -
-                                                1.0) * search->chan_wid;
+                        search->lofreq + 0.5 * (search->numchan - 1.0) * search->chan_wid;
                     // Dispersion smearing from a single channel
                     tdms = smearing_from_bw(search->bestdm, fmid, search->chan_wid);
                     // Sample time
@@ -805,9 +985,11 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
             }
         }
 
-        if (!flags->justprofs) {
+        if (!flags->justprofs)
+        {
 
-            if (search->nsub > 1) {
+            if (search->nsub > 1)
+            {
 
                 /* DM vs reduced chisqr */
 
@@ -817,8 +999,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 {
                     int dmnum;
 
-                    printf
-                        ("\nThe raw data from the DM vs. Reduced chi-sqr plot:\n\n");
+                    printf("\nThe raw data from the DM vs. Reduced chi-sqr plot:\n\n");
                     printf("   DM      Reduced chi-sqr\n");
                     for (dmnum = 0; dmnum < search->numdms; dmnum++)
                         printf("  %.3f     %.3f\n", search->dms[dmnum],
@@ -840,7 +1021,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
 
                 /* Plots for each subband */
 
-                if (0) {
+                if (0)
+                {
                     int chanpersb;
                     double lofreq, hifreq, losubfreq, hisubfreq;
                     float *tmpprof, dsubf, foffset, fnorm, *phaseone;
@@ -866,26 +1048,34 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     cpgmtxt("B", 2.5, 0.5, 0.5, "Phase");
                     phaseone =
                         gen_freqs(search->proflen + 1, 0.0, 1.0 / search->proflen);
-                    for (ii = 0; ii < search->nsub; ii++) {
+                    for (ii = 0; ii < search->nsub; ii++)
+                    {
                         find_min_max_arr(search->proflen,
                                          dmprofs + ii * search->proflen, &min, &max);
                         foffset =
                             doppler(lofreq + (ii - 0.45) * dsubf, search->avgvoverc);
-                        if (min == max) {
+                        if (min == max)
+                        {
                             for (jj = 0; jj < search->proflen; jj++)
                                 tmpprof[jj] = 0.45 * dsubf + foffset;
-                        } else {
+                        }
+                        else
+                        {
                             fnorm = 0.9 * dsubf / (max - min);
                             for (jj = 0; jj < search->proflen; jj++)
                                 tmpprof[jj] = (dmprofs[ii * search->proflen + jj] -
-                                               min) * fnorm + foffset;
+                                               min) *
+                                                  fnorm +
+                                              foffset;
                         }
                         tmpprof[search->proflen] = tmpprof[0];
                         cpgline(search->proflen + 1, phaseone, tmpprof);
                     }
                     vect_free(phaseone);
                     vect_free(tmpprof);
-                } else {
+                }
+                else
+                {
                     double lofreq, hifreq, losubfreq, hisubfreq;
 
                     lofreq = search->lofreq - 0.5 * search->chan_wid;
@@ -897,10 +1087,10 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     {
                         int mincol, maxcol, numcol, nr, nc;
                         float min, max, gmax = -1.0e100;
-                        float l[2] = { 0.0, 1.0 };
-                        float r[2] = { 1.0, 0.0 };
-                        float g[2] = { 1.0, 0.0 };
-                        float b[2] = { 1.0, 0.0 };
+                        float l[2] = {0.0, 1.0};
+                        float r[2] = {1.0, 0.0};
+                        float g[2] = {1.0, 0.0};
+                        float b[2] = {1.0, 0.0};
                         float fg = 0.0, bg = 0.0, tr[6], *levels;
                         float x1 = 0.0, y1 = 0.0, x2 = 1.0, y2 = search->nsub;
                         float *subprofs;
@@ -914,14 +1104,16 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                         numcol = maxcol - mincol + 1;
                         levels = gen_fvect(numcol);
                         cpgctab(l, r, g, b, numcol, 1.0, 0.5);
-                        for (ii = 0; ii < search->nsub; ii++) {
+                        for (ii = 0; ii < search->nsub; ii++)
+                        {
                             profindex = ii * search->proflen;
                             find_min_max_arr(search->proflen,
                                              dmprofs + profindex, &min, &max);
                             if (max > gmax)
                                 gmax = max;
                         }
-                        for (ii = 0; ii < search->nsub; ii++) {
+                        for (ii = 0; ii < search->nsub; ii++)
+                        {
                             profindex = ii * search->proflen;
                             fscaleprof(dmprofs + profindex, subprofs + profindex,
                                        search->proflen, flags->scaleparts, gmax);
@@ -955,23 +1147,20 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 /*       float g[7] = {0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0}; */
                 /*       float b[7] = {0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0}; */
                 /* "Anti-Rainbow" (BG=White, FG=Red) (Better for printing) */
-                float l[10] = { 0.0, 0.035, 0.045, 0.225,
-                    0.4, 0.41, 0.6, 0.775, 0.985, 1.0
-                };
-                float r[10] = { 1.0, 1.0, 0.947, 0.0, 0.0,
-                    0.0, 0.0, 1.0, 1.0, 1.0
-                };
-                float g[10] = { 1.0, 0.844, 0.8, 0.0, 0.946,
-                    1.0, 1.0, 1.0, 0.0, 0.0
-                };
-                float b[10] = { 1.0, 1.0, 1.0, 1.0, 1.0, 0.95,
-                    0.0, 0.0, 0.0, 0.0
-                };
+                float l[10] = {0.0, 0.035, 0.045, 0.225,
+                               0.4, 0.41, 0.6, 0.775, 0.985, 1.0};
+                float r[10] = {1.0, 1.0, 0.947, 0.0, 0.0,
+                               0.0, 0.0, 1.0, 1.0, 1.0};
+                float g[10] = {1.0, 0.844, 0.8, 0.0, 0.946,
+                               1.0, 1.0, 1.0, 0.0, 0.0};
+                float b[10] = {1.0, 1.0, 1.0, 1.0, 1.0, 0.95,
+                               0.0, 0.0, 0.0, 0.0};
                 float fg = 0.0, bg = 0.0, tr[6], *levels, errlen;
                 float x1l, x1h, y1l, y1h, x2l, x2h, y2l, y2h;
                 char pout[100], pdout[100], fout[100], fdout[100];
 
-                if (flags->allgrey) {
+                if (flags->allgrey)
+                {
                     /* ApJ Grey  White to dark grey... */
                     l[0] = 0.0;
                     l[1] = 1.0;
@@ -996,7 +1185,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     1.0 / search->periods[search->numperiods - 1] - search->fold.p1;
                 y2l = switch_pfdot(pfold, search->pdots[0]) - search->fold.p2;
                 y2h = switch_pfdot(pfold, search->pdots[search->numperiods - 1]) -
-                    search->fold.p2;
+                      search->fold.p2;
                 sprintf(pout, "Period - %-.8f (ms)", pfold * 1000.0);
                 sprintf(fout, "Freq - %-.6f (Hz)", search->fold.p1);
                 if (pdfold < 0.0)
@@ -1019,7 +1208,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 for (ii = 0; ii < search->numperiods; ii++)
                     ftmparr1[ii] = (search->periods[ii] - pfold) * 1000.0;
                 find_min_max_arr(search->numperiods, periodchi, &min, &max);
-                if (search->nsub > 1) {
+                if (search->nsub > 1)
+                {
                     cpgsvp(0.74, 0.94, 0.41, 0.51);
                     cpgswin(x1l, x1h, 0.0, 1.1 * max);
                     cpgline(search->numperiods, ftmparr1, periodchi);
@@ -1028,7 +1218,9 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     cpgsch(0.7);
                     cpgmtxt("B", 2.2, 0.5, 0.5, pout);
                     cpgmtxt("R", 2.4, 0.5, 0.5, "Reduced \\gx\\u2\\d");
-                } else {
+                }
+                else
+                {
                     cpgsvp(0.51, 0.82, 0.49, 0.63);
                     cpgswin(x1l, x1h, 0.001, 1.1 * max);
                     cpgline(search->numperiods, ftmparr1, periodchi);
@@ -1047,7 +1239,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 for (ii = 0; ii < search->numpdots; ii++)
                     ftmparr1[ii] = search->pdots[ii] - pdfold;
                 find_min_max_arr(search->numpdots, pdotchi, &min, &max);
-                if (search->nsub > 1) {
+                if (search->nsub > 1)
+                {
                     cpgsvp(0.74, 0.94, 0.58, 0.68);
                     cpgswin(y1l, y1h, 0.0, 1.1 * max);
                     cpgline(search->numpdots, ftmparr1, pdotchi);
@@ -1056,7 +1249,9 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     cpgsch(0.7);
                     cpgmtxt("B", 2.2, 0.5, 0.5, pdout);
                     cpgmtxt("R", 2.4, 0.5, 0.5, "Reduced \\gx\\u2\\d");
-                } else {
+                }
+                else
+                {
                     cpgsvp(0.82, 0.93, 0.09, 0.49);
                     cpgswin(0.001, 1.1 * max, y1l, y1h);
                     cpgline(search->numpdots, pdotchi, ftmparr1);
@@ -1089,15 +1284,16 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 autocal2d(ppdot2d, nr, nc, &fg, &bg, numcol,
                           levels, &x1l, &x1h, &y1l, &y1h, tr);
                 cpgimag(ppdot2d, nc, nr, 0 + 1, nc, 0 + 1, nr, bg, fg, tr);
-                x1l = (float) ((bestp - pfold) * 1000.0);
-                y1l = (float) (bestpd - pdfold);
+                x1l = (float)((bestp - pfold) * 1000.0);
+                y1l = (float)(bestpd - pdfold);
                 /* Plot the error bars on the P-Pdot diagram */
                 cpgpt(1, &x1l, &y1l, 5);
-                errlen = (float) (perr * 1000.0);
+                errlen = (float)(perr * 1000.0);
                 cpgerrb(5, 1, &x1l, &y1l, &errlen, 2);
-                errlen = (float) (pderr);
+                errlen = (float)(pderr);
                 cpgerrb(6, 1, &x1l, &y1l, &errlen, 2);
-                if (search->nsub > 1) {
+                if (search->nsub > 1)
+                {
                     cpgsch(0.5);
                     cpgbox("BNST", 0.0, 0, "BNST", 0.0, 0);
                     cpgsch(0.7);
@@ -1109,7 +1305,9 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                     cpgsch(0.7);
                     cpgmtxt("T", 1.8, 0.5, 0.5, fout);
                     cpgmtxt("R", 2.3, 0.5, 0.5, fdout);
-                } else {
+                }
+                else
+                {
                     cpgsch(0.7);
                     cpgbox("BCNST", 0.0, 0, "BCNST", 0.0, 0);
                     cpgsch(0.8);
@@ -1137,8 +1335,7 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                 cpgtext(0.0, 1.0, out);
                 sprintf(out, "Telescope:  %-s", search->telescope);
                 cpgtext(0.0, 0.9, out);
-                if (TEST_EQUAL(search->tepoch, 0.0)
-                    || TEST_EQUAL(search->tepoch, -1))
+                if (TEST_EQUAL(search->tepoch, 0.0) || TEST_EQUAL(search->tepoch, -1))
                     // -1.0 is for fake data made with makedata
                     sprintf(out, "Epoch\\dtopo\\u = N/A");
                 else
@@ -1219,16 +1416,20 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                                 "DOF\\deff\\u = %.2f  \\gx\\u2\\d\\dred\\u = %.3f  P(Noise) < %.3g  %s",
                                 dofeff, beststats.redchi, chip, out2);
                     cpgtext(0.0, 0.8, out);
-                    if (search->nsub > 1) {
+                    if (search->nsub > 1)
+                    {
                         sprintf(out, "Dispersion Measure (DM; pc/cm\\u3\\d) = %.3f",
                                 search->bestdm);
                         cpgtext(0.0, 0.7, out);
-                    } else {
+                    }
+                    else
+                    {
                         sprintf(out, "Dispersion Measure (DM) = N/A");
                         cpgtext(0.0, 0.7, out);
                     }
                     {
-                        if (search->tepoch != 0.0) {
+                        if (search->tepoch != 0.0)
+                        {
                             cpgnice_output_2(out2, search->topo.p1 * 1000.0,
                                              perr * 1000.0, 0);
                             sprintf(out, "P\\dtopo\\u (ms) = %s", out2);
@@ -1239,12 +1440,15 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                             cpgnice_output_2(out2, search->topo.p3, pdderr, 0);
                             sprintf(out, "P''\\dtopo\\u (s/s\\u2\\d) = %s", out2);
                             cpgtext(0.0, 0.4, out);
-                        } else {
+                        }
+                        else
+                        {
                             cpgtext(0.0, 0.6, "P\\dtopo\\u (ms) = N/A");
                             cpgtext(0.0, 0.5, "P'\\dtopo\\u (s/s) = N/A");
                             cpgtext(0.0, 0.4, "P''\\dtopo\\u (s/s\\u2\\d) = N/A");
                         }
-                        if (search->bepoch != 0.0) {
+                        if (search->bepoch != 0.0)
+                        {
                             cpgnice_output_2(out2, search->bary.p1 * 1000.0,
                                              perr * 1000.0, 0);
                             sprintf(out, "P\\dbary\\u (ms) = %s", out2);
@@ -1255,20 +1459,25 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                             cpgnice_output_2(out2, search->bary.p3, pdderr, 0);
                             sprintf(out, "P''\\dbary\\u (s/s\\u2\\d) = %s", out2);
                             cpgtext(0.6, 0.4, out);
-                        } else {
+                        }
+                        else
+                        {
                             cpgtext(0.6, 0.6, "P\\dbary\\u (ms) = N/A");
                             cpgtext(0.6, 0.5, "P'\\dbary\\u (s/s) = N/A");
                             cpgtext(0.6, 0.4, "P''\\dbary\\u (s/s\\u2\\d) = N/A");
                         }
                     }
                     cpgtext(0.0, 0.3, "        Binary Parameters");
-                    if (TEST_EQUAL(search->orb.p, 0.0)) {
+                    if (TEST_EQUAL(search->orb.p, 0.0))
+                    {
                         cpgtext(0.0, 0.2, "P\\dorb\\u (s) = N/A");
                         cpgtext(0.0, 0.1, "a\\d1\\usin(i)/c (s) = N/A");
                         cpgtext(0.6, 0.2, "e = N/A");
                         cpgtext(0.6, 0.1, "\\gw (rad) = N/A");
                         cpgtext(0.0, 0.0, "T\\dperi\\u = N/A");
-                    } else {
+                    }
+                    else
+                    {
                         sprintf(out, "P\\dorb\\u (s) = %f", search->orb.p);
                         cpgtext(0.0, 0.2, out);
                         sprintf(out, "a\\d1\\usin(i)/c (s) = %f", search->orb.x);
@@ -1280,19 +1489,161 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
                         sprintf(out, "T\\dperi\\u = %-.11f", search->orb.t);
                         cpgtext(0.0, 0.0, out);
                     }
+
+                    if (flags->printjson)
+                    {
+                        // 初始化 JSON 文件
+                        FILE *json_file = init_json_file(search->pgdev);
+                        if (json_file == NULL)
+                        {
+                            printf("json 文件初始化失败\n");
+                        }
+                        char buffer[50]; // 用于存储 double 转换后的字符串
+                        write_json_property(json_file, "Candidate", search->candnm, 0);
+                        write_json_property(json_file, "Telescope", search->telescope, 0);
+                        if (TEST_EQUAL(search->tepoch, 0.0) || TEST_EQUAL(search->tepoch, -1))
+                        {
+                            write_json_property(json_file, "Epoch_topo", "N/A", 0);
+                        }
+                        else
+                        {
+                            // 使用 snprintf 将 double 转换为字符串
+                            snprintf(buffer, sizeof(buffer), "%-.11f", search->tepoch);
+                            write_json_property(json_file, "Epoch_topo", buffer, 0);
+                        }
+                        if (TEST_EQUAL(search->bepoch, 0.0))
+                        {
+                            write_json_property(json_file, "Epoch_bary", "N/A", 0);
+                        }
+                        else
+                        {
+                            snprintf(buffer, sizeof(buffer), "%-.11f", search->bepoch);
+                            write_json_property(json_file, "Epoch_bary", buffer, 0);
+                        }
+                        if (flags->events)
+                        {
+                            write_json_property(json_file, "T_sample", "N/A (Events)", 0);
+                            snprintf(buffer, sizeof(buffer), "%-.0f", beststats.prof_avg * search->proflen);
+                            write_json_property(json_file, "Events Folded", buffer, 0);
+                        }
+                        else
+                        {
+                            snprintf(buffer, sizeof(buffer), "%.5g", search->dt);
+                            write_json_property(json_file, "T_sample", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%-.0f", N);
+                            write_json_property(json_file, "Data Folded", buffer, 0);
+                        }
+                        snprintf(buffer, sizeof(buffer), "%.4g", beststats.data_avg);
+                        write_json_property(json_file, "Data Avg", buffer, 0);
+                        snprintf(buffer, sizeof(buffer), "%.4g", sqrt(beststats.data_var));
+                        write_json_property(json_file, "Data StdDev", buffer, 0);
+                        snprintf(buffer, sizeof(buffer), "%d", search->proflen);
+                        write_json_property(json_file, "Profile Bins", buffer, 0);
+                        snprintf(buffer, sizeof(buffer), "%.4g", beststats.prof_avg);
+                        write_json_property(json_file, "Profile Avg", buffer, 0);
+                        snprintf(buffer, sizeof(buffer), "%.4g", sqrt(beststats.prof_var));
+                        write_json_property(json_file, "Profile StdDev", buffer, 0);
+                        write_json_property(json_file, "RA_J2000", search->rastr, 0);
+                        write_json_property(json_file, "DEC_J2000", search->decstr, 0);
+                        sprintf(out2, "(%.1f\\gs)", chi_sig);
+                        if (chip == 0.0)
+                        {
+                            snprintf(buffer, sizeof(buffer), "%.2f", dofeff);
+                            write_json_property(json_file, "DOF_eff", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%.3f", beststats.redchi);
+                            write_json_property(json_file, "x_2_red", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%s%s", " ~ 0 ", out2);
+                            write_json_property(json_file, "P(Noise)", buffer, 0);
+                        }
+                        else
+                        {
+                            snprintf(buffer, sizeof(buffer), "%.2f", dofeff);
+                            write_json_property(json_file, "DOF_eff", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%.3f", beststats.redchi);
+                            write_json_property(json_file, "x_2_red", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), " < %.3g %s", chip, out2);
+                            write_json_property(json_file, "P(Noise)", buffer, 0);
+                        }
+                        if (search->nsub > 1)
+                        {
+                            snprintf(buffer, sizeof(buffer), "%.3f", search->bestdm);
+                            write_json_property(json_file, "Dispersion Measure (DM; pc/cm_3)", buffer, 0);
+                        }
+                        else
+                        {
+                            write_json_property(json_file, "Dispersion Measure (DM)", "N/A", 0);
+                        }
+                        if (search->tepoch != 0.0)
+                        {
+                            cpgnice_output_2(out2, search->topo.p1 * 1000.0,
+                                             perr * 1000.0, 0);
+                            write_json_property(json_file, "P_topo (ms)", out2, 0);
+                            cpgnice_output_2(out2, search->topo.p2, pderr, 0);
+                            write_json_property(json_file, "P'_topo (s/s)", out2, 0);
+                            cpgnice_output_2(out2, search->topo.p3, pdderr, 0);
+                            write_json_property(json_file, "P''_topo (s/s_2)", out2, 0);
+                        }
+                        else
+                        {
+                            write_json_property(json_file, "P_topo (ms)", "N/A", 0);
+                            write_json_property(json_file, "P'_topo (s/s)", "N/A", 0);
+                            write_json_property(json_file, "P''_topo (s/s_2)", "N/A", 0);
+                        }
+                        if (search->bepoch != 0.0)
+                        {
+                            cpgnice_output_2(out2, search->bary.p1 * 1000.0,
+                                             perr * 1000.0, 0);
+                            write_json_property(json_file, "P_bary (ms)", out2, 0);
+                            cpgnice_output_2(out2, search->bary.p2, pderr, 0);
+                            write_json_property(json_file, "P'_bary (s/s)", out2, 0);
+                            cpgnice_output_2(out2, search->bary.p3, pdderr, 0);
+                            write_json_property(json_file, "P''_bary (s/s_2)", out2, 0);
+                        }
+                        else
+                        {
+                            write_json_property(json_file, "P_bary (ms)", "N/A", 0);
+                            write_json_property(json_file, "P'_bary (s/s)", "N/A", 0);
+                            write_json_property(json_file, "P''_bary (s/s_2)", "N/A", 0);
+                        }
+                        if (TEST_EQUAL(search->orb.p, 0.0))
+                        {
+                            write_json_property(json_file, "P_orb (s)", "N/A", 0);
+                            write_json_property(json_file, "a_1sin(i)/c (s)", "N/A", 0);
+                            write_json_property(json_file, "e", "N/A", 0);
+                            write_json_property(json_file, "w (rad)", "N/A", 0);
+                            write_json_property(json_file, "T_peri", "N/A", 1);
+                        }
+                        else
+                        {
+                            snprintf(buffer, sizeof(buffer), "%f", search->orb.p);
+                            write_json_property(json_file, "P_orb (s)", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%f", search->orb.x);
+                            write_json_property(json_file, "a_1sin(i)/c (s)", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%f", search->orb.e);
+                            write_json_property(json_file, "e", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%f", search->orb.w);
+                            write_json_property(json_file, "w (deg)", buffer, 0);
+                            snprintf(buffer, sizeof(buffer), "%-.11f", search->orb.t);
+                            write_json_property(json_file, "T_peri", buffer, 1);
+                            cpgtext(0.0, 0.0, out);
+                        }
+                        finalize_json_file(json_file);
+                    }
                 }
             }
         }
         cpgclos();
-        if (ct == 0) {
+        if (ct == 0)
+        {
             // Attempt to change the .ps into a nice .png using latex2html...
             int retval = 0;
-            char *command = (char *) malloc(2 * strlen(search->pgdev) + 60);
+            char *command = (char *)malloc(2 * strlen(search->pgdev) + 60);
             sprintf(command, "pstoimg -density 200 -antialias -flip cw "
-                    "-quiet -type png -out %.*s.png %.*s",
-                    (int) strlen(search->pgdev) - 7, search->pgdev,
-                    (int) strlen(search->pgdev) - 4, search->pgdev);
-            if ((retval = system(command))) {
+                             "-quiet -type png -out %.*s.png %.*s",
+                    (int)strlen(search->pgdev) - 7, search->pgdev,
+                    (int)strlen(search->pgdev) - 4, search->pgdev);
+            if ((retval = system(command)))
+            {
                 perror("Error running pstoimg in prepfold_plot()");
                 printf("\n");
             }
@@ -1307,7 +1658,8 @@ void prepfold_plot(prepfoldinfo * search, plotflags * flags, int xwin, float *pp
     vect_free(pdotchi);
     if (ppdot == NULL)
         vect_free(ppdot2d);
-    if (search->nsub > 1) {
+    if (search->nsub > 1)
+    {
         vect_free(dmprofs);
         vect_free(dmchi);
     }

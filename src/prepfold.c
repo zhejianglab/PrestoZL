@@ -143,6 +143,11 @@ int main(int argc, char *argv[])
     pflags.fixchi = cmd->fixchiP;
     pflags.samples = cmd->samplesP;
     pflags.showfold = 0;
+    if(cmd->jsonP){
+        pflags.printjson = 1;
+    }else{
+        pflags.printjson = 0;
+    }
 
 #ifdef DEBUG
     showOptionValues();

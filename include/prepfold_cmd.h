@@ -254,6 +254,8 @@ typedef struct s_Cmdline {
   char *full_cmd_line;
   /***** -IOlog: Print IO transfer log */
   char IOlogP;
+  /***** -json: create json file */
+  char jsonP;
 } Cmdline;
 
 

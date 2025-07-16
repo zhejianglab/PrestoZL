@@ -266,7 +266,9 @@ static Cmdline cmd = {
   /***** the original command line concatenated */
   /* full_cmd_line = */ NULL,
   /***** -IOlog: Print IO transfer log */
-  /* IOlogP = */ 0
+  /* IOlogP = */ 0,
+  /***** -json: create json file */
+  /* jsonP = */ 0
 };
 
 /*@=null*/
@@ -1721,6 +1723,13 @@ showOptionValues(void)
     printf("-IOlog found:\n");
   }
 
+  /***** -json: create json file */
+  if( !cmd.jsonP ) {
+    printf("-json not found.\n");
+  } else {
+    printf("-json found:\n");
+  }
+
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
   } else {
@@ -2458,6 +2467,10 @@ parseCmdline(int argc, char **argv)
       continue;
     }
 
+    if( 0==strcmp("-json", argv[i]) ) {
+      cmd.jsonP = 1;
+      continue;
+    }
     if( argv[i][0]=='-' ) {
       fprintf(stderr, "\n%s: unknown option `%s'\n\n",
               Program, argv[i]);

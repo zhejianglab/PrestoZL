@@ -24,6 +24,7 @@ typedef struct plotflags {
   int fixchi;
   int samples;
   int showfold;
+  int printjson;
 } plotflags;
 
 /* structure used to pass information to plotting routine */
