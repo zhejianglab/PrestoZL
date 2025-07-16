@@ -56,7 +56,7 @@ static int read_PRESTO_subbands(FILE *infiles[], int numfiles,
 static int get_data_offset(float **outdata, int blocksperread,
                            struct spectra_info *s,
                            mask *obsmask, int *idispdts,
-                           int *padding, short **subsdata);
+                           int *padding, short **subsdata, long long *data_size, long *total_microseconds);
 static void update_infodata(infodata *idata, long datawrote, long padwrote,
                             int *barybins, int numbarybins, int downsamp);
 static void print_percent_complete(int current, int number);
@@ -257,9 +257,10 @@ int main(int argc, char *argv[])
             read_mask(cmd->maskfile, &obsmask);
             printf("Read mask information from '%s'\n\n", cmd->maskfile);
             if ((obsmask.numchan != idata.num_chan) ||
-                (fabs(obsmask.mjd - (idata.mjd_i + idata.mjd_f)) > 1e-9)) {
-                    printf("WARNING!: maskfile has different number of channels or start MJD than raw data! Exiting.\n\n");
-                    exit(1);
+                (fabs(obsmask.mjd - (idata.mjd_i + idata.mjd_f)) > 1e-9))
+            {
+                printf("WARNING!: maskfile has different number of channels or start MJD than raw data! Exiting.\n\n");
+                exit(1);
             }
             good_padvals = determine_padvals(cmd->maskfile, &obsmask, s.padvals);
         }
@@ -308,6 +309,9 @@ int main(int argc, char *argv[])
     }
 
     /* Determine the output file names and open them */
+
+    long long data_size = 0;
+    long total_microseconds = 0;
 
     datafilenm = (char *)calloc(strlen(cmd->outfile) + 20, 1);
     if (!cmd->subP)
@@ -492,7 +496,7 @@ int main(int argc, char *argv[])
         else
             outdata = gen_fmatrix(cmd->numdms, worklen / cmd->downsamp);
         numread = get_data_offset(outdata, blocksperread, &s,
-                                  &obsmask, idispdt, &padding, subsdata);
+                                  &obsmask, idispdt, &padding, subsdata, &data_size, &total_microseconds);
 
         while (numread == worklen)
         {
@@ -528,7 +532,7 @@ int main(int argc, char *argv[])
                 break;
 
             numread = get_data_offset(outdata, blocksperread, &s,
-                                      &obsmask, idispdt, &padding, subsdata);
+                                      &obsmask, idispdt, &padding, subsdata, &data_size, &total_microseconds);
         }
         datawrote = totwrote;
         free(offsets_host);
@@ -673,7 +677,7 @@ int main(int argc, char *argv[])
         else
             outdata = gen_fmatrix(cmd->numdms, worklen / cmd->downsamp);
         numread = get_data_offset(outdata, blocksperread, &s,
-                                  &obsmask, idispdt, &padding, subsdata);
+                                  &obsmask, idispdt, &padding, subsdata, &data_size, &total_microseconds);
 
         while (numread == worklen)
         { /* Loop to read and write the data */
@@ -778,7 +782,7 @@ int main(int argc, char *argv[])
                 break;
 
             numread = get_data_offset(outdata, blocksperread, &s,
-                                      &obsmask, idispdt, &padding, subsdata);
+                                      &obsmask, idispdt, &padding, subsdata, &data_size, &total_microseconds);
         }
         free(offsets_host);
     }
@@ -919,6 +923,9 @@ int main(int argc, char *argv[])
     cudaFree(lastdata_gpu);
     cudaFree(currentdsdata_gpu);
     cudaFree(lastdsdata_gpu);
+    if(cmd->IOlogP){
+        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+    }
     return (0);
 }
 
@@ -1077,7 +1084,7 @@ static int read_PRESTO_subbands(FILE *infiles[], int numfiles,
 static int get_data_offset(float **outdata, int blocksperread,
                            struct spectra_info *s,
                            mask *obsmask, int *idispdts,
-                           int *padding, short **subsdata)
+                           int *padding, short **subsdata, long long *data_size, long *total_microseconds)
 {
     static int firsttime = 1, *maskchans = NULL, blocksize;
     static int worklen, dsworklen;
@@ -1121,9 +1128,18 @@ static int get_data_offset(float **outdata, int blocksperread,
             for (ii = 0; ii < blocksperread; ii++)
             {
                 if (RAWDATA)
-                    numread = read_subbands(currentdata + ii * blocksize, idispdts,
-                                            cmd->nsub, s, 0, &tmppad,
-                                            maskchans, &nummasked, obsmask);
+                {
+                    if (!cmd->IOlogP)
+                    {
+                        numread = read_subbands(currentdata + ii * blocksize, idispdts,
+                                                cmd->nsub, s, 0, &tmppad,
+                                                maskchans, &nummasked, obsmask);
+                    }else{
+                        numread = read_subbands_log(currentdata + ii * blocksize, idispdts,
+                                                cmd->nsub, s, 0, &tmppad,
+                                                maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                    }
+                }
                 else if (insubs)
                     numread = read_PRESTO_subbands(s->files, s->num_files,
                                                    currentdata + ii * blocksize,

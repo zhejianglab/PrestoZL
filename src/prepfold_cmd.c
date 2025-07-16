@@ -264,7 +264,9 @@ static Cmdline cmd = {
   /* argc = */ 0,
   /* argv = */ (char**)0,
   /***** the original command line concatenated */
-  /* full_cmd_line = */ NULL
+  /* full_cmd_line = */ NULL,
+  /***** -IOlog: Print IO transfer log */
+  /* IOlogP = */ 0
 };
 
 /*@=null*/
@@ -1711,6 +1713,14 @@ showOptionValues(void)
       printf("  value = `%.40g'\n", cmd.offset);
     }
   }
+
+  /***** -IOlog: Print IO transfer log */
+  if( !cmd.IOlogP ) {
+    printf("-IOlog not found.\n");
+  } else {
+    printf("-IOlog found:\n");
+  }
+
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
   } else {
@@ -2440,6 +2450,11 @@ parseCmdline(int argc, char **argv)
       cmd.offsetP = 1;
       i = getDoubleOpt(argc, argv, i, &cmd.offset, 1);
       cmd.offsetC = i-keep;
+      continue;
+    }
+
+    if( 0==strcmp("-IOlog", argv[i]) ) {
+      cmd.IOlogP = 1;
       continue;
     }
 

@@ -252,6 +252,8 @@ typedef struct s_Cmdline {
   /*@null*/char **argv;
   /***** the whole command line concatenated */
   char *full_cmd_line;
+  /***** -IOlog: Print IO transfer log */
+  char IOlogP;
 } Cmdline;
 
 

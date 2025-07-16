@@ -85,6 +85,7 @@ struct spectra_info {
     long long *num_spec;   // Number of spectra per file
     long long *num_pad;    // Number of padding samples after each file
     int (*get_rawblock)(float *, struct spectra_info *, int *);  // Raw data block function pointer
+    int (*get_rawblock_log)(float *, struct spectra_info *, int *, long long *, long *);  // Raw data block function pointer
     long long (*offset_to_spectra)(long long, struct spectra_info *);  // Shift into file(s) function pointer
 };
 
@@ -105,6 +106,7 @@ int read_psrdata(float *fdata, int numspect, struct spectra_info *s, int *delays
 void get_channel(float chandat[], int channum, int numsubints, float rawdata[], struct spectra_info *s);
 int prep_subbands(float *fdata, float *rawdata, int *delays, int numsubbands, struct spectra_info *s, int transpose, int *maskchans, int *nummasked, mask *obsmask);
 int read_subbands(float *fdata, int *delays, int numsubbands, struct spectra_info *s, int transpose, int *padding, int *maskchans, int *nummasked, mask *obsmask);
+int read_subbands_log(float *fdata, int *delays, int numsubbands, struct spectra_info *s, int transpose, int *padding, int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds);
 void flip_band(float *fdata, struct spectra_info *s);
 int *get_ignorechans(char *ignorechans_str, int minchan, int maxchan, int *num_ignorechans, char **filestr);
 

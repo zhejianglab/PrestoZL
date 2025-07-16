@@ -400,6 +400,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    long long data_size = 0;
+    long total_microseconds = 0;
+
     /* Manipulate the file names we will use  */
 
     {
@@ -1279,10 +1282,16 @@ int main(int argc, char *argv[])
             for (jj = 0; jj < reads_per_part; jj++) {
                 double fold_time0;
 
-                if (RAWDATA) {
-                    numread =
-                        read_subbands(data, idispdts, cmd->nsub, &s, 1, &padding,
+                if (RAWDATA)
+                {
+                    if (!cmd->IOlogP)
+                    {
+                        numread = read_subbands(data, idispdts, cmd->nsub, &s, 1, &padding,
                                       maskchans, &nummasked, &obsmask);
+                    }else{
+                        numread = read_subbands_log(data, idispdts, cmd->nsub, &s, 1, &padding,
+                                      maskchans, &nummasked, &obsmask, &data_size, &total_microseconds);
+                    }
                 } else if (insubs) {
                     numread = read_PRESTO_subbands(s.files, s.num_files, data, recdt,
                                                    maskchans, &nummasked, &obsmask,
@@ -1832,5 +1841,8 @@ int main(int argc, char *argv[])
         vect_free(idispdts);
     }
     printf("Done.\n\n");
+    if(cmd->IOlogP){
+        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+    }
     return (0);
 }

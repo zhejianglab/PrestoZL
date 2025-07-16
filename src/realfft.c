@@ -65,6 +65,9 @@ int main(int argc, char *argv[])
     printf("        by Scott M. Ransom\n\n");
 
     /* Get our file information */
+    long long data_size = 0;
+    long total_microseconds = 0;
+    struct timeval start, end; // 定义两个时间结构体
 
     numfiles = cmd->argc;
     for (int fi = 0 ; fi < numfiles ; fi++) {
@@ -231,7 +234,17 @@ int main(int argc, char *argv[])
             }
             printf("   Reading.\n");
             data = gen_fvect(numdata);
-            chkfread(data, sizeof(float), numdata, datfile);
+            if (cmd->IOlogP){
+                gettimeofday(&start, NULL);
+                chkfread(data, sizeof(float), numdata, datfile);
+                gettimeofday(&end, NULL);
+                long seconds = end.tv_sec - start.tv_sec;            // 秒部分的差值
+                long microseconds = end.tv_usec - start.tv_usec;     // 微秒部分的差值
+                total_microseconds += seconds * 1000000 + microseconds; // 转换为总微秒
+                data_size += numdata * sizeof(float);
+            }else{
+                chkfread(data, sizeof(float), numdata, datfile);
+            }
             printf("   Transforming.\n");
             realfft(data, numdata, isign);
             /* fftwcall((fcomplex *)data, numdata/2, isign); */
@@ -262,6 +275,14 @@ int main(int argc, char *argv[])
     printf("  CPU usage: %.3f sec total (%.3f sec user, %.3f sec system)\n",
            ttim, utim, stim);
     printf("  Total time elapsed:  %.3f sec (%.3f sec/file)\n\n", tott, tott / numfiles);
+
+    if(cmd->IOlogP){
+        if ((numdata > MAXREALFFT || cmd->diskfftP) && !cmd->memfftP){
+            printf("IOlog: numdata too large and use out-core forward FFT\n");
+        }else{
+            printf("IOlog: %s read %.3f MB data, use %.3f ms, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0), (double)total_microseconds/(1000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+        }
+    }
 
     /*
        fftw_print_max_memory_usage();

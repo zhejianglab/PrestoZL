@@ -5,3 +5,4 @@ int is_PSRFITS(char *filename);
 void read_PSRFITS_files(struct spectra_info *s);
 long long offset_to_PSRFITS_spectra(long long specnum, struct spectra_info *s);
 int get_PSRFITS_rawblock(float *fdata, struct spectra_info *s, int *padding);
+int get_PSRFITS_rawblock_log(float *fdata, struct spectra_info *s, int *padding, long long *data_size, long *total_microseconds);

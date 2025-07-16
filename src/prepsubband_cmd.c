@@ -120,7 +120,9 @@ static Cmdline cmd = {
   /* argc = */ 0,
   /* argv = */ (char**)0,
   /***** the original command line concatenated */
-  /* full_cmd_line = */ NULL
+  /* full_cmd_line = */ NULL,
+  /***** -IOlog: Print IO transfer log */
+  /* IOlogP = */ 0
 };
 
 /*@=null*/
@@ -1121,6 +1123,14 @@ showOptionValues(void)
       printf("  value = `%s'\n", cmd.ignorechanstr);
     }
   }
+
+  /***** -IOlog: Print IO transfer log */
+  if( !cmd.IOlogP ) {
+    printf("-IOlog not found.\n");
+  } else {
+    printf("-IOlog found:\n");
+  }
+
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
   } else {
@@ -1439,6 +1449,11 @@ parseCmdline(int argc, char **argv)
       cmd.ignorechanstrP = 1;
       i = getStringOpt(argc, argv, i, &cmd.ignorechanstr, 1);
       cmd.ignorechanstrC = i-keep;
+      continue;
+    }
+
+    if( 0==strcmp("-IOlog", argv[i]) ) {
+      cmd.IOlogP = 1;
       continue;
     }
 

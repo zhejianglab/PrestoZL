@@ -810,6 +810,67 @@ int read_subbands(float *fdata, int *delays, int numsubbands,
     }
 }
 
+int read_subbands_log(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds)
+// This routine reads a spectral block/subint from the input raw data
+// files. The routine uses dispersion delays in 'delays' to
+// de-disperse the data into 'numsubbands' subbands.  It stores the
+// resulting data in vector 'fdata' of length 'numsubbands' *
+// 's->spectra_per_subint'.  The low freq subband is stored first,
+// then the next highest subband etc, with 's->spectra_per_subint'
+// floating points per subband.  It returns the # of points read if
+// successful, 0 otherwise. If padding is returned as 1, then padding
+// was added and statistics should not be calculated.  'maskchans' is
+// an array of length numchans which contains a list of the number of
+// channels that were masked.  The # of channels masked is returned in
+// 'nummasked'.  'obsmask' is the mask structure to use for masking.
+// If 'transpose'==0, the data will be kept in time order instead of
+// arranged by subband as above.
+{
+    static int firsttime = 1;
+    static float *frawdata;
+
+    if (firsttime) {
+        // Check to make sure there isn't more dispersion across a
+        // subband than time in a block of data
+        if (delays[0] > s->spectra_per_subint) {
+            perror("\nError: there is more dispersion across a subband than time\n"
+                   "in a block of data.  Increase spectra_per_subint if possible.");
+            exit(-1);
+        }
+        // Needs to be twice as large for buffering if adding observations together
+        frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
+        // if (!get_PSRFITS_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+        //     perror("Error: problem reading the raw data file in read_subbands()");
+        //     exit(-1);
+        // }
+        if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+            perror("Error: problem reading the raw data file in read_subbands()");
+            exit(-1);
+        }
+        if (0 != prep_subbands(fdata, frawdata, delays, numsubbands, s,
+                               transpose, maskchans, nummasked, obsmask)) {
+            perror("Error: problem initializing prep_subbands() in read_subbands()");
+            exit(-1);
+        }
+        firsttime = 0;
+    }
+    // if (!get_PSRFITS_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+    //     return 0;
+    // }
+    if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+        return 0;
+    }
+    if (prep_subbands(fdata, frawdata, delays, numsubbands, s, transpose,
+                      maskchans, nummasked, obsmask) == s->spectra_per_subint) {
+        currentspectra += s->spectra_per_subint;
+        return s->spectra_per_subint;
+    } else {
+        return 0;
+    }
+}
+
 
 void flip_band(float *fdata, struct spectra_info *s)
 // Flip the bandpass

@@ -35,7 +35,7 @@ static int read_PRESTO_subbands(FILE * infiles[], int numfiles,
 static int get_data(float **outdata, int blocksperread,
                     struct spectra_info *s,
                     mask * obsmask, int *idispdts, int **offsets,
-                    int *padding, short **subsdata);
+                    int *padding, short **subsdata, long long *data_size, long *total_microseconds);
 static void update_infodata(infodata * idata, long datawrote, long padwrote,
                             int *barybins, int numbarybins, int downsamp);
 static void print_percent_complete(int current, int number);
@@ -255,6 +255,9 @@ int main(int argc, char *argv[])
 
     /* Determine the output file names and open them */
 
+    long long data_size = 0;
+    long total_microseconds = 0;
+
     datafilenm = (char *) calloc(strlen(cmd->outfile) + 20, 1);
     if (!cmd->subP) {
         printf("Writing output data to:\n");
@@ -405,7 +408,7 @@ int main(int argc, char *argv[])
         else
             outdata = gen_fmatrix(cmd->numdms, worklen / cmd->downsamp);
         numread = get_data(outdata, blocksperread, &s,
-                           &obsmask, idispdt, offsets, &padding, subsdata);
+                           &obsmask, idispdt, offsets, &padding, subsdata, &data_size, &total_microseconds);
 
         while (numread == worklen) {
 
@@ -439,7 +442,7 @@ int main(int argc, char *argv[])
                 break;
 
             numread = get_data(outdata, blocksperread, &s,
-                               &obsmask, idispdt, offsets, &padding, subsdata);
+                               &obsmask, idispdt, offsets, &padding, subsdata, &data_size, &total_microseconds);
         }
         datawrote = totwrote;
 
@@ -564,7 +567,7 @@ int main(int argc, char *argv[])
         else
             outdata = gen_fmatrix(cmd->numdms, worklen / cmd->downsamp);
         numread = get_data(outdata, blocksperread, &s,
-                           &obsmask, idispdt, offsets, &padding, subsdata);
+                           &obsmask, idispdt, offsets, &padding, subsdata, &data_size, &total_microseconds);
 
         while (numread == worklen) {    /* Loop to read and write the data */
             int numwritten = 0;
@@ -661,7 +664,7 @@ int main(int argc, char *argv[])
                 break;
 
             numread = get_data(outdata, blocksperread, &s,
-                               &obsmask, idispdt, offsets, &padding, subsdata);
+                               &obsmask, idispdt, offsets, &padding, subsdata, &data_size, &total_microseconds);
         }
     }
 
@@ -778,6 +781,9 @@ int main(int argc, char *argv[])
         vect_free(btoa);
         vect_free(ttoa);
         vect_free(diffbins);
+    }
+    if(cmd->IOlogP){
+        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
     }
     return (0);
 }
@@ -919,7 +925,7 @@ static int read_PRESTO_subbands(FILE * infiles[], int numfiles,
 static int get_data(float **outdata, int blocksperread,
                     struct spectra_info *s,
                     mask * obsmask, int *idispdts, int **offsets,
-                    int *padding, short **subsdata)
+                    int *padding, short **subsdata, long long *data_size, long *total_microseconds)
 {
     static int firsttime = 1, *maskchans = NULL, blocksize;
     static int worklen, dsworklen;
@@ -963,9 +969,16 @@ static int get_data(float **outdata, int blocksperread,
         if (RAWDATA || insubs) {
             for (ii = 0; ii < blocksperread; ii++) {
                 if (RAWDATA)
-                    numread = read_subbands(currentdata + ii * blocksize, idispdts,
-                                            cmd->nsub, s, 0, &tmppad,
-                                            maskchans, &nummasked, obsmask);
+                    if (!cmd->IOlogP)
+                    {
+                        numread = read_subbands(currentdata + ii * blocksize, idispdts,
+                                                cmd->nsub, s, 0, &tmppad,
+                                                maskchans, &nummasked, obsmask);
+                    }else{
+                        numread = read_subbands_log(currentdata + ii * blocksize, idispdts,
+                                                cmd->nsub, s, 0, &tmppad,
+                                                maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                    }
                 else if (insubs)
                     numread = read_PRESTO_subbands(s->files, s->num_files,
                                                    currentdata + ii * blocksize,
