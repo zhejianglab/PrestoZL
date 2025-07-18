@@ -110,6 +110,8 @@ typedef struct s_Cmdline {
   char *full_cmd_line;
   /***** -IOlog: Print IO transfer log */
   char IOlogP;
+  /***** -cache: Read/Write data from cache */
+  char cacheP;
 } Cmdline;
 
 

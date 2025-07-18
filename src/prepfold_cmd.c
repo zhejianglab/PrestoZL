@@ -268,7 +268,9 @@ static Cmdline cmd = {
   /***** -IOlog: Print IO transfer log */
   /* IOlogP = */ 0,
   /***** -json: create json file */
-  /* jsonP = */ 0
+  /* jsonP = */ 0,
+  /***** -cache: Read/Write data from cache */
+  /* cacheP = */ 0
 };
 
 /*@=null*/
@@ -1730,6 +1732,13 @@ showOptionValues(void)
     printf("-json found:\n");
   }
 
+  /***** -cache: Read/Write data from cache */
+  if( !cmd.cacheP ) {
+    printf("-cache not found.\n");
+  } else {
+    printf("-cache found:\n");
+  }
+
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
   } else {
@@ -2471,6 +2480,12 @@ parseCmdline(int argc, char **argv)
       cmd.jsonP = 1;
       continue;
     }
+
+    if( 0==strcmp("-cache", argv[i]) ) {
+      cmd.cacheP = 1;
+      continue;
+    }
+    
     if( argv[i][0]=='-' ) {
       fprintf(stderr, "\n%s: unknown option `%s'\n\n",
               Program, argv[i]);

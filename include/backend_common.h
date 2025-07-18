@@ -87,6 +87,8 @@ struct spectra_info {
     int (*get_rawblock)(float *, struct spectra_info *, int *);  // Raw data block function pointer
     int (*get_rawblock_log)(float *, struct spectra_info *, int *, long long *, long *);  // Raw data block function pointer
     long long (*offset_to_spectra)(long long, struct spectra_info *);  // Shift into file(s) function pointer
+    FILE *cacheFile;
+    char cacheFileName[1024];
 };
 
 
@@ -112,3 +114,29 @@ int *get_ignorechans(char *ignorechans_str, int minchan, int maxchan, int *num_i
 
 /* zerodm.c */
 void remove_zerodm(float *fdata, struct spectra_info *s);
+
+int write_prep_subbands_cache(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread);
+void SclData(float *intputDATA, int x, int y, unsigned char *DATA,float *sclArray, float *offsArray, int thread);
+int write_subbands_cache(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread);
+int write_subbands_cache_log(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread, long long *data_size, long *total_microseconds);
+void serialize_spectra_info(struct spectra_info *s, const char *filename);
+void deserialize_spectra_info(struct spectra_info *s, const char *filename);
+int compare_spectra_info(const struct spectra_info *s1, const struct spectra_info *s2);
+int read_prep_subbands_cache(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask);
+int read_subbands_cache(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask);
+int read_prep_subbands_cache_log(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds);
+int read_subbands_cache_log(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds);

@@ -200,9 +200,9 @@ BINARIES = makedata makeinf mjd2cal realfft librealfft_lib.so quicklook\
 	patchdata readfile toas2dat taperaw\
 	accelsearch libaccelsearch_lib.so libaccelsearch_maxsize.so accelsearch_cu prepsubband prepsubband_cu libprepsubband_cu_lib.so libprepsubband_maxsize.so cal2mjd split_parkes_beams\
 	dat2sdat sdat2dat downsample rednoise un_sc_td bincand\
-	psrorbit window plotbincand prepfold show_pfd\
+	psrorbit window plotbincand prepfold libprepfold_lib.so show_pfd\
 	rfifind zapbirds explorefft exploredat\
-	weight_psrfits fitsdelrow fitsdelcol psrfits_dumparrays
+	weight_psrfits fitsdelrow fitsdelcol psrfits_dumparrays prepcache
 
 all: libpresto slalib binaries
 
@@ -306,6 +306,9 @@ rfifind: rfifind_cmd.c rfifind_cmd.o rfifind.o rfi_utils.o rfifind_plot.o $(INST
 prepdata: prepdata_cmd.c prepdata_cmd.o prepdata.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepdata.o prepdata_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
 
+prepcache: prepsubband_cmd.c prepsubband_cmd.o prepcache.o $(INSTRUMENTOBJS) libpresto
+	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepcache.o prepsubband_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm -lglib-2.0 $(CUDA_LINK_EXTRA_FLAGS) $(CUDA_LINK_EXTRA_FLAGS)
+
 prepsubband_kernels.o: prepsubband_kernels.cu 
 	$(NVCC) $(EXTRA_NVCCFLAGS) $(NVCCFLAGS) $(CUDA_INC_PATH) $(GENCODE_FLAGS) $(GLIBINC) -c $< 
 
@@ -323,6 +326,9 @@ libprepsubband_maxsize.so: prepsubband_maxsize.c $(INSTRUMENTOBJS) libpresto
 
 prepfold: prepfold_cmd.c prepfold_cmd.o prepfold.o prepfold_utils.o prepfold_plot.o least_squares.o polycos.o readpar.o $(INSTRUMENTOBJS) $(PLOT2DOBJS) libpresto
 	$(FC) $(FLINKFLAGS) -o $(PRESTO)/bin/$@ prepfold.o prepfold_utils.o prepfold_plot.o prepfold_cmd.o least_squares.o polycos.o readpar.o $(PLOT2DOBJS) $(INSTRUMENTOBJS) $(LAPACKLINK) $(PRESTOLINK) $(PGPLOTLINK) -lcfitsio -lm
+
+libprepfold_lib.so: prepfold_cmd.o prepfold.o prepfold_utils.o prepfold_plot.o least_squares.o polycos.o readpar.o $(INSTRUMENTOBJS) $(PLOT2DOBJS) libpresto
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ prepfold.o prepfold_utils.o prepfold_plot.o prepfold_cmd.o least_squares.o polycos.o readpar.o $(PLOT2DOBJS) $(INSTRUMENTOBJS) $(LAPACKLINK) $(PRESTOLINK) $(PGPLOTLINK) -lcfitsio -lm
 
 dump_spigot_zerolag: dump_spigot_zerolag.o spigot.o libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ dump_spigot_zerolag.o spigot.o $(PRESTOLINK) -lm

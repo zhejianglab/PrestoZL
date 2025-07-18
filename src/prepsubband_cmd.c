@@ -122,7 +122,9 @@ static Cmdline cmd = {
   /***** the original command line concatenated */
   /* full_cmd_line = */ NULL,
   /***** -IOlog: Print IO transfer log */
-  /* IOlogP = */ 0
+  /* IOlogP = */ 0,
+  /***** -cache: Read/Write data from cache */
+  /* cacheP = */ 0
 };
 
 /*@=null*/
@@ -1131,6 +1133,13 @@ showOptionValues(void)
     printf("-IOlog found:\n");
   }
 
+  /***** -cache: Read/Write data from cache */
+  if( !cmd.cacheP ) {
+    printf("-cache not found.\n");
+  } else {
+    printf("-cache found:\n");
+  }
+
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
   } else {
@@ -1457,6 +1466,11 @@ parseCmdline(int argc, char **argv)
       continue;
     }
 
+    if( 0==strcmp("-cache", argv[i]) ) {
+      cmd.cacheP = 1;
+      continue;
+    }
+    
     if( argv[i][0]=='-' ) {
       fprintf(stderr, "\n%s: unknown option `%s'\n\n",
               Program, argv[i]);

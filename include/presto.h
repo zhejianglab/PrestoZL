@@ -628,6 +628,10 @@ void dedisp_subbands(float *data, float *lastdata,
 // ordered in time, with the channels stored together at each time
 // point.
 
+void dedisp_subbands_cache(unsigned char *data, float *data_scl, float *data_offs, unsigned char *lastdata, float *lastdata_scl, float *lastdata_offs,
+                     int numpts, int numchan,
+                     int *delays, int numsubbands, float *result);
+
 void float_dedisp(float *data, float *lastdata,
                   int numpts, int numchan,
                   int *delays, float approx_mean, float *result);

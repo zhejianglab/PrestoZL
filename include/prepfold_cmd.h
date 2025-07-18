@@ -256,6 +256,8 @@ typedef struct s_Cmdline {
   char IOlogP;
   /***** -json: create json file */
   char jsonP;
+  /***** -cache: Read/Write data from cache */
+  char cacheP;
 } Cmdline;
 
 

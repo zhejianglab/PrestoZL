@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <sys/time.h>
 #include "backend_common.h"
 #include "misc_utils.h"
 #include "fftw3.h"
@@ -18,11 +19,15 @@ extern void float_dedisp(float *data, float *lastdata,
 extern void dedisp_subbands(float *data, float *lastdata,
                             int numpts, int numchan,
                             int *delays, int numsubbands, float *result);
+extern void dedisp_subbands_cache(unsigned char *data, float *data_scl, float *data_offs, unsigned char *lastdata, float *lastdata_scl, float *lastdata_offs,
+                     int numpts, int numchan,
+                     int *delays, int numsubbands, float *result);
 extern short transpose_float(float *a, int nx, int ny, unsigned char *move,
                              int move_size);
 extern double DATEOBS_to_MJD(char *dateobs, int *mjd_day, double *mjd_fracday);
 extern void read_filterbank_files(struct spectra_info *s);
 extern void read_PSRFITS_files(struct spectra_info *s);
+extern void init_static_values(struct spectra_info *s);
 extern fftwf_plan plan_transpose(int rows, int cols, float *in, float *out);
 extern int *ranges_to_ivect(char *str, int minval, int maxval, int *numvals);
 
@@ -841,10 +846,6 @@ int read_subbands_log(float *fdata, int *delays, int numsubbands,
         }
         // Needs to be twice as large for buffering if adding observations together
         frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
-        // if (!get_PSRFITS_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
-        //     perror("Error: problem reading the raw data file in read_subbands()");
-        //     exit(-1);
-        // }
         if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
             perror("Error: problem reading the raw data file in read_subbands()");
             exit(-1);
@@ -856,9 +857,6 @@ int read_subbands_log(float *fdata, int *delays, int numsubbands,
         }
         firsttime = 0;
     }
-    // if (!get_PSRFITS_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
-    //     return 0;
-    // }
     if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
         return 0;
     }
@@ -946,4 +944,932 @@ int *get_ignorechans(char *ignorechans_str, int minchan, int maxchan,
         *filestr = NULL; // Not being used
     }
     return ranges_to_ivect(parsestr, minchan, maxchan, num_ignorechans);
+}
+
+void SclData(float *intputDATA, int x, int y, unsigned char *DATA,float *sclArray, float *offsArray, int thread)
+{
+  int i;
+
+#ifdef _OPENMP
+// #pragma omp parallel for default(shared)
+#pragma omp parallel for num_threads(thread) shared(intputDATA, DATA, sclArray, offsArray)
+#endif
+  for(i=0; i<y; i++)
+  {
+    int j;
+    float min, max;
+    float value;
+    min = max = 0.0f;
+    for(j=0; j<x; j++)
+    {
+      value = intputDATA[i*x+j];
+      min = (min > value) ? value : min;
+      max = (max < value) ? value : max;
+    }
+
+    float range;
+    float scale_bk, offset_bk;
+
+    range = max - min;
+    if (max == 0.0f && min == 0.0f)
+    {
+        scale_bk = 1.0;
+        offset_bk = 0.0;
+    }
+    else 
+    {
+        if (range==0.0f)
+            scale_bk = max / 255.0f;
+        else
+          scale_bk = range / 255.0f;
+        offset_bk = min;
+    }
+    for(j=0; j<x; j++)
+    {
+        DATA[i*x+j] = (unsigned char) ((intputDATA[i*x+j] - offset_bk) / scale_bk + 0.5f);
+    }
+    sclArray[i] = scale_bk;
+    offsArray[i] = offset_bk;
+  }
+}
+
+int write_prep_subbands_cache(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread)
+// This routine preps a block of raw spectra for subbanding.  It uses
+// dispersion delays in 'delays' to de-disperse the data into
+// 'numsubbands' subbands.  It stores the resulting data in vector
+// 'fdata' of length 'numsubbands' * 's->spectra_per_subint'.  The low
+// freq subband is stored first, then the next highest subband etc,
+// with 's->spectra_per_subint' floating points per subband. It
+// returns the # of points read if succesful, 0 otherwise.
+// 'maskchans' is an array of length numchans which contains a list of
+// the number of channels that were masked.  The # of channels masked
+// is returned in 'nummasked'.  'obsmask' is the mask structure to use
+// for masking.  If 'transpose'==0, the data will be kept in time
+// order instead of arranged by subband as above.
+{
+    int ii, jj, offset;
+    double starttime = 0.0;
+    static float *tmpswap, *rawdata1, *rawdata2;
+    static float *currentdata, *lastdata;
+    
+    static float *currentdata_scl;
+    static float *currentdata_offs;
+    static unsigned char *currentdata_data;
+
+    static int firsttime = 1, mask = 0;
+    static fftwf_plan tplan1;
+
+    *nummasked = 0;
+    if (firsttime) {
+        if (obsmask->numchan)
+            mask = 1;
+        rawdata1 = gen_fvect(s->spectra_per_subint * s->num_channels);
+        rawdata2 = gen_fvect(s->spectra_per_subint * s->num_channels);
+        
+        currentdata_scl = malloc(s->num_channels * sizeof(float));
+        currentdata_offs = malloc(s->num_channels * sizeof(float));
+        currentdata_data = malloc(s->spectra_per_subint * s->num_channels * sizeof(unsigned char));
+
+        currentdata = rawdata1;
+        lastdata = rawdata2;
+        // Make plans to do fast transposes using FFTW
+        tplan1 = plan_transpose(s->spectra_per_subint, s->num_channels,
+                                currentdata, currentdata);
+        // tplan2 = plan_transpose(numsubbands, s->spectra_per_subint, fdata, fdata);
+    }
+
+    /* Read and de-disperse */
+    memcpy(currentdata, rawdata,
+           s->spectra_per_subint * s->num_channels * sizeof(float));
+    starttime = currentspectra * s->dt; // or -1 subint?
+    if (mask)
+        *nummasked = check_mask(starttime, s->time_per_subint, obsmask, maskchans);
+
+    /* Clip nasty RFI if requested and we're not masking all the channels */
+    if ((s->clip_sigma > 0.0) && !(mask && (*nummasked == -1)))
+        clip_times(currentdata, s->spectra_per_subint, s->num_channels,
+                   s->clip_sigma, s->padvals);
+
+    if (mask) {
+        if (*nummasked == -1) { /* If all channels are masked */
+            for (ii = 0; ii < s->spectra_per_subint; ii++)
+                memcpy(currentdata + ii * s->num_channels,
+                       s->padvals, s->num_channels * sizeof(float));
+            // fftwf_execute_r2r(tplan1, currentdata, currentdata);
+        } else if (*nummasked > 0) {    /* Only some of the channels are masked */
+            int channum;
+            for (ii = 0; ii < s->spectra_per_subint; ii++) {
+                offset = ii * s->num_channels;
+                for (jj = 0; jj < *nummasked; jj++) {
+                    channum = maskchans[jj];
+                    currentdata[offset + channum] = s->padvals[channum];
+                }
+            }
+        }
+    }
+
+    if (s->num_ignorechans) { // These are channels we explicitly zero
+        int channum;
+        for (ii = 0; ii < s->spectra_per_subint; ii++) {
+            offset = ii * s->num_channels;
+            for (jj = 0; jj < s->num_ignorechans; jj++) {
+                channum = s->ignorechans[jj];
+                currentdata[offset + channum] = 0.0;
+            }
+        }
+    }
+
+    // In mpiprepsubband, the nodes do not call read_subbands() where
+    // currentspectra gets incremented.
+    if (using_MPI)
+        currentspectra += s->spectra_per_subint;
+
+    // Now transpose the raw block of data so that the times in each
+    // channel are the most rapidly varying index
+    fftwf_execute_r2r(tplan1, currentdata, currentdata);
+
+    if (firsttime) {
+    
+        /* Write cache file*/
+        int prepvalue = 0;
+        SclData(currentdata, s->spectra_per_subint, s->num_channels, currentdata_data, currentdata_scl, currentdata_offs, thread);
+        fwrite(currentdata_scl, sizeof(float), s->num_channels, s->cacheFile);
+        fwrite(currentdata_offs, sizeof(float), s->num_channels, s->cacheFile);
+        fwrite(currentdata_data, sizeof(unsigned char), s->spectra_per_subint * s->num_channels, s->cacheFile);
+        
+        firsttime = 0;
+        SWAP(currentdata, lastdata);
+        return 0;
+    } else {
+
+        /* Write cache file*/
+        SclData(currentdata, s->spectra_per_subint, s->num_channels, currentdata_data, currentdata_scl, currentdata_offs, thread);
+        fwrite(currentdata_scl, sizeof(float), s->num_channels, s->cacheFile);
+        fwrite(currentdata_offs, sizeof(float), s->num_channels, s->cacheFile);
+        fwrite(currentdata_data, sizeof(unsigned char), s->spectra_per_subint * s->num_channels, s->cacheFile);
+        
+        SWAP(currentdata, lastdata);
+        // Transpose the resulting data into spectra as a function of time
+        // if (transpose == 0)
+        //     fftwf_execute_r2r(tplan2, fdata, fdata);
+        return s->spectra_per_subint;
+    }
+}
+
+int write_subbands_cache(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread)
+// This routine reads a spectral block/subint from the input raw data
+// files. The routine uses dispersion delays in 'delays' to
+// de-disperse the data into 'numsubbands' subbands.  It stores the
+// resulting data in vector 'fdata' of length 'numsubbands' *
+// 's->spectra_per_subint'.  The low freq subband is stored first,
+// then the next highest subband etc, with 's->spectra_per_subint'
+// floating points per subband.  It returns the # of points read if
+// successful, 0 otherwise. If padding is returned as 1, then padding
+// was added and statistics should not be calculated.  'maskchans' is
+// an array of length numchans which contains a list of the number of
+// channels that were masked.  The # of channels masked is returned in
+// 'nummasked'.  'obsmask' is the mask structure to use for masking.
+// If 'transpose'==0, the data will be kept in time order instead of
+// arranged by subband as above.
+{
+    static int firsttime = 1;
+    static float *frawdata;
+
+    if (firsttime) {
+        // Check to make sure there isn't more dispersion across a
+        // subband than time in a block of data
+        if (delays[0] > s->spectra_per_subint) {
+            perror("\nError: there is more dispersion across a subband than time\n"
+                   "in a block of data.  Increase spectra_per_subint if possible.");
+            exit(-1);
+        }
+        // Needs to be twice as large for buffering if adding observations together
+        frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
+        if (!s->get_rawblock(frawdata, s, padding)) {
+            perror("Error: problem reading the raw data file in read_subbands()");
+            int ifget_rawblock = 0;
+            fwrite(padding, sizeof(int), 1, s->cacheFile); 
+            fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+            exit(-1);
+        }
+        else
+        {
+            int ifget_rawblock = 1;
+            fwrite(padding, sizeof(int), 1, s->cacheFile); 
+            fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+        }
+
+        if (0 != write_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s,
+                               transpose, maskchans, nummasked, obsmask, thread)) {
+            perror("Error: problem initializing write_prep_subbands_cache() in read_subbands()");
+            exit(-1);
+        }
+        firsttime = 0;
+    }
+    
+    if (!s->get_rawblock(frawdata, s, padding)) {
+        int ifget_rawblock = 0;
+        fwrite(padding, sizeof(int), 1, s->cacheFile);
+        fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+        return 0;
+    }
+    else
+    {
+        int ifget_rawblock = 1;
+        fwrite(padding, sizeof(int), 1, s->cacheFile); 
+        fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+    }
+
+    if (write_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s, transpose,
+                      maskchans, nummasked, obsmask, thread) == s->spectra_per_subint) {
+        currentspectra += s->spectra_per_subint;
+        return s->spectra_per_subint;
+    } else {
+        return 0;
+    }
+}
+
+int write_subbands_cache_log(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, int thread, long long *data_size, long *total_microseconds)
+// This routine reads a spectral block/subint from the input raw data
+// files. The routine uses dispersion delays in 'delays' to
+// de-disperse the data into 'numsubbands' subbands.  It stores the
+// resulting data in vector 'fdata' of length 'numsubbands' *
+// 's->spectra_per_subint'.  The low freq subband is stored first,
+// then the next highest subband etc, with 's->spectra_per_subint'
+// floating points per subband.  It returns the # of points read if
+// successful, 0 otherwise. If padding is returned as 1, then padding
+// was added and statistics should not be calculated.  'maskchans' is
+// an array of length numchans which contains a list of the number of
+// channels that were masked.  The # of channels masked is returned in
+// 'nummasked'.  'obsmask' is the mask structure to use for masking.
+// If 'transpose'==0, the data will be kept in time order instead of
+// arranged by subband as above.
+{
+    static int firsttime = 1;
+    static float *frawdata;
+
+    if (firsttime) {
+        // Check to make sure there isn't more dispersion across a
+        // subband than time in a block of data
+        if (delays[0] > s->spectra_per_subint) {
+            perror("\nError: there is more dispersion across a subband than time\n"
+                   "in a block of data.  Increase spectra_per_subint if possible.");
+            exit(-1);
+        }
+        // Needs to be twice as large for buffering if adding observations together
+        frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
+        if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+            perror("Error: problem reading the raw data file in read_subbands()");
+            int ifget_rawblock = 0;
+            fwrite(padding, sizeof(int), 1, s->cacheFile); 
+            fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+            exit(-1);
+        }
+        else
+        {
+            int ifget_rawblock = 1;
+            fwrite(padding, sizeof(int), 1, s->cacheFile); 
+            fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+        }
+
+        if (0 != write_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s,
+                               transpose, maskchans, nummasked, obsmask, thread)) {
+            perror("Error: problem initializing write_prep_subbands_cache() in read_subbands()");
+            exit(-1);
+        }
+        firsttime = 0;
+    }
+    
+    if (!s->get_rawblock_log(frawdata, s, padding, data_size, total_microseconds)) {
+        int ifget_rawblock = 0;
+        fwrite(padding, sizeof(int), 1, s->cacheFile);
+        fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+        return 0;
+    }
+    else
+    {
+        int ifget_rawblock = 1;
+        fwrite(padding, sizeof(int), 1, s->cacheFile); 
+        fwrite(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+    }
+
+    if (write_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s, transpose,
+                      maskchans, nummasked, obsmask, thread) == s->spectra_per_subint) {
+        currentspectra += s->spectra_per_subint;
+        return s->spectra_per_subint;
+    } else {
+        return 0;
+    }
+}
+
+// 保存 spectra_info 到文件
+void serialize_spectra_info(struct spectra_info *s, const char *filename) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("Failed to open file for writing");
+        exit(EXIT_FAILURE);
+    }
+
+    // 保存标量字段
+    fwrite(&(s->N), sizeof(long long), 1, file);
+    fwrite(&(s->T), sizeof(double), 1, file);
+    fwrite(&(s->dt), sizeof(double), 1, file);
+    fwrite(&(s->fctr), sizeof(double), 1, file);
+    fwrite(&(s->lo_freq), sizeof(double), 1, file);
+    fwrite(&(s->hi_freq), sizeof(double), 1, file);
+    fwrite(&(s->orig_df), sizeof(double), 1, file);
+    fwrite(&(s->chan_dm), sizeof(double), 1, file);
+    fwrite(&(s->df), sizeof(double), 1, file);
+    fwrite(&(s->BW), sizeof(double), 1, file);
+    fwrite(&(s->ra2000), sizeof(double), 1, file);
+    fwrite(&(s->dec2000), sizeof(double), 1, file);
+    fwrite(&(s->azimuth), sizeof(double), 1, file);
+    fwrite(&(s->zenith_ang), sizeof(double), 1, file);
+    fwrite(&(s->beam_FWHM), sizeof(double), 1, file);
+    fwrite(&(s->time_per_subint), sizeof(double), 1, file);
+    fwrite(&(s->datatype), sizeof(psrdatatype), 1, file);
+    fwrite(&(s->scan_number), sizeof(int), 1, file);
+    fwrite(&(s->tracking), sizeof(int), 1, file);
+    fwrite(&(s->orig_num_chan), sizeof(int), 1, file);
+    fwrite(&(s->num_channels), sizeof(int), 1, file);
+    fwrite(&(s->num_polns), sizeof(int), 1, file);
+    fwrite(&(s->num_beams), sizeof(int), 1, file);
+    fwrite(&(s->beamnum), sizeof(int), 1, file);
+    fwrite(&(s->summed_polns), sizeof(int), 1, file);
+    fwrite(&(s->FITS_typecode), sizeof(int), 1, file);
+    fwrite(&(s->bits_per_sample), sizeof(int), 1, file);
+    fwrite(&(s->bytes_per_spectra), sizeof(int), 1, file);
+    fwrite(&(s->samples_per_spectra), sizeof(int), 1, file);
+    fwrite(&(s->bytes_per_subint), sizeof(int), 1, file);
+    fwrite(&(s->spectra_per_subint), sizeof(int), 1, file);
+    fwrite(&(s->samples_per_subint), sizeof(int), 1, file);
+    fwrite(&(s->min_spect_per_read), sizeof(int), 1, file);
+    fwrite(&(s->num_files), sizeof(int), 1, file);
+    fwrite(&(s->offs_sub_col), sizeof(int), 1, file);
+    fwrite(&(s->dat_wts_col), sizeof(int), 1, file);
+    fwrite(&(s->dat_offs_col), sizeof(int), 1, file);
+    fwrite(&(s->dat_scl_col), sizeof(int), 1, file);
+    fwrite(&(s->data_col), sizeof(int), 1, file);
+    fwrite(&(s->apply_scale), sizeof(int), 1, file);
+    fwrite(&(s->apply_offset), sizeof(int), 1, file);
+    fwrite(&(s->apply_weight), sizeof(int), 1, file);
+    fwrite(&(s->apply_flipband), sizeof(int), 1, file);
+    fwrite(&(s->signedints), sizeof(int), 1, file);
+    fwrite(&(s->remove_zerodm), sizeof(int), 1, file);
+    fwrite(&(s->use_poln), sizeof(int), 1, file);
+    fwrite(&(s->flip_bytes), sizeof(int), 1, file);
+    fwrite(&(s->num_ignorechans), sizeof(int), 1, file);
+    fwrite(&(s->zero_offset), sizeof(float), 1, file);
+    fwrite(&(s->clip_sigma), sizeof(float), 1, file);
+
+    // 保存字符串字段
+    fwrite(s->telescope, sizeof(char), 40, file);
+    fwrite(s->observer, sizeof(char), 100, file);
+    fwrite(s->source, sizeof(char), 100, file);
+    fwrite(s->frontend, sizeof(char), 100, file);
+    fwrite(s->backend, sizeof(char), 100, file);
+    fwrite(s->project_id, sizeof(char), 40, file);
+    fwrite(s->date_obs, sizeof(char), 40, file);
+    fwrite(s->ra_str, sizeof(char), 40, file);
+    fwrite(s->dec_str, sizeof(char), 40, file);
+    fwrite(s->poln_type, sizeof(char), 40, file);
+    fwrite(s->poln_order, sizeof(char), 40, file);
+    fwrite(s->cacheFileName, sizeof(char), 1024, file);
+
+    // 保存动态数组
+    for (int i = 0; i < s->num_files; i++) {
+        fwrite(&(s->start_MJD[i]), sizeof(long double), 1, file);
+        fwrite(&(s->start_spec[i]), sizeof(long long), 1, file);
+        fwrite(&(s->num_spec[i]), sizeof(long long), 1, file);
+        fwrite(&(s->num_pad[i]), sizeof(long long), 1, file);
+        fwrite(&(s->start_subint[i]), sizeof(int), 1, file);
+        fwrite(&(s->num_subint[i]), sizeof(int), 1, file);
+    }
+
+    // 保存文件名数组
+    for (int i = 0; i < s->num_files; i++) {
+        size_t len = strlen(s->filenames[i]) + 1; // 包括 '\0'
+        fwrite(&len, sizeof(size_t), 1, file);
+        fwrite(s->filenames[i], sizeof(char), len, file);
+    }
+
+    // 保存 padvals 数组
+    fwrite(s->padvals, sizeof(float), s->num_channels, file);
+
+    fclose(file);
+}
+
+// 从文件加载 spectra_info
+void deserialize_spectra_info(struct spectra_info *s, const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    printf("spec file name: %s\n", filename);
+    if (!file) {
+        perror("Failed to open file for reading");
+        exit(EXIT_FAILURE);
+    }
+
+    // 读取标量字段
+    fread(&(s->N), sizeof(long long), 1, file);
+    fread(&(s->T), sizeof(double), 1, file);
+    fread(&(s->dt), sizeof(double), 1, file);
+    fread(&(s->fctr), sizeof(double), 1, file);
+    fread(&(s->lo_freq), sizeof(double), 1, file);
+    fread(&(s->hi_freq), sizeof(double), 1, file);
+    fread(&(s->orig_df), sizeof(double), 1, file);
+    fread(&(s->chan_dm), sizeof(double), 1, file);
+    fread(&(s->df), sizeof(double), 1, file);
+    fread(&(s->BW), sizeof(double), 1, file);
+    fread(&(s->ra2000), sizeof(double), 1, file);
+    fread(&(s->dec2000), sizeof(double), 1, file);
+    fread(&(s->azimuth), sizeof(double), 1, file);
+    fread(&(s->zenith_ang), sizeof(double), 1, file);
+    fread(&(s->beam_FWHM), sizeof(double), 1, file);
+    fread(&(s->time_per_subint), sizeof(double), 1, file);
+    fread(&(s->datatype), sizeof(psrdatatype), 1, file);
+    fread(&(s->scan_number), sizeof(int), 1, file);
+    fread(&(s->tracking), sizeof(int), 1, file);
+    fread(&(s->orig_num_chan), sizeof(int), 1, file);
+    fread(&(s->num_channels), sizeof(int), 1, file);
+    fread(&(s->num_polns), sizeof(int), 1, file);
+    fread(&(s->num_beams), sizeof(int), 1, file);
+    fread(&(s->beamnum), sizeof(int), 1, file);
+    fread(&(s->summed_polns), sizeof(int), 1, file);
+    fread(&(s->FITS_typecode), sizeof(int), 1, file);
+    fread(&(s->bits_per_sample), sizeof(int), 1, file);
+    fread(&(s->bytes_per_spectra), sizeof(int), 1, file);
+    fread(&(s->samples_per_spectra), sizeof(int), 1, file);
+    fread(&(s->bytes_per_subint), sizeof(int), 1, file);
+    fread(&(s->spectra_per_subint), sizeof(int), 1, file);
+    fread(&(s->samples_per_subint), sizeof(int), 1, file);
+    fread(&(s->min_spect_per_read), sizeof(int), 1, file);
+    fread(&(s->num_files), sizeof(int), 1, file);
+    fread(&(s->offs_sub_col), sizeof(int), 1, file);
+    fread(&(s->dat_wts_col), sizeof(int), 1, file);
+    fread(&(s->dat_offs_col), sizeof(int), 1, file);
+    fread(&(s->dat_scl_col), sizeof(int), 1, file);
+    fread(&(s->data_col), sizeof(int), 1, file);
+    fread(&(s->apply_scale), sizeof(int), 1, file);
+    fread(&(s->apply_offset), sizeof(int), 1, file);
+    fread(&(s->apply_weight), sizeof(int), 1, file);
+    fread(&(s->apply_flipband), sizeof(int), 1, file);
+    fread(&(s->signedints), sizeof(int), 1, file);
+    fread(&(s->remove_zerodm), sizeof(int), 1, file);
+    fread(&(s->use_poln), sizeof(int), 1, file);
+    fread(&(s->flip_bytes), sizeof(int), 1, file);
+    fread(&(s->num_ignorechans), sizeof(int), 1, file);
+    fread(&(s->zero_offset), sizeof(float), 1, file);
+    fread(&(s->clip_sigma), sizeof(float), 1, file);
+
+    // 读取字符串字段
+    fread(s->telescope, sizeof(char), 40, file);
+    fread(s->observer, sizeof(char), 100, file);
+    fread(s->source, sizeof(char), 100, file);
+    fread(s->frontend, sizeof(char), 100, file);
+    fread(s->backend, sizeof(char), 100, file);
+    fread(s->project_id, sizeof(char), 40, file);
+    fread(s->date_obs, sizeof(char), 40, file);
+    fread(s->ra_str, sizeof(char), 40, file);
+    fread(s->dec_str, sizeof(char), 40, file);
+    fread(s->poln_type, sizeof(char), 40, file);
+    fread(s->poln_order, sizeof(char), 40, file);
+    fread(s->cacheFileName, sizeof(char), 1024, file);
+
+    // 初始化动态数组
+    s->start_MJD = (long double *)malloc(sizeof(long double) * s->num_files);
+    s->start_spec = (long long *)malloc(sizeof(long long) * s->num_files);
+    s->num_spec = (long long *)malloc(sizeof(long long) * s->num_files);
+    s->num_pad = (long long *)malloc(sizeof(long long) * s->num_files);
+    s->start_subint = (int *)malloc(sizeof(int) * s->num_files);
+    s->num_subint = (int *)malloc(sizeof(int) * s->num_files);
+
+    for (int i = 0; i < s->num_files; i++) {
+        fread(&(s->start_MJD[i]), sizeof(long double), 1, file);
+        fread(&(s->start_spec[i]), sizeof(long long), 1, file);
+        fread(&(s->num_spec[i]), sizeof(long long), 1, file);
+        fread(&(s->num_pad[i]), sizeof(long long), 1, file);
+        fread(&(s->start_subint[i]), sizeof(int), 1, file);
+        fread(&(s->num_subint[i]), sizeof(int), 1, file);
+    }
+
+    // 读取文件名数组
+    s->filenames = (char **)malloc(sizeof(char *) * s->num_files);
+    for (int i = 0; i < s->num_files; i++) {
+        size_t len;
+        fread(&len, sizeof(size_t), 1, file);
+        s->filenames[i] = (char *)malloc(len);
+        fread(s->filenames[i], sizeof(char), len, file);
+    }
+
+    // 初始化 padvals
+    s->padvals = (float *)malloc(sizeof(float) * s->num_channels);
+    fread(s->padvals, sizeof(float), s->num_channels, file);
+
+    // 初始化 cacheFile
+    s->cacheFile = fopen(s->cacheFileName, "wb+");
+
+    init_static_values(s);
+
+    fclose(file);
+}
+
+int compare_spectra_info(const struct spectra_info *s1, const struct spectra_info *s2) {
+    // 比较标量字段
+    if (strcmp(s1->telescope, s2->telescope) != 0) return 0;
+    if (strcmp(s1->observer, s2->observer) != 0) return 0;
+    if (strcmp(s1->source, s2->source) != 0) return 0;
+    if (strcmp(s1->frontend, s2->frontend) != 0) return 0;
+    if (strcmp(s1->backend, s2->backend) != 0) return 0;
+    if (strcmp(s1->project_id, s2->project_id) != 0) return 0;
+    if (strcmp(s1->date_obs, s2->date_obs) != 0) return 0;
+    if (strcmp(s1->ra_str, s2->ra_str) != 0) return 0;
+    if (strcmp(s1->dec_str, s2->dec_str) != 0) return 0;
+    if (strcmp(s1->poln_type, s2->poln_type) != 0) return 0;
+    if (strcmp(s1->poln_order, s2->poln_order) != 0) return 0;
+
+    if (s1->N != s2->N) return 0;
+    if (fabs(s1->T - s2->T) > 1e-6) return 0; // 浮点数比较
+    if (fabs(s1->dt - s2->dt) > 1e-6) return 0;
+    if (fabs(s1->fctr - s2->fctr) > 1e-6) return 0;
+    if (fabs(s1->lo_freq - s2->lo_freq) > 1e-6) return 0;
+    if (fabs(s1->hi_freq - s2->hi_freq) > 1e-6) return 0;
+    if (fabs(s1->orig_df - s2->orig_df) > 1e-6) return 0;
+    if (fabs(s1->chan_dm - s2->chan_dm) > 1e-6) return 0;
+    if (fabs(s1->df - s2->df) > 1e-6) return 0;
+    if (fabs(s1->BW - s2->BW) > 1e-6) return 0;
+    if (fabs(s1->ra2000 - s2->ra2000) > 1e-6) return 0;
+    if (fabs(s1->dec2000 - s2->dec2000) > 1e-6) return 0;
+    if (fabs(s1->azimuth - s2->azimuth) > 1e-6) return 0;
+    if (fabs(s1->zenith_ang - s2->zenith_ang) > 1e-6) return 0;
+    if (fabs(s1->beam_FWHM - s2->beam_FWHM) > 1e-6) return 0;
+    if (fabs(s1->time_per_subint - s2->time_per_subint) > 1e-6) return 0;
+
+    if (s1->datatype != s2->datatype) return 0;
+    if (s1->scan_number != s2->scan_number) return 0;
+    if (s1->tracking != s2->tracking) return 0;
+    if (s1->orig_num_chan != s2->orig_num_chan) return 0;
+    if (s1->num_channels != s2->num_channels) return 0;
+    if (s1->num_polns != s2->num_polns) return 0;
+    if (s1->num_beams != s2->num_beams) return 0;
+    if (s1->beamnum != s2->beamnum) return 0;
+    if (s1->summed_polns != s2->summed_polns) return 0;
+    if (s1->FITS_typecode != s2->FITS_typecode) return 0;
+    if (s1->bits_per_sample != s2->bits_per_sample) return 0;
+    if (s1->bytes_per_spectra != s2->bytes_per_spectra) return 0;
+    if (s1->samples_per_spectra != s2->samples_per_spectra) return 0;
+    if (s1->bytes_per_subint != s2->bytes_per_subint) return 0;
+    if (s1->spectra_per_subint != s2->spectra_per_subint) return 0;
+    if (s1->samples_per_subint != s2->samples_per_subint) return 0;
+    if (s1->min_spect_per_read != s2->min_spect_per_read) return 0;
+    if (s1->num_files != s2->num_files) return 0;
+
+    // 比较指针字段
+    // 比较 start_MJD 数组
+    if (s1->start_MJD != NULL && s2->start_MJD != NULL) {
+        for (int i = 0; i < s1->num_files; i++) {
+            if (fabs(s1->start_MJD[i] - s2->start_MJD[i]) > 1e-6) return 0;
+        }
+    }
+
+    // 比较 filenames 数组
+    for (int i = 0; i < s1->num_files; i++) {
+        if (strcmp(s1->filenames[i], s2->filenames[i]) != 0) return 0;
+    }
+
+    // 比较 ignorechans 数组
+    if (s1->num_ignorechans == s2->num_ignorechans && s1->ignorechans != NULL && s2->ignorechans != NULL) {
+        for (int i = 0; i < s1->num_ignorechans; i++) {
+            if (s1->ignorechans[i] != s2->ignorechans[i]) return 0;
+        }
+    }
+
+    // 比较 ignorechans_str
+    if (s1->ignorechans_str != NULL && s2->ignorechans_str != NULL) {
+        if (strcmp(s1->ignorechans_str, s2->ignorechans_str) != 0) return 0;
+    }
+
+    // 比较 start_spec 数组
+    if (s1->start_spec != NULL && s2->start_spec != NULL) {
+        for (int i = 0; i < s1->num_files; i++) {
+            if (s1->start_spec[i] != s2->start_spec[i]) return 0;
+        }
+    }
+
+    // 比较 num_spec 数组
+    if (s1->num_spec != NULL && s2->num_spec != NULL) {
+        for (int i = 0; i < s1->num_files; i++) {
+            if (s1->num_spec[i] != s2->num_spec[i]) return 0;
+        }
+    }
+
+    // 比较 num_pad 数组
+    if (s1->num_pad != NULL && s2->num_pad != NULL) {
+        for (int i = 0; i < s1->num_files; i++) {
+            if (s1->num_pad[i] != s2->num_pad[i]) return 0;
+        }
+    }
+
+    // 如果所有字段都一致
+    return 1;
+}
+
+int read_prep_subbands_cache(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask)
+// This routine preps a block of raw spectra for subbanding.  It uses
+// dispersion delays in 'delays' to de-disperse the data into
+// 'numsubbands' subbands.  It stores the resulting data in vector
+// 'fdata' of length 'numsubbands' * 's->spectra_per_subint'.  The low
+// freq subband is stored first, then the next highest subband etc,
+// with 's->spectra_per_subint' floating points per subband. It
+// returns the # of points read if succesful, 0 otherwise.
+// 'maskchans' is an array of length numchans which contains a list of
+// the number of channels that were masked.  The # of channels masked
+// is returned in 'nummasked'.  'obsmask' is the mask structure to use
+// for masking.  If 'transpose'==0, the data will be kept in time
+// order instead of arranged by subband as above.
+{
+    int ii, jj, offset;
+    double starttime = 0.0;
+    static float *tmpswap;// *rawdata1, *rawdata2;
+    // static float *currentdata, *lastdata;
+
+    static float *currentdata_scl, *lastdata_scl;
+    static float *currentdata_offs, *lastdata_offs;
+    static unsigned char *currentdata_data, *lastdata_data;
+
+    static int firsttime = 1, mask = 0;
+    static fftwf_plan tplan1, tplan2;
+
+    *nummasked = 0;
+    if (firsttime) {
+        if (obsmask->numchan)
+            mask = 1;
+            
+        currentdata_scl = malloc(s->num_channels * sizeof(float));
+        currentdata_offs = malloc(s->num_channels * sizeof(float));
+        currentdata_data = malloc(s->spectra_per_subint * s->num_channels * sizeof(unsigned char));
+
+        lastdata_scl = malloc(s->num_channels * sizeof(float));
+        lastdata_offs = malloc(s->num_channels * sizeof(float));
+        lastdata_data = malloc(s->spectra_per_subint * s->num_channels * sizeof(unsigned char));
+
+        tplan2 = plan_transpose(numsubbands, s->spectra_per_subint, fdata, fdata);
+    }
+
+    /* Read and de-disperse */
+    fread(currentdata_scl, sizeof(float), s->num_channels, s->cacheFile);
+    fread(currentdata_offs, sizeof(float), s->num_channels, s->cacheFile);
+    fread(currentdata_data, sizeof(unsigned char), s->spectra_per_subint * s->num_channels, s->cacheFile);
+    
+        
+    starttime = currentspectra * s->dt; // or -1 subint?
+
+    // In mpiprepsubband, the nodes do not call read_subbands() where
+    // currentspectra gets incremented.
+    if (using_MPI)
+        currentspectra += s->spectra_per_subint;
+
+    if (firsttime) {
+        SWAP(currentdata_scl, lastdata_scl);
+        SWAP(currentdata_offs, lastdata_offs);
+        SWAP(currentdata_data, lastdata_data);
+        
+        firsttime = 0;
+        return 0;
+    } else {
+        dedisp_subbands_cache(currentdata_data, currentdata_scl, currentdata_offs, lastdata_data, lastdata_scl, lastdata_offs, s->spectra_per_subint,
+                        s->num_channels, delays, numsubbands, fdata);
+        // SWAP(currentdata, lastdata);
+        SWAP(currentdata_scl, lastdata_scl);
+        SWAP(currentdata_offs, lastdata_offs);
+        SWAP(currentdata_data, lastdata_data);
+
+        // Transpose the resulting data into spectra as a function of time
+        if (transpose == 0)
+            fftwf_execute_r2r(tplan2, fdata, fdata);
+        return s->spectra_per_subint;
+    }
+}
+
+int read_subbands_cache(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask)
+// This routine reads a spectral block/subint from the input raw data
+// files. The routine uses dispersion delays in 'delays' to
+// de-disperse the data into 'numsubbands' subbands.  It stores the
+// resulting data in vector 'fdata' of length 'numsubbands' *
+// 's->spectra_per_subint'.  The low freq subband is stored first,
+// then the next highest subband etc, with 's->spectra_per_subint'
+// floating points per subband.  It returns the # of points read if
+// successful, 0 otherwise. If padding is returned as 1, then padding
+// was added and statistics should not be calculated.  'maskchans' is
+// an array of length numchans which contains a list of the number of
+// channels that were masked.  The # of channels masked is returned in
+// 'nummasked'.  'obsmask' is the mask structure to use for masking.
+// If 'transpose'==0, the data will be kept in time order instead of
+// arranged by subband as above.
+{
+    static int firsttime = 1;
+    static float *frawdata;
+    int ifget_rawblock;
+
+    if (firsttime) {
+        // Check to make sure there isn't more dispersion across a
+        // subband than time in a block of data
+        if (delays[0] > s->spectra_per_subint) {
+            perror("\nError: there is more dispersion across a subband than time\n"
+                   "in a block of data.  Increase spectra_per_subint if possible.");
+            exit(-1);
+        }
+        // Needs to be twice as large for buffering if adding observations together
+        // frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
+
+        fread(padding, sizeof(int), 1, s->cacheFile);
+        fread(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+
+        if (!ifget_rawblock) {
+            perror("Error: problem reading the raw data file in read_subbands()");
+            exit(-1);
+        }
+        if (0 != read_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s,
+                               transpose, maskchans, nummasked, obsmask)) {
+            perror("Error: problem initializing read_prep_subbands_cache() in read_subbands()");
+            exit(-1);
+        }
+        firsttime = 0;
+    }
+
+    fread(padding, sizeof(int), 1, s->cacheFile);
+    fread(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+
+
+    if (!ifget_rawblock) {
+        return 0;
+    }
+    if (read_prep_subbands_cache(fdata, frawdata, delays, numsubbands, s, transpose,
+                      maskchans, nummasked, obsmask) == s->spectra_per_subint) {
+        currentspectra += s->spectra_per_subint;
+        return s->spectra_per_subint;
+    } else {
+        return 0;
+    }
+}
+
+int read_prep_subbands_cache_log(float *fdata, float *rawdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose,
+                  int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds)
+// This routine preps a block of raw spectra for subbanding.  It uses
+// dispersion delays in 'delays' to de-disperse the data into
+// 'numsubbands' subbands.  It stores the resulting data in vector
+// 'fdata' of length 'numsubbands' * 's->spectra_per_subint'.  The low
+// freq subband is stored first, then the next highest subband etc,
+// with 's->spectra_per_subint' floating points per subband. It
+// returns the # of points read if succesful, 0 otherwise.
+// 'maskchans' is an array of length numchans which contains a list of
+// the number of channels that were masked.  The # of channels masked
+// is returned in 'nummasked'.  'obsmask' is the mask structure to use
+// for masking.  If 'transpose'==0, the data will be kept in time
+// order instead of arranged by subband as above.
+{
+    int ii, jj, offset;
+    double starttime = 0.0;
+    static float *tmpswap;// *rawdata1, *rawdata2;
+    // static float *currentdata, *lastdata;
+
+    static float *currentdata_scl, *lastdata_scl;
+    static float *currentdata_offs, *lastdata_offs;
+    static unsigned char *currentdata_data, *lastdata_data;
+
+    static int firsttime = 1, mask = 0;
+    static fftwf_plan tplan1, tplan2;
+
+    *nummasked = 0;
+    if (firsttime) {
+        if (obsmask->numchan)
+            mask = 1;
+            
+        currentdata_scl = malloc(s->num_channels * sizeof(float));
+        currentdata_offs = malloc(s->num_channels * sizeof(float));
+        currentdata_data = malloc(s->spectra_per_subint * s->num_channels * sizeof(unsigned char));
+
+        lastdata_scl = malloc(s->num_channels * sizeof(float));
+        lastdata_offs = malloc(s->num_channels * sizeof(float));
+        lastdata_data = malloc(s->spectra_per_subint * s->num_channels * sizeof(unsigned char));
+
+        tplan2 = plan_transpose(numsubbands, s->spectra_per_subint, fdata, fdata);
+    }
+
+    /* Read and de-disperse */    
+    struct timeval start, end; // 定义两个时间结构体
+    // 获取开始时间
+    gettimeofday(&start, NULL);
+    fread(currentdata_scl, sizeof(float), s->num_channels, s->cacheFile);
+    fread(currentdata_offs, sizeof(float), s->num_channels, s->cacheFile);
+    fread(currentdata_data, sizeof(unsigned char), s->spectra_per_subint * s->num_channels, s->cacheFile);    
+    // 获取结束时间
+    gettimeofday(&end, NULL);
+
+    // 计算执行时间（单位：微秒）
+    long seconds = end.tv_sec - start.tv_sec;            // 秒部分的差值
+    long microseconds = end.tv_usec - start.tv_usec;     // 微秒部分的差值
+    *total_microseconds += seconds * 1000000 + microseconds; // 转换为总微秒
+    *data_size += s->num_channels * sizeof(float) * 2 + s->spectra_per_subint * s->num_channels * sizeof(unsigned char);
+        
+    starttime = currentspectra * s->dt; // or -1 subint?
+
+    // In mpiprepsubband, the nodes do not call read_subbands() where
+    // currentspectra gets incremented.
+    if (using_MPI)
+        currentspectra += s->spectra_per_subint;
+
+    if (firsttime) {
+        SWAP(currentdata_scl, lastdata_scl);
+        SWAP(currentdata_offs, lastdata_offs);
+        SWAP(currentdata_data, lastdata_data);
+        
+        firsttime = 0;
+        return 0;
+    } else {
+        dedisp_subbands_cache(currentdata_data, currentdata_scl, currentdata_offs, lastdata_data, lastdata_scl, lastdata_offs, s->spectra_per_subint,
+                        s->num_channels, delays, numsubbands, fdata);
+        // SWAP(currentdata, lastdata);
+        SWAP(currentdata_scl, lastdata_scl);
+        SWAP(currentdata_offs, lastdata_offs);
+        SWAP(currentdata_data, lastdata_data);
+
+        // Transpose the resulting data into spectra as a function of time
+        if (transpose == 0)
+            fftwf_execute_r2r(tplan2, fdata, fdata);
+        return s->spectra_per_subint;
+    }
+}
+
+int read_subbands_cache_log(float *fdata, int *delays, int numsubbands,
+                  struct spectra_info *s, int transpose, int *padding,
+                  int *maskchans, int *nummasked, mask * obsmask, long long *data_size, long *total_microseconds)
+// This routine reads a spectral block/subint from the input raw data
+// files. The routine uses dispersion delays in 'delays' to
+// de-disperse the data into 'numsubbands' subbands.  It stores the
+// resulting data in vector 'fdata' of length 'numsubbands' *
+// 's->spectra_per_subint'.  The low freq subband is stored first,
+// then the next highest subband etc, with 's->spectra_per_subint'
+// floating points per subband.  It returns the # of points read if
+// successful, 0 otherwise. If padding is returned as 1, then padding
+// was added and statistics should not be calculated.  'maskchans' is
+// an array of length numchans which contains a list of the number of
+// channels that were masked.  The # of channels masked is returned in
+// 'nummasked'.  'obsmask' is the mask structure to use for masking.
+// If 'transpose'==0, the data will be kept in time order instead of
+// arranged by subband as above.
+{
+    static int firsttime = 1;
+    static float *frawdata;
+    int ifget_rawblock;
+
+    if (firsttime) {
+        // Check to make sure there isn't more dispersion across a
+        // subband than time in a block of data
+        if (delays[0] > s->spectra_per_subint) {
+            perror("\nError: there is more dispersion across a subband than time\n"
+                   "in a block of data.  Increase spectra_per_subint if possible.");
+            exit(-1);
+        }
+        // Needs to be twice as large for buffering if adding observations together
+        // frawdata = gen_fvect(2 * s->num_channels * s->spectra_per_subint);
+
+        fread(padding, sizeof(int), 1, s->cacheFile);
+        fread(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+
+        if (!ifget_rawblock) {
+            perror("Error: problem reading the raw data file in read_subbands()");
+            exit(-1);
+        }
+        if (0 != read_prep_subbands_cache_log(fdata, frawdata, delays, numsubbands, s,
+                               transpose, maskchans, nummasked, obsmask, data_size, total_microseconds)) {
+            perror("Error: problem initializing read_prep_subbands_cache() in read_subbands()");
+            exit(-1);
+        }
+        firsttime = 0;
+    }
+
+    fread(padding, sizeof(int), 1, s->cacheFile);
+    fread(&ifget_rawblock, sizeof(int), 1, s->cacheFile);
+
+
+    if (!ifget_rawblock) {
+        return 0;
+    }
+    if (read_prep_subbands_cache_log(fdata, frawdata, delays, numsubbands, s, transpose,
+                      maskchans, nummasked, obsmask, data_size, total_microseconds) == s->spectra_per_subint) {
+        currentspectra += s->spectra_per_subint;
+        return s->spectra_per_subint;
+    } else {
+        return 0;
+    }
 }

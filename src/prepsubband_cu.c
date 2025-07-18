@@ -212,8 +212,31 @@ int prepsubband_cu_main(int argc, char *argv[])
         }
         printf("\n");
         if (RAWDATA)
-        {
-            read_rawdata_files(&s);
+        {            
+            if (cmd->cacheP)
+            {
+                // 加载到另一个结构体
+                char *spec_file[1024];
+                strcpy(spec_file, s.filenames[0]);
+                strcat(spec_file, "_spec.dat");
+                printf("*** --- >>> Read spec_info file %s\n", spec_file);
+                deserialize_spectra_info(&s, spec_file);
+            }
+            else
+            {
+                read_rawdata_files(&s);
+                if (cmd->ignorechanstrP)
+                {
+                    s.ignorechans = get_ignorechans(cmd->ignorechanstr, 0, s.num_channels - 1,
+                                                    &s.num_ignorechans, &s.ignorechans_str);
+                    if (s.ignorechans_str == NULL)
+                    {
+                        s.ignorechans_str = (char *)malloc(strlen(cmd->ignorechanstr) + 1);
+                        strcpy(s.ignorechans_str, cmd->ignorechanstr);
+                    }
+                }
+                print_spectra_info_summary(&s);
+            }
             // Make sure that the requested number of subbands divides into the
             // the raw number of channels.
             if (s.num_channels % cmd->nsub)
@@ -223,17 +246,6 @@ int prepsubband_cu_main(int argc, char *argv[])
                        cmd->nsub, s.num_channels);
                 exit(1);
             }
-            if (cmd->ignorechanstrP)
-            {
-                s.ignorechans = get_ignorechans(cmd->ignorechanstr, 0, s.num_channels - 1,
-                                                &s.num_ignorechans, &s.ignorechans_str);
-                if (s.ignorechans_str == NULL)
-                {
-                    s.ignorechans_str = (char *)malloc(strlen(cmd->ignorechanstr) + 1);
-                    strcpy(s.ignorechans_str, cmd->ignorechanstr);
-                }
-            }
-            print_spectra_info_summary(&s);
             spectra_info_to_inf(&s, &idata);
         }
         else
@@ -312,6 +324,18 @@ int prepsubband_cu_main(int argc, char *argv[])
 
     long long data_size = 0;
     long total_microseconds = 0;
+
+    /* Open cache file for read */
+    if (cmd->cacheP)
+    {
+        strcpy(s.cacheFileName, s.filenames[0]);
+        if (s.remove_zerodm)
+            strcat(s.cacheFileName, "_cac0");
+        else
+            strcat(s.cacheFileName, "_cac");
+        printf("\n*** --- >>> Read cache file %s ...\n", s.cacheFileName);
+        s.cacheFile = fopen(s.cacheFileName, "r");
+    }
 
     datafilenm = (char *)calloc(strlen(cmd->outfile) + 20, 1);
     if (!cmd->subP)
@@ -891,7 +915,12 @@ int prepsubband_cu_main(int argc, char *argv[])
         free_mask(obsmask);
     }
     //  Close all the raw files and free their vectors
-    close_rawfiles(&s);
+    if (!cmd->cacheP)
+    {
+        close_rawfiles(&s);
+    }else {
+        fclose(s.cacheFile);
+    }
     for (ii = 0; ii < cmd->numdms; ii++)
         fclose(outfiles[ii]);
     if (cmd->subP)
@@ -923,8 +952,9 @@ int prepsubband_cu_main(int argc, char *argv[])
     cudaFree(lastdata_gpu);
     cudaFree(currentdsdata_gpu);
     cudaFree(lastdsdata_gpu);
-    if(cmd->IOlogP){
-        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+    if (cmd->IOlogP)
+    {
+        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size / (1024.0 * 1024.0 * 1024.0), (double)total_microseconds / (1000000), ((double)data_size / (1024.0 * 1024.0 * 1024.0)) / ((double)total_microseconds / (1000000)));
     }
     return (0);
 }
@@ -1131,13 +1161,33 @@ static int get_data_offset(float **outdata, int blocksperread,
                 {
                     if (!cmd->IOlogP)
                     {
-                        numread = read_subbands(currentdata + ii * blocksize, idispdts,
-                                                cmd->nsub, s, 0, &tmppad,
-                                                maskchans, &nummasked, obsmask);
-                    }else{
-                        numread = read_subbands_log(currentdata + ii * blocksize, idispdts,
-                                                cmd->nsub, s, 0, &tmppad,
-                                                maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                        if (cmd->cacheP)
+                        {
+                            numread = read_subbands_cache(currentdata + ii * blocksize, idispdts,
+                                                             cmd->nsub, s, 0, &tmppad,
+                                                             maskchans, &nummasked, obsmask);
+                        }
+                        else
+                        {
+                            numread = read_subbands(currentdata + ii * blocksize, idispdts,
+                                                    cmd->nsub, s, 0, &tmppad,
+                                                    maskchans, &nummasked, obsmask);
+                        }
+                    }
+                    else
+                    {
+                        if (cmd->cacheP)
+                        {
+                            numread = read_subbands_cache_log(currentdata + ii * blocksize, idispdts,
+                                                             cmd->nsub, s, 0, &tmppad,
+                                                             maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                        }
+                        else
+                        {
+                            numread = read_subbands_log(currentdata + ii * blocksize, idispdts,
+                                                    cmd->nsub, s, 0, &tmppad,
+                                                    maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                        }
                     }
                 }
                 else if (insubs)
@@ -1318,11 +1368,13 @@ static void update_infodata(infodata *idata, long datawrote, long padwrote,
 }
 
 /* 定义共享库接口 */
-int call_prepsubband_cu(int argc, char *argv[]) {
+int call_prepsubband_cu(int argc, char *argv[])
+{
     return prepsubband_cu_main(argc, argv);
 }
 
 /* 保留原来的 main 函数 */
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     return prepsubband_cu_main(argc, argv);
 }

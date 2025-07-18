@@ -1742,3 +1742,23 @@ void get_PSRFITS_subint_log(float *fdata, unsigned char *cdata, struct spectra_i
         }
     }
 }
+
+void init_static_values(struct spectra_info *s){
+    s->get_rawblock = &get_PSRFITS_rawblock;
+    s->get_rawblock_log = &get_PSRFITS_rawblock_log;
+    s->offset_to_spectra = &offset_to_PSRFITS_spectra;
+    offsets = gen_fvect(s->num_channels * s->num_polns);
+    scales = gen_fvect(s->num_channels * s->num_polns);
+    weights = gen_fvect(s->num_channels);
+    int ii;
+    // Initialize these if we won't be reading them from the file
+    if (s->apply_offset == 0)
+        for (ii = 0; ii < s->num_channels * s->num_polns; ii++)
+            offsets[ii] = 0.0;
+    if (s->apply_scale == 0)
+        for (ii = 0; ii < s->num_channels * s->num_polns; ii++)
+            scales[ii] = 1.0;
+    if (s->apply_weight == 0)
+        for (ii = 0; ii < s->num_channels; ii++)
+            weights[ii] = 1.0;
+}
