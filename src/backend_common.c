@@ -1458,20 +1458,20 @@ void deserialize_spectra_info(struct spectra_info *s, const char *filename) {
     }
 
     // 读取文件名数组
-    s->filenames = (char **)malloc(sizeof(char *) * s->num_files);
-    for (int i = 0; i < s->num_files; i++) {
-        size_t len;
-        fread(&len, sizeof(size_t), 1, file);
-        s->filenames[i] = (char *)malloc(len);
-        fread(s->filenames[i], sizeof(char), len, file);
-    }
+    // s->filenames = (char **)malloc(sizeof(char *) * s->num_files);
+    // for (int i = 0; i < s->num_files; i++) {
+    //     size_t len;
+    //     fread(&len, sizeof(size_t), 1, file);
+    //     s->filenames[i] = (char *)malloc(len);
+    //     fread(s->filenames[i], sizeof(char), len, file);
+    // }
 
     // 初始化 padvals
     s->padvals = (float *)malloc(sizeof(float) * s->num_channels);
     fread(s->padvals, sizeof(float), s->num_channels, file);
 
     // 初始化 cacheFile
-    s->cacheFile = fopen(s->cacheFileName, "wb+");
+    // s->cacheFile = fopen(s->cacheFileName, "wb+");
 
     init_static_values(s);
 
