@@ -22,7 +22,7 @@ PrestoZL is particularly suitable for searching pulsars using large (zmax, wmax)
 
 **We also opensource a GPU-accelerated version of De-dispersion** in `prepsubband_cu.c` with the performance far exceeds the CPU-based `prepsubband.c`. It can be 100 times faster than the CPU based de-dispersion version, and the processing results are fully consistent with the code in [PRESTO's prepsubband.c](https://github.com/scottransom/presto/blob/v4.0/src/prepsubband.c).
 
-Table below shows the end-to-end processing times of different methods when processing a 1816.77-second observation in M5 dataset (NGC 5904) using a single process. PrestoZL achieves 51.19~56.38 times speedup over PRESTO C.
+Table below shows the end-to-end processing times of different methods when processing a 1816.77-second observation in M5 dataset (NGC 5904) using a single process with zmax=200 and wmax=300. PrestoZL achieves 51.19~56.38 times speedup over PRESTO C.
 
 | Method              | Process Time | Speedup |
 |---------------------|--------------|---------|
