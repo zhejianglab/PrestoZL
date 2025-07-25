@@ -11,6 +11,7 @@ lib.call_prepsubband_cu.restype = c_int
 # 构造参数列表，拆分为与命令行一致的形式
 args = [
     "prepsubband_cu",  # 程序名 (相当于 argv[0])
+    "-check",
     "-IOlog",          # 参数
     "-nobary",         # 参数
     "-numout",         # 参数

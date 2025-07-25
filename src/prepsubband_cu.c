@@ -77,6 +77,36 @@ static Cmdline *cmd;
 #include "dmalloc.h"
 #endif
 
+void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdata_len, int dmprecision, int *all_zero, int *has_over)
+{
+    double max_float = (double)(((1 << s->bits_per_sample) - 1) * cmd->nsub);
+    for (int ii = 0; ii < cmd->numdms; ii++)
+    {
+        if (all_zero[ii])
+        {
+            for (int jj = 0; jj < outdata_len; jj++)
+            {
+                if (outdata[ii][jj] > 0)
+                {
+                    all_zero[ii] = 0;
+                    break;
+                }
+            }
+        }
+        if (!has_over[ii])
+        {
+            for (int jj = 0; jj < outdata_len; jj++)
+            {
+                if (outdata[ii][jj] > max_float)
+                {
+                    has_over[ii] = 1;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 int prepsubband_cu_main(int argc, char *argv[])
 {
     /* Any variable that begins with 't' means topocentric */
@@ -212,7 +242,7 @@ int prepsubband_cu_main(int argc, char *argv[])
         }
         printf("\n");
         if (RAWDATA)
-        {            
+        {
             if (cmd->cacheP)
             {
                 // 加载到另一个结构体
@@ -340,7 +370,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     datafilenm = (char *)calloc(strlen(cmd->outfile) + 20, 1);
     if (!cmd->subP)
     {
-        printf("Writing output data to:\n");
+        // printf("Writing output data to:\n");
         outfiles = (FILE **)malloc(cmd->numdms * sizeof(FILE *));
         dms = gen_dvect(cmd->numdms);
         for (ii = 0; ii < cmd->numdms; ii++)
@@ -349,7 +379,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             avgdm += dms[ii];
             sprintf(datafilenm, "%s_DM%.*f.dat", cmd->outfile, dmprecision, dms[ii]);
             outfiles[ii] = chkfopen(datafilenm, "wb");
-            printf("   '%s'\n", datafilenm);
+            // printf("   '%s'\n", datafilenm);
         }
         avgdm /= cmd->numdms;
         maxdm = dms[cmd->numdms - 1];
@@ -389,10 +419,56 @@ int prepsubband_cu_main(int argc, char *argv[])
     if (RAWDATA)
         idata.dm = avgdm;
     dsdt = cmd->downsamp * idata.dt;
+
+    int *all_zero, *has_over;
+    if (cmd->checkP && !cmd->subP)
+    {
+        all_zero = malloc(sizeof(int) * cmd->numdms);
+        has_over = malloc(sizeof(int) * cmd->numdms);
+        for (int ii = 0; ii < cmd->numdms; ii++)
+        {
+            all_zero[ii] = 1;
+            has_over[ii] = 0;
+        }
+    }
+
+    double cache_maxdm, cache_padding;
+    if (cmd->readpaddingP)
+    {
+        FILE *file = fopen(cmd->readpadding, "r");
+        if (file == NULL)
+        {
+            // 如果文件打开失败，打印错误信息并退出
+            perror("无法打开文件");
+            return 1;
+        }
+
+        if (fscanf(file, "%lf", &cache_maxdm) != 1)
+        {
+            printf("读取 maxdm 数据失败！\n");
+            fclose(file);
+            return 1;
+        }
+
+        if (fscanf(file, "%lf", &cache_padding) != 1)
+        {
+            printf("读取 padding 数据失败！\n");
+            fclose(file);
+            return 1;
+        }
+        maxdm = cache_maxdm;
+        printf("readpadding: maxdm和padding数据已从文件 %s 读取, maxdm:%f, avg:%f\n", cmd->readpadding, cache_maxdm, cache_padding);
+        fclose(file);
+    }
+    if (cmd->writepaddingP && cmd->maxnumdmsP)
+    {
+        maxdm = cmd->lodm + (cmd->maxnumdms - 1) * cmd->dmstep;
+    }
     BW_ddelay = delay_from_dm(maxdm, idata.freq) -
                 delay_from_dm(maxdm, idata.freq + (idata.num_chan - 1) * idata.chan_wid);
     blocksperread = ((int)(BW_ddelay / idata.dt) / s.spectra_per_subint + 1);
     worklen = s.spectra_per_subint * blocksperread;
+    // printf("maxdm:%f, BW_ddelay:%f, blocksperread:%d, worklen:%d\n", maxdm, BW_ddelay, blocksperread, worklen);
     /* The number of topo to bary time points to generate with TEMPO */
     numbarypts = (int)(s.T * 1.1 / TDT + 5.5) + 1;
 
@@ -537,7 +613,11 @@ int prepsubband_cu_main(int argc, char *argv[])
             if (cmd->subP)
                 write_subs(outfiles, cmd->nsub, subsdata, 0, numtowrite);
             else
+            {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
+                if (cmd->checkP && !cmd->subP)
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+            }
             totwrote += numtowrite;
 
             /* Update the statistics */
@@ -726,7 +806,11 @@ int prepsubband_cu_main(int argc, char *argv[])
             if (cmd->subP)
                 write_subs(outfiles, cmd->nsub, subsdata, 0, numtowrite);
             else
+            {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
+                if (cmd->checkP && !cmd->subP)
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+            }
             datawrote += numtowrite;
             totwrote += numtowrite;
             numwritten += numtowrite;
@@ -778,7 +862,11 @@ int prepsubband_cu_main(int argc, char *argv[])
                     if (cmd->subP)
                         write_subs(outfiles, cmd->nsub, subsdata, skip, numtowrite);
                     else
+                    {
                         write_data(outfiles, cmd->numdms, outdata, skip, numtowrite);
+                        if (cmd->checkP && !cmd->subP)
+                            check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+                    }
                     numwritten += numtowrite;
                     datawrote += numtowrite;
                     totwrote += numtowrite;
@@ -865,6 +953,10 @@ int prepsubband_cu_main(int argc, char *argv[])
             for (jj = 0; jj < cmd->numdms; jj++)
                 chkfseek(outfiles[jj], (startpad + 1) * sizeof(float), SEEK_SET);
             padtowrite = endpad - startpad;
+            if (cmd->readpaddingP)
+            {
+                avg = cache_padding;
+            }
             write_padding(outfiles, cmd->numdms, avg, padtowrite);
         }
     }
@@ -918,23 +1010,14 @@ int prepsubband_cu_main(int argc, char *argv[])
     if (!cmd->cacheP)
     {
         close_rawfiles(&s);
-    }else {
+    }
+    else
+    {
         fclose(s.cacheFile);
     }
     for (ii = 0; ii < cmd->numdms; ii++)
         fclose(outfiles[ii]);
-    if (cmd->subP)
-    {
-        vect_free(subsdata[0]);
-        vect_free(subsdata);
-    }
-    else
-    {
-        vect_free(outdata[0]);
-        vect_free(outdata);
-    }
     free(outfiles);
-    vect_free(dms);
     vect_free(idispdt);
     vect_free(offsets[0]);
     vect_free(offsets);
@@ -952,9 +1035,69 @@ int prepsubband_cu_main(int argc, char *argv[])
     cudaFree(lastdata_gpu);
     cudaFree(currentdsdata_gpu);
     cudaFree(lastdsdata_gpu);
+
+    if (cmd->subP)
+    {
+        vect_free(subsdata[0]);
+        vect_free(subsdata);
+    }
+    else
+    {
+        vect_free(outdata[0]);
+        vect_free(outdata);
+    }
+    vect_free(dms);
+
     if (cmd->IOlogP)
     {
         printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size / (1024.0 * 1024.0 * 1024.0), (double)total_microseconds / (1000000), ((double)data_size / (1024.0 * 1024.0 * 1024.0)) / ((double)total_microseconds / (1000000)));
+    }
+
+    if (cmd->writepaddingP && cmd->maxnumdmsP)
+    {
+        FILE *file = fopen(cmd->writepadding, "w");
+        if (file == NULL)
+        {
+            // 如果文件打开失败，打印错误信息并退出
+            perror("无法打开文件");
+            return 1;
+        }
+
+        // 写入 int 和 double 数据到文件
+        fprintf(file, "%f\n", maxdm); // 第一行写入 maxdm
+        fprintf(file, "%f\n", avg);   // 第二行写入 padding avg
+
+        // 关闭文件
+        fclose(file);
+
+        printf("writepadding: maxdm和padding数据已写入到文件 %s, maxdm:%f, avg:%f\n", cmd->writepadding, maxdm, avg);
+    }
+
+    if (cmd->checkP && !cmd->subP)
+    {
+        double max_float = (double)(((1 << s.bits_per_sample) - 1) * cmd->nsub);
+        int total_all_zero = 0, total_has_over = 0;
+        for (int ii = 0; ii < cmd->numdms; ii++)
+        {
+            double dms_ii = cmd->lodm + ii * cmd->dmstep;
+            if (all_zero[ii] == 1)
+            {
+                total_all_zero = 1;
+                printf("check: %s_DM%.*f.dat all values are zero!\n", cmd->outfile, dmprecision, dms_ii);
+            }
+            else if (has_over[ii] == 1)
+            {
+                total_has_over = 1;
+                printf("check: %s_DM%.*f.dat has value exceeding the upper limit!\n", cmd->outfile, dmprecision, dms_ii);
+            }
+        }
+
+        free(all_zero);
+        free(has_over);
+        if (total_all_zero)
+            return -1;
+        if (total_has_over)
+            return -2;
     }
     return (0);
 }
@@ -1164,8 +1307,8 @@ static int get_data_offset(float **outdata, int blocksperread,
                         if (cmd->cacheP)
                         {
                             numread = read_subbands_cache(currentdata + ii * blocksize, idispdts,
-                                                             cmd->nsub, s, 0, &tmppad,
-                                                             maskchans, &nummasked, obsmask);
+                                                          cmd->nsub, s, 0, &tmppad,
+                                                          maskchans, &nummasked, obsmask);
                         }
                         else
                         {
@@ -1179,14 +1322,14 @@ static int get_data_offset(float **outdata, int blocksperread,
                         if (cmd->cacheP)
                         {
                             numread = read_subbands_cache_log(currentdata + ii * blocksize, idispdts,
-                                                             cmd->nsub, s, 0, &tmppad,
-                                                             maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                                                              cmd->nsub, s, 0, &tmppad,
+                                                              maskchans, &nummasked, obsmask, data_size, total_microseconds);
                         }
                         else
                         {
                             numread = read_subbands_log(currentdata + ii * blocksize, idispdts,
-                                                    cmd->nsub, s, 0, &tmppad,
-                                                    maskchans, &nummasked, obsmask, data_size, total_microseconds);
+                                                        cmd->nsub, s, 0, &tmppad,
+                                                        maskchans, &nummasked, obsmask, data_size, total_microseconds);
                         }
                     }
                 }

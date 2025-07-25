@@ -124,7 +124,21 @@ static Cmdline cmd = {
   /***** -IOlog: Print IO transfer log */
   /* IOlogP = */ 0,
   /***** -cache: Read/Write data from cache */
-  /* cacheP = */ 0
+  /* cacheP = */ 0,
+  /***** -readpadding: Read maxdm and first_padding from file */
+  /* readpaddingP = */ 0,
+  /* readpadding = */ (char*)0,
+  /* readpaddingC = */ 0,
+  /***** -writepadding: Write maxdm and first_padding to file */
+  /* writepaddingP = */ 0,
+  /* writepadding = */ (char*)0,
+  /* writepaddingC = */ 0,
+  /***** -maxnumdms: The max number of DMs to de-disperse */
+  /* maxnumdmsP = */ 0,
+  /* maxnumdms =  */ 0,
+  /* maxnumdmsC = */ 0,
+  /***** -check: Check whether the values in the dat file are abnormal */
+  /* checkP = */ 0,
 };
 
 /*@=null*/
@@ -1139,6 +1153,49 @@ showOptionValues(void)
   } else {
     printf("-cache found:\n");
   }
+  
+  /***** -readpadding: Read maxdm and first_padding from file */
+  if( !cmd.readpaddingP ) {
+    printf("-readpadding not found.\n");
+  } else {
+    printf("-readpadding found:\n");
+    if( !cmd.readpaddingC ) {
+      printf("  no values\n");
+    } else {
+      printf("  value = `%s'\n", cmd.readpadding);
+    }
+  }
+  
+  /***** -writepadding: Write maxdm and first_padding to file */
+  if( !cmd.writepaddingP ) {
+    printf("-writepadding not found.\n");
+  } else {
+    printf("-writepadding found:\n");
+    if( !cmd.writepaddingC ) {
+      printf("  no values\n");
+    } else {
+      printf("  value = `%s'\n", cmd.writepadding);
+    }
+  }
+
+  /***** -check: Check whether the values in the dat file are abnormal */
+  if( !cmd.checkP ) {
+    printf("-check not found.\n");
+  } else {
+    printf("-check found:\n");
+  }
+  
+  /***** -maxnumdms: The max number of DMs to de-disperse */
+  if( !cmd.maxnumdmsP ) {
+    printf("-maxnumdms not found.\n");
+  } else {
+    printf("-maxnumdms found:\n");
+    if( !cmd.maxnumdmsC ) {
+      printf("  no values\n");
+    } else {
+      printf("  value = `%d'\n", cmd.maxnumdms);
+    }
+  }
 
   if( !cmd.argc ) {
     printf("no remaining parameters in argv\n");
@@ -1468,6 +1525,37 @@ parseCmdline(int argc, char **argv)
 
     if( 0==strcmp("-cache", argv[i]) ) {
       cmd.cacheP = 1;
+      continue;
+    }
+    
+    if( 0==strcmp("-readpadding", argv[i]) ) {
+      int keep = i;
+      cmd.readpaddingP = 1;
+      i = getStringOpt(argc, argv, i, &cmd.readpadding, 1);
+      cmd.readpaddingC = i-keep;
+      continue;
+    }
+    
+    if( 0==strcmp("-writepadding", argv[i]) ) {
+      int keep = i;
+      cmd.writepaddingP = 1;
+      i = getStringOpt(argc, argv, i, &cmd.writepadding, 1);
+      cmd.writepaddingC = i-keep;
+      continue;
+    }
+
+    if( 0==strcmp("-maxnumdms", argv[i]) ) {
+      int keep = i;
+      cmd.maxnumdmsP = 1;
+      i = getIntOpt(argc, argv, i, &cmd.maxnumdms, 1);
+      cmd.maxnumdmsC = i-keep;
+      checkIntLower("-maxnumdms", &cmd.maxnumdms, cmd.maxnumdmsC, 10000);
+      checkIntHigher("-maxnumdms", &cmd.maxnumdms, cmd.maxnumdmsC, 1);
+      continue;
+    }
+
+    if( 0==strcmp("-check", argv[i]) ) {
+      cmd.checkP = 1;
       continue;
     }
     

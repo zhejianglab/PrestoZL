@@ -112,6 +112,20 @@ typedef struct s_Cmdline {
   char IOlogP;
   /***** -cache: Read/Write data from cache */
   char cacheP;
+  /***** -readpadding: Read maxdm and first_padding from file */
+  char readpaddingP;
+  char* readpadding;
+  int readpaddingC;
+  /***** -writepadding: Write maxdm and first_padding to file */
+  char writepaddingP;
+  char* writepadding;
+  int writepaddingC;
+  /***** -maxnumdms: The max number of DMs to de-disperse */
+  char maxnumdmsP;
+  int maxnumdms;
+  int maxnumdmsC;
+  /***** -check: Check whether the values in the dat file are abnormal */
+  char checkP;
 } Cmdline;
 
 

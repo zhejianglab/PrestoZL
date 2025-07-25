@@ -304,6 +304,33 @@ int main(int argc, char *argv[])
     if (RAWDATA)
         idata.dm = avgdm;
     dsdt = cmd->downsamp * idata.dt;
+    double cache_maxdm, cache_padding;
+    if(cmd->readpaddingP){
+        FILE *file = fopen(cmd->readpadding, "r");
+        if (file == NULL) {
+            // 如果文件打开失败，打印错误信息并退出
+            perror("无法打开文件");
+            return 1;
+        }
+
+        if (fscanf(file, "%lf", &cache_maxdm) != 1) {
+            printf("读取 maxdm 数据失败！\n");
+            fclose(file);
+            return 1;
+        }
+
+        if (fscanf(file, "%lf", &cache_padding) != 1) {
+            printf("读取 padding 数据失败！\n");
+            fclose(file);
+            return 1;
+        }
+        maxdm = cache_maxdm;
+        printf("readpadding: maxdm和padding数据已从文件 %s 读取, maxdm:%f, avg:%f\n", cmd->readpadding, cache_maxdm, cache_padding);
+        fclose(file);
+    }
+    if(cmd->writepaddingP && cmd->maxnumdmsP){
+        maxdm = cmd->lodm + (cmd->maxnumdms - 1) * cmd->dmstep;
+    }
     BW_ddelay = delay_from_dm(maxdm, idata.freq) -
         delay_from_dm(maxdm, idata.freq + (idata.num_chan - 1) * idata.chan_wid);
     blocksperread = ((int) (BW_ddelay / idata.dt) / s.spectra_per_subint + 1);
@@ -717,6 +744,9 @@ int main(int argc, char *argv[])
             for (jj = 0; jj < cmd->numdms; jj++)
                 chkfseek(outfiles[jj], (startpad + 1) * sizeof(float), SEEK_SET);
             padtowrite = endpad - startpad;
+            if(cmd->readpaddingP){
+                avg = cache_padding;
+            }
             write_padding(outfiles, cmd->numdms, avg, padtowrite);
         }
     }
@@ -784,6 +814,23 @@ int main(int argc, char *argv[])
     }
     if(cmd->IOlogP){
         printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+    }
+    if (cmd->writepaddingP && cmd->maxnumdmsP){
+        FILE *file = fopen(cmd->writepadding, "w");
+        if (file == NULL) {
+            // 如果文件打开失败，打印错误信息并退出
+            perror("无法打开文件");
+            return 1;
+        }
+
+        // 写入 int 和 double 数据到文件
+        fprintf(file, "%f\n", maxdm);      // 第一行写入 maxdm
+        fprintf(file, "%f\n", avg);   // 第二行写入 padding avg
+
+        // 关闭文件
+        fclose(file);
+
+        printf("writepadding: maxdm和padding数据已写入到文件 %s, maxdm:%f, avg:%f\n", cmd->writepadding, maxdm, avg);
     }
     return (0);
 }

@@ -30,6 +30,7 @@ bin/patchdata
 bin/plotbincand
 bin/prepdata
 bin/prepfold
+bin/prepcache
 bin/prepsubband
 bin/prepsubband_cu
 bin/psrorbit
