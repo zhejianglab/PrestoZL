@@ -784,6 +784,7 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
                 unsigned long long int *search_nums_current = (unsigned long long int *)malloc(sizeof(unsigned long long int));
                 CUDA_CHECK(cudaMemcpyAsync(search_nums_current, search_nums, sizeof(unsigned long long int), cudaMemcpyDeviceToHost, main_stream));
                 unsigned long long int search_num = search_nums_current[0];
+                // printf("current search_num:%lld, max search_num:%lld\n", search_num, search_num_array * search_num_base * single_search_size / (sizeof(SearchValue)));
                 if (search_num > search_num_array * search_num_base * single_search_size / (sizeof(SearchValue) * 2))
                 {
                     // Too much data in search_results, transferring back to CPU

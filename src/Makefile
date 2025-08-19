@@ -313,7 +313,7 @@ prepsubband_kernels.o: prepsubband_kernels.cu
 	$(NVCC) $(EXTRA_NVCCFLAGS) $(NVCCFLAGS) $(CUDA_INC_PATH) $(GENCODE_FLAGS) $(GLIBINC) -c $< 
 
 prepsubband_cu: prepsubband_cmd.c prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
-	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband_cu.o prepsubband_cmd.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)
+	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband_cu.o prepsubband_cmd.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm -ljson-c $(CUDA_LINK_EXTRA_FLAGS)
 
 libprepsubband_cu_lib.so: prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) $(GLIBLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)

@@ -25,6 +25,7 @@
 #include "backend_common.h"
 #include "cuda_runtime.h"
 #include "cuda_helper.h"
+#include <json-c/json.h> // 使用 json-c 库进行 JSON 操作
 
 // Use OpenMP
 #ifdef _OPENMP
@@ -77,7 +78,29 @@ static Cmdline *cmd;
 #include "dmalloc.h"
 #endif
 
-void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdata_len, int dmprecision, int *all_zero, int *has_over, int *has_nag)
+// 定义连续相等值的数量 N
+#define Conse_N 1000
+
+int has_consecutive_equal(float** outdata, int ii, int outdata_len) {
+    // 遍历 jj 维度
+    for (int jj = 0; jj < outdata_len; jj++) {
+        int count = 1; // 用来统计连续相同值的个数
+
+        for (int k = jj + 1; k < outdata_len; k++) {
+            if (outdata[ii][k] == outdata[ii][jj]) {
+                count++;
+                if (count >= Conse_N) {
+                    return 1; // 找到连续 N 个相等的值
+                }
+            } else {
+                break; // 如果不相等，计数清零并退出内层循环
+            }
+        }
+    }
+    return 0; // 遍历完成后没有找到连续 N 个相等的值
+}
+
+void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdata_len, int dmprecision, int *all_zero, int *has_over, int *has_nag, int *has_zero, int *has_match)
 {
     double max_float = (double)(((1 << s->bits_per_sample) - 1) * cmd->nsub);
     for (int ii = 0; ii < cmd->numdms; ii++)
@@ -93,23 +116,42 @@ void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdat
                 }
             }
         }
-        if (!has_over[ii] && !has_nag[ii])
+        // if (!has_over[ii] && !has_nag[ii])
+        // {
+        for (int jj = 0; jj < outdata_len; jj++)
         {
-            for (int jj = 0; jj < outdata_len; jj++)
+            if (outdata[ii][jj] == 0)
             {
-                if (outdata[ii][jj] < 0)
-                {
-                    has_nag[ii] = 1;
-                    break;
-                }
-                else if (outdata[ii][jj] > max_float)
-                {
-                    has_over[ii] = 1;
-                    break;
-                }
+                has_zero[ii] = 1;
+            }
+            else if (outdata[ii][jj] < 0)
+            {
+                has_nag[ii] = 1;
+            }
+            else if (outdata[ii][jj] > max_float)
+            {
+                has_over[ii] = 1;
             }
         }
+        // }
+        has_match[ii] = has_consecutive_equal(outdata, ii, outdata_len);
     }
+}
+
+char *get_error_json_path(const char *outfile, char *error_file_path) {
+    // 提取路径部分
+    strcpy(error_file_path, outfile);
+    char *last_slash = strrchr(error_file_path, '/');
+    if (last_slash) {
+        *last_slash = '\0'; // 截断，保留路径部分
+    } else {
+        // 如果没有路径，返回 NULL
+        return NULL;
+    }
+
+    // 拼接 error_dat.json 文件路径
+    strcat(error_file_path, "/error_dat.json");
+    return error_file_path;
 }
 
 int prepsubband_cu_main(int argc, char *argv[])
@@ -425,17 +467,21 @@ int prepsubband_cu_main(int argc, char *argv[])
         idata.dm = avgdm;
     dsdt = cmd->downsamp * idata.dt;
 
-    int *all_zero, *has_over, *has_nag;
+    int *all_zero, *has_over, *has_nag, *has_zero, *has_match;
     if (cmd->checkP && !cmd->subP)
     {
         all_zero = malloc(sizeof(int) * cmd->numdms);
         has_over = malloc(sizeof(int) * cmd->numdms);
         has_nag = malloc(sizeof(int) * cmd->numdms);
+        has_zero = malloc(sizeof(int) * cmd->numdms);
+        has_match = malloc(sizeof(int) * cmd->numdms);
         for (int ii = 0; ii < cmd->numdms; ii++)
         {
             all_zero[ii] = 1;
             has_nag[ii] = 0;
             has_over[ii] = 0;
+            has_zero[ii] = 0;
+            has_match[ii] = 0;
         }
     }
 
@@ -623,7 +669,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
                 if (cmd->checkP && !cmd->subP)
-                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag, has_zero, has_match);
             }
             totwrote += numtowrite;
 
@@ -816,7 +862,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
                 if (cmd->checkP && !cmd->subP)
-                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag, has_zero, has_match);
             }
             datawrote += numtowrite;
             totwrote += numtowrite;
@@ -872,7 +918,7 @@ int prepsubband_cu_main(int argc, char *argv[])
                     {
                         write_data(outfiles, cmd->numdms, outdata, skip, numtowrite);
                         if (cmd->checkP && !cmd->subP)
-                            check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
+                            check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag, has_zero, has_match);
                     }
                     numwritten += numtowrite;
                     datawrote += numtowrite;
@@ -1082,37 +1128,101 @@ int prepsubband_cu_main(int argc, char *argv[])
 
     if (cmd->checkP && !cmd->subP)
     {
+        // 创建 JSON 对象
+        struct json_object *error_array = json_object_new_array();
         double max_float = (double)(((1 << s.bits_per_sample) - 1) * cmd->nsub);
-        int total_all_zero = 0, total_has_over = 0, total_has_nag = 0;
+        int total_all_zero = 0, total_has_over = 0, total_has_nag = 0, total_has_zero = 0, total_has_match = 0;
         for (int ii = 0; ii < cmd->numdms; ii++)
         {
             double dms_ii = cmd->lodm + ii * cmd->dmstep;
+            char file_name[256]; // 假设文件名最长不超过 256 字节
+            snprintf(file_name, sizeof(file_name), "%s_DM%.*f.dat", cmd->outfile, dmprecision, dms_ii);
+
             if (all_zero[ii] == 1)
             {
                 total_all_zero = 1;
-                printf("check: %s_DM%.*f.dat all values are zero!\n", cmd->outfile, dmprecision, dms_ii);
+                // printf("check: %s_DM%.*f.dat all values are zero!\n", cmd->outfile, dmprecision, dms_ii);
+                // 创建错误信息 JSON 对象
+                struct json_object *error_obj = json_object_new_object();
+                json_object_object_add(error_obj, "file", json_object_new_string(file_name));
+                json_object_object_add(error_obj, "error", json_object_new_string("all values are zero"));
+                json_object_array_add(error_array, error_obj);
             }
             else if (has_over[ii] == 1)
             {
                 total_has_over = 1;
-                printf("check: %s_DM%.*f.dat has value exceeding the upper limit!\n", cmd->outfile, dmprecision, dms_ii);
+                // printf("check: %s_DM%.*f.dat has value exceeding the upper limit!\n", cmd->outfile, dmprecision, dms_ii);
+                struct json_object *error_obj = json_object_new_object();
+                json_object_object_add(error_obj, "file", json_object_new_string(file_name));
+                json_object_object_add(error_obj, "error", json_object_new_string("has value exceeding the upper limit"));
+                json_object_array_add(error_array, error_obj);
             }
             else if (has_nag[ii] == 1)
             {
                 total_has_nag = 1;
-                printf("check: %s_DM%.*f.dat has negative number!\n", cmd->outfile, dmprecision, dms_ii);
+                // printf("check: %s_DM%.*f.dat has negative number!\n", cmd->outfile, dmprecision, dms_ii);
+                struct json_object *error_obj = json_object_new_object();
+                json_object_object_add(error_obj, "file", json_object_new_string(file_name));
+                json_object_object_add(error_obj, "error", json_object_new_string("has negative number"));
+                json_object_array_add(error_array, error_obj);
+            }
+            else if (has_zero[ii] == 1)
+            {
+                total_has_zero = 1;
+                // printf("check: %s_DM%.*f.dat has negative number!\n", cmd->outfile, dmprecision, dms_ii);
+                struct json_object *error_obj = json_object_new_object();
+                json_object_object_add(error_obj, "file", json_object_new_string(file_name));
+                json_object_object_add(error_obj, "error", json_object_new_string("has zero number"));
+                json_object_array_add(error_array, error_obj);
+            }
+            else if (has_match[ii] == 1)
+            {
+                total_has_match = 1;
+                // printf("check: %s_DM%.*f.dat has negative number!\n", cmd->outfile, dmprecision, dms_ii);
+                struct json_object *error_obj = json_object_new_object();
+                json_object_object_add(error_obj, "file", json_object_new_string(file_name));
+                json_object_object_add(error_obj, "error", json_object_new_string("has 1000 consecutive identical values"));
+                json_object_array_add(error_array, error_obj);
             }
         }
+
+        // 如果有错误信息，则写入 JSON 文件
+        if (json_object_array_length(error_array) > 0) {
+            char error_file_path[1024];
+            char *error_file = get_error_json_path(cmd->outfile, error_file_path);
+            
+            FILE *file = fopen(error_file, "w");
+            if (file == NULL) {
+                perror("Error opening file");
+                json_object_put(error_array); // 释放 JSON 对象内存
+                return 0;
+            }
+
+            // 写入 JSON 数据
+            const char *json_str = json_object_to_json_string_ext(error_array, JSON_C_TO_STRING_PRETTY);
+            fprintf(file, "%s\n", json_str);
+
+            fclose(file);
+        }
+
+        // 释放 JSON 对象内存
+        json_object_put(error_array);
 
         free(all_zero);
         free(has_over);
         free(has_nag);
+        free(has_zero);
+        free(has_match);
         if (total_all_zero)
             return -1;
         if (total_has_over)
             return -2;
         if (total_has_nag)
             return -3;
+        if (total_has_zero)
+            return 1;
+        if (total_has_match)
+            return 2;
     }
     return (0);
 }
