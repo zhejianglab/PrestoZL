@@ -77,7 +77,7 @@ static Cmdline *cmd;
 #include "dmalloc.h"
 #endif
 
-void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdata_len, int dmprecision, int *all_zero, int *has_over)
+void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdata_len, int dmprecision, int *all_zero, int *has_over, int *has_nag)
 {
     double max_float = (double)(((1 << s->bits_per_sample) - 1) * cmd->nsub);
     for (int ii = 0; ii < cmd->numdms; ii++)
@@ -93,11 +93,16 @@ void check_dat(float **outdata, struct spectra_info *s, Cmdline *cmd, int outdat
                 }
             }
         }
-        if (!has_over[ii])
+        if (!has_over[ii] && !has_nag[ii])
         {
             for (int jj = 0; jj < outdata_len; jj++)
             {
-                if (outdata[ii][jj] > max_float)
+                if (outdata[ii][jj] < 0)
+                {
+                    has_nag[ii] = 1;
+                    break;
+                }
+                else if (outdata[ii][jj] > max_float)
                 {
                     has_over[ii] = 1;
                     break;
@@ -197,9 +202,9 @@ int prepsubband_cu_main(int argc, char *argv[])
     showOptionValues();
 #endif
 
-    printf("\n\n");
-    printf("          Pulsar Subband De-dispersion Routine\n");
-    printf("    by Astronomical Computing Research Center of Zhejiang Lab.\n\n");
+    // printf("\n\n");
+    // printf("          Pulsar Subband De-dispersion Routine\n");
+    // printf("    by Astronomical Computing Research Center of Zhejiang Lab.\n\n");
 
     if (RAWDATA)
     {
@@ -265,7 +270,7 @@ int prepsubband_cu_main(int argc, char *argv[])
                         strcpy(s.ignorechans_str, cmd->ignorechanstr);
                     }
                 }
-                print_spectra_info_summary(&s);
+                // print_spectra_info_summary(&s);
             }
             // Make sure that the requested number of subbands divides into the
             // the raw number of channels.
@@ -297,7 +302,7 @@ int prepsubband_cu_main(int argc, char *argv[])
         if (cmd->maskfileP)
         {
             read_mask(cmd->maskfile, &obsmask);
-            printf("Read mask information from '%s'\n\n", cmd->maskfile);
+            // printf("Read mask information from '%s'\n\n", cmd->maskfile);
             if ((obsmask.numchan != idata.num_chan) ||
                 (fabs(obsmask.mjd - (idata.mjd_i + idata.mjd_f)) > 1e-9))
             {
@@ -420,14 +425,16 @@ int prepsubband_cu_main(int argc, char *argv[])
         idata.dm = avgdm;
     dsdt = cmd->downsamp * idata.dt;
 
-    int *all_zero, *has_over;
+    int *all_zero, *has_over, *has_nag;
     if (cmd->checkP && !cmd->subP)
     {
         all_zero = malloc(sizeof(int) * cmd->numdms);
         has_over = malloc(sizeof(int) * cmd->numdms);
+        has_nag = malloc(sizeof(int) * cmd->numdms);
         for (int ii = 0; ii < cmd->numdms; ii++)
         {
             all_zero[ii] = 1;
+            has_nag[ii] = 0;
             has_over[ii] = 0;
         }
     }
@@ -616,7 +623,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
                 if (cmd->checkP && !cmd->subP)
-                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
             }
             totwrote += numtowrite;
 
@@ -809,7 +816,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             {
                 write_data(outfiles, cmd->numdms, outdata, 0, numtowrite);
                 if (cmd->checkP && !cmd->subP)
-                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+                    check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
             }
             datawrote += numtowrite;
             totwrote += numtowrite;
@@ -865,7 +872,7 @@ int prepsubband_cu_main(int argc, char *argv[])
                     {
                         write_data(outfiles, cmd->numdms, outdata, skip, numtowrite);
                         if (cmd->checkP && !cmd->subP)
-                            check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over);
+                            check_dat(outdata, &s, cmd, worklen / cmd->downsamp, dmprecision, all_zero, has_over, has_nag);
                     }
                     numwritten += numtowrite;
                     datawrote += numtowrite;
@@ -1076,7 +1083,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     if (cmd->checkP && !cmd->subP)
     {
         double max_float = (double)(((1 << s.bits_per_sample) - 1) * cmd->nsub);
-        int total_all_zero = 0, total_has_over = 0;
+        int total_all_zero = 0, total_has_over = 0, total_has_nag = 0;
         for (int ii = 0; ii < cmd->numdms; ii++)
         {
             double dms_ii = cmd->lodm + ii * cmd->dmstep;
@@ -1090,14 +1097,22 @@ int prepsubband_cu_main(int argc, char *argv[])
                 total_has_over = 1;
                 printf("check: %s_DM%.*f.dat has value exceeding the upper limit!\n", cmd->outfile, dmprecision, dms_ii);
             }
+            else if (has_nag[ii] == 1)
+            {
+                total_has_nag = 1;
+                printf("check: %s_DM%.*f.dat has negative number!\n", cmd->outfile, dmprecision, dms_ii);
+            }
         }
 
         free(all_zero);
         free(has_over);
+        free(has_nag);
         if (total_all_zero)
             return -1;
         if (total_has_over)
             return -2;
+        if (total_has_nag)
+            return -3;
     }
     return (0);
 }
@@ -1368,6 +1383,7 @@ static int get_data_offset(float **outdata, int blocksperread,
     /*Do downsamp and de-dispersion on GPU*/
     if (!cmd->subP)
     {
+        // printf("read from CPU: currentdsdata[0]: %.3f, lastdsdata[0]: %.3f, outdata[0][0]: ", currentdsdata[0], lastdsdata[0]);
         cudaMemcpy(currentdsdata_gpu, currentdsdata, sizeof(float) * gpu_worklen * cmd->nsub, cudaMemcpyHostToDevice); // GPU get data
         cudaMemcpy(lastdsdata_gpu, lastdsdata, sizeof(float) * gpu_worklen * cmd->nsub, cudaMemcpyHostToDevice);       // GPU get data
         getDedisp(currentdsdata_gpu, lastdsdata_gpu, outdata_gpu, gpu_worklen, cmd->nsub, cmd->numdms, offsets_gpu);
@@ -1381,6 +1397,8 @@ static int get_data_offset(float **outdata, int blocksperread,
         {
             memcpy(outdata[ii], outdata_host + gpu_worklen * ii, sizeof(float) * gpu_worklen);
         }
+        // printf("%.3f\n", outdata[0][0]);
+
         // 释放主机端的临时数组
         free(outdata_host);
     }
