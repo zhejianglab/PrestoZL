@@ -1203,6 +1203,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             fprintf(file, "%s\n", json_str);
 
             fclose(file);
+            printf("check: dat error file:%s\n", error_file);
         }
 
         // 释放 JSON 对象内存
