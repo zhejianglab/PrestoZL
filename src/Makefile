@@ -316,7 +316,7 @@ prepsubband_cu: prepsubband_cmd.c prepsubband_cmd.o prepsubband_cu.o prepsubband
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband_cu.o prepsubband_cmd.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm -ljson-c $(CUDA_LINK_EXTRA_FLAGS)
 
 libprepsubband_cu_lib.so: prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) libpresto
-	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) $(GLIBLINK) -lcfitsio -lm $(CUDA_LINK_EXTRA_FLAGS)
+	$(CC) $(CFLAGS) -shared $(CLINKFLAGS) -o $(PRESTO)/lib/$@ prepsubband_cmd.o prepsubband_cu.o prepsubband_kernels.o $(INSTRUMENTOBJS) $(PRESTOLINK) $(GLIBLINK) -lcfitsio -lm -ljson-c $(CUDA_LINK_EXTRA_FLAGS)
 
 prepsubband: prepsubband_cmd.c prepsubband_cmd.o prepsubband.o $(INSTRUMENTOBJS) libpresto
 	$(CC) $(CLINKFLAGS) -o $(PRESTO)/bin/$@ prepsubband.o prepsubband_cmd.o $(INSTRUMENTOBJS) $(PRESTOLINK) -lcfitsio -lm
