@@ -63,6 +63,7 @@ int prepfold_main(int argc, char *argv[])
     /* Parse the command line using the excellent program Clig */
 
     cmd = parseCmdline(argc, argv);
+    printf("[%s] Prepfold Start: %s\n", log_timestamp(), cmd->full_cmd_line);
     spectra_info_set_defaults(&s);
     s.filenames = cmd->argv;
     s.num_files = cmd->argc;
@@ -153,10 +154,10 @@ int prepfold_main(int argc, char *argv[])
     showOptionValues();
 #endif
 
-    printf("\n\n");
-    printf("        Pulsar Raw-Data Folding Search Routine\n");
-    printf(" Used for DM, Period, and P-dot tweaking of PSR candidates.\n");
-    printf("                 by Scott M. Ransom\n\n");
+    // printf("\n\n");
+    // printf("        Pulsar Raw-Data Folding Search Routine\n");
+    // printf(" Used for DM, Period, and P-dot tweaking of PSR candidates.\n");
+    // printf("                 by Scott M. Ransom\n\n");
 
     init_prepfoldinfo(&search);
 
@@ -204,7 +205,7 @@ int prepfold_main(int argc, char *argv[])
             insubs = 1;
         } else {
             printf
-                ("Error:  Unable to identify input data files.  Please specify type.\n\n");
+                ("[%s] Error:  Unable to identify input data files.  Please specify type.\n\n", log_timestamp());
             exit(1);
         }
     }
@@ -215,9 +216,9 @@ int prepfold_main(int argc, char *argv[])
         char description[40];
         psrdatatype_description(description, s.datatype);
         if (s.num_files > 1)
-            printf("Reading %s data from %d files:\n", description, s.num_files);
+            printf("[%s] Reading %s data from %d files:\n", log_timestamp(), description, s.num_files);
         else
-            printf("Reading %s data from 1 file:\n", description);
+            printf("[%s] Reading %s data from 1 file:\n", log_timestamp(), description);
         for (ii = 0; ii < s.num_files; ii++) {
             printf("  '%s'\n", cmd->argv[ii]);
             if (insubs)
@@ -303,7 +304,7 @@ int prepfold_main(int argc, char *argv[])
         /* Read an input mask if wanted */
         if (cmd->maskfileP) {
             read_mask(cmd->maskfile, &obsmask);
-            printf("Read mask information from '%s'\n\n", cmd->maskfile);
+            printf("[%s] Read mask information from '%s'\n\n", log_timestamp(), cmd->maskfile);
             good_padvals = determine_padvals(cmd->maskfile, &obsmask, s.padvals);
         } else {
             obsmask.numchan = obsmask.numint = 0;
@@ -313,7 +314,7 @@ int prepfold_main(int argc, char *argv[])
     if (!RAWDATA) {
         char *root, *suffix;
         if (split_root_suffix(s.filenames[0], &root, &suffix) == 0) {
-            printf("Error:  The input filename (%s) must have a suffix!\n\n",
+            printf("[%s] Error:  The input filename (%s) must have a suffix!\n\n", log_timestamp(),
                    s.filenames[0]);
             exit(1);
         }
@@ -339,21 +340,21 @@ int prepfold_main(int argc, char *argv[])
                 print_spectra_info_summary(&s);
             } else {
                 printf
-                    ("\nThe input files (%s) must be subbands!  (i.e. *.sub##)\n\n",
+                    ("\n[%s] The input files (%s) must be subbands!  (i.e. *.sub##)\n\n", log_timestamp(),
                      cmd->argv[0]);
                 exit(1);
             }
             /* Read an input mask if wanted */
             if (cmd->maskfileP) {
                 read_mask(cmd->maskfile, &obsmask);
-                printf("Read mask information from '%s'\n\n", cmd->maskfile);
+                printf("[%s] Read mask information from '%s'\n\n", log_timestamp(), cmd->maskfile);
                 good_padvals = determine_padvals(cmd->maskfile, &obsmask, s.padvals);
             } else {
                 obsmask.numchan = obsmask.numint = 0;
             }
         } else {
-            printf("Reading input data from '%s'.\n", cmd->argv[0]);
-            printf("Reading information from '%s.inf'.\n\n", root);
+            printf("[%s] Reading input data from '%s'.\n", log_timestamp(), cmd->argv[0]);
+            printf("[%s] Reading information from '%s.inf'.\n\n", log_timestamp(), root);
             /* Read the info file if available */
             readinf(&idata, root);
             cmd->nsub = 1;
@@ -387,11 +388,11 @@ int prepfold_main(int argc, char *argv[])
                 idata.N = rzwidata.N;
                 idata.dt = rzwidata.dt;
             }
-            printf("Assuming the events are barycentered or geocentered.\n");
+            printf("[%s] Assuming the events are barycentered or geocentered.\n", log_timestamp());
             if (!cmd->proflenP) {
                 cmd->proflenP = 1;
                 cmd->proflen = 20;
-                printf("Using %d bins in the profile since not specified.\n",
+                printf("[%s] Using %d bins in the profile since not specified.\n", log_timestamp(),
                        cmd->proflen);
             }
             if (cmd->doubleP)
@@ -458,7 +459,7 @@ int prepfold_main(int argc, char *argv[])
             else if (cmd->fP)
                 sprintf(search.candnm, "%.2fHz_Cand", cmd->f);
             else {
-                printf("\nYou must specify candidate parameters (i.e period).\n\n");
+                printf("\n[%s] You must specify candidate parameters (i.e period).\n\n", log_timestamp());
                 exit(1);
             }
         }
@@ -519,7 +520,7 @@ int prepfold_main(int argc, char *argv[])
             reads_per_part = 1;
             cmd->npart = numrec;
             printf
-                ("Overriding -npart to be %lld, the number of raw (requested) records.\n",
+                ("[%s] Overriding -npart to be %lld, the number of raw (requested) records.\n", log_timestamp(),
                  numrec);
         }
 
@@ -606,16 +607,16 @@ int prepfold_main(int argc, char *argv[])
 
     /* Make sure that the number of subbands evenly divides the number of channels */
     if (numchan % cmd->nsub != 0) {
-        printf("Error:  # of channels (%d) not divisible by # of subbands (%d)!\n",
+        printf("[%s] Error:  # of channels (%d) not divisible by # of subbands (%d)!\n", log_timestamp(),
                numchan, cmd->nsub);
         exit(1);
     }
 
     set_posn(&search, &idata);
-    printf("Folding a %s candidate.\n\n", search.candnm);
-    printf("Output data file is '%s'.\n", outfilenm);
-    printf("Output plot file is '%s'.\n", plotfilenm);
-    printf("Best profile is in  '%s.bestprof'.\n", outfilenm);
+    printf("[%s] Folding a %s candidate.\n\n", log_timestamp(), search.candnm);
+    printf("[%s] Output data file is '%s'.\n", log_timestamp(), outfilenm);
+    printf("[%s] Output plot file is '%s'.\n", log_timestamp(), plotfilenm);
+    printf("[%s] Best profile is in  '%s.bestprof'.\n", log_timestamp(), outfilenm);
 
     /* Generate polycos if required and set the pulsar name */
     if (((cmd->timingP || cmd->parnameP) && (!idata.bary)) ||
@@ -628,7 +629,7 @@ int prepfold_main(int argc, char *argv[])
             cmd->psrname = make_polycos(cmd->timing, &idata, polycofilenm, cmd->debugP);
         else
             cmd->psrname = make_polycos(cmd->parname, &idata, polycofilenm, cmd->debugP);
-        printf("Polycos used are in '%s'.\n", polycofilenm);
+        printf("[%s] Polycos used are in '%s'.\n", log_timestamp(), polycofilenm);
         cmd->polycofileP = 1;
         cmd->polycofile = (char *) calloc(strlen(polycofilenm) + 1, sizeof(char));
         strcpy(cmd->polycofile, polycofilenm);
@@ -649,12 +650,12 @@ int prepfold_main(int argc, char *argv[])
                               polycofileptr, cmd->psrname);
             fclose(polycofileptr);
             if (cmd->dm > 0.0) {
-                printf("\nRead %d set(s) of polycos for PSR %s at %18.12f\n",
+                printf("\n[%s] Read %d set(s) of polycos for PSR %s at %18.12f\n", log_timestamp(),
                        numsets, cmd->psrname, epoch);
-                printf("Overriding polyco DM = %f with %f\n", polyco_dm, cmd->dm);
+                printf("[%s] Overriding polyco DM = %f with %f\n", log_timestamp(), polyco_dm, cmd->dm);
             } else {
                 printf
-                    ("\nRead %d set(s) of polycos for PSR %s at %18.12f (DM = %.5g)\n",
+                    ("\n[%s] Read %d set(s) of polycos for PSR %s at %18.12f (DM = %.5g)\n", log_timestamp(),
                      numsets, cmd->psrname, epoch, polyco_dm);
                 cmd->dm = polyco_dm;
             }
@@ -675,13 +676,13 @@ int prepfold_main(int argc, char *argv[])
 
             if (search.bepoch == 0.0) {
                 printf
-                    ("\nYou cannot fold topocentric data with the pulsar database.\n");
+                    ("\n[%s] You cannot fold topocentric data with the pulsar database.\n", log_timestamp());
                 printf("Use '-timing' or polycos instead.  Exiting.\n\n");
                 exit(1);
             }
             pnum = get_psr_at_epoch(cmd->psrname, search.bepoch, &psr);
             if (!pnum) {
-                printf("The pulsar is not in the database.  Exiting.\n\n");
+                printf("[%s] The pulsar is not in the database.  Exiting.\n\n", log_timestamp());
                 exit(1);
             }
             if (psr.orb.p != 0.0) {     /* Checks if the pulsar is in a binary */
@@ -703,7 +704,7 @@ int prepfold_main(int argc, char *argv[])
         psrparams psr;
 
         if (search.bepoch == 0.0) {
-            printf("\nYou cannot fold topocentric data with a par file.\n");
+            printf("\n[%s] You cannot fold topocentric data with a par file.\n", log_timestamp());
             printf("Use '-timing' or polycos instead.  Exiting.\n\n");
             exit(1);
         }
@@ -761,10 +762,10 @@ int prepfold_main(int argc, char *argv[])
         }
         cptr = (char *) calloc(ii + 1, sizeof(char));
         strncpy(cptr, cmd->accelfile, ii);
-        printf("\nAttempting to read '%s.inf'.  ", cptr);
+        printf("\n[%s] Attempting to read '%s.inf'.  ", log_timestamp(), cptr);
         readinf(&rzwidata, cptr);
         free(cptr);
-        printf("Successful.\n");
+        printf("[%s] Read .inf Successful.\n", log_timestamp());
         get_rzw_cand(cmd->accelfile, cmd->accelcand, &rzwcand);
         T = rzwidata.dt * rzwidata.N;
         // fourier props file reports average r and average z.
@@ -1119,7 +1120,7 @@ int prepfold_main(int argc, char *argv[])
             search.stats[ii].redchi /= (search.stats[ii].prof_var *
                                         (search.proflen - 1));
         }
-        printf("\r  Folded %d events.", numevents);
+        printf("\r[%s]   Folded %d events.", log_timestamp(), numevents);
         fflush(NULL);
 
     } else {                    /* Fold a time series */
@@ -1135,7 +1136,7 @@ int prepfold_main(int argc, char *argv[])
 
         data = gen_fvect(cmd->nsub * worklen);
         if (RAWDATA) {
-            printf("\rTrue starting fraction       =  %g\n",
+            printf("\r[%s] True starting fraction       =  %g\n", log_timestamp(),
                    (double) (lorec * ptsperrec) / s.N);
             offset_to_spectra(lorec * ptsperrec, &s);
         } else {
@@ -1178,7 +1179,7 @@ int prepfold_main(int argc, char *argv[])
 
             /* Call TEMPO for the barycentering */
 
-            printf("\nGenerating barycentric corrections...\n");
+            printf("\n[%s] Generating barycentric corrections...\n", log_timestamp());
             barycenter(topotimes, barytimes, voverc, numbarypts,
                        rastring, decstring, obs, ephem);
 
@@ -1276,7 +1277,7 @@ int prepfold_main(int argc, char *argv[])
                 if (lodm < 0.0)
                     lodm = 0.0;
                 hidm = lodm + numdmtrials * ddm;
-                printf("Will search %d DMs from %.3f to %.3f (ddm = %.4f)\n",
+                printf("[%s] Will search %d DMs from %.3f to %.3f (ddm = %.4f)\n", log_timestamp(),
                        cmd->nodmsearchP ? 1 : numdmtrials, lodm, hidm, ddm);
             }
         }
@@ -1285,10 +1286,10 @@ int prepfold_main(int argc, char *argv[])
          *   Perform the actual folding of the data
          */
 
-        printf("\nStarting work on '%s'...\n\n", search.filenm);
+        printf("\n[%s] Starting work on '%s'...\n\n", log_timestamp(), search.filenm);
         proftime = worklen * search.dt;
         parttimes = gen_dvect(cmd->npart);
-        printf("  Folded %lld points of %.0f", totnumfolded, N);
+        printf("[%s]   Folded %lld points of %.0f", log_timestamp(), totnumfolded, N);
 
         /* Open cache file for read */
         if (cmd->cacheP)
@@ -1415,7 +1416,7 @@ int prepfold_main(int argc, char *argv[])
                 totnumfolded += numread;
             }
 
-            printf("\r  Folded %lld points of %.0f", totnumfolded, N);
+            printf("\r[%s]   Folded %lld points of %.0f", log_timestamp(), totnumfolded, N);
             fflush(NULL);
         }
         vect_free(buffers);
@@ -1437,7 +1438,7 @@ int prepfold_main(int argc, char *argv[])
      *   Perform the candidate optimization search
      */
 
-    printf("\n\nOptimizing...\n\n");
+    printf("\n\n[%s] Optimizing: %s\n\n", log_timestamp(), cmd->full_cmd_line);
     bestprof = gen_dvect(search.proflen);
     {
         int numtrials, totpdelay;
@@ -1564,13 +1565,13 @@ int prepfold_main(int argc, char *argv[])
 
                 if (cmd->searchpddP)
                     printf
-                        ("  Searching %d DMs, %d periods, %d p-dots, and %d p-dotdots...\n",
+                        ("[%s]   Searching %d DMs, %d periods, %d p-dots, and %d p-dotdots...\n", log_timestamp(),
                          cmd->nodmsearchP ? 1 : search.numdms,
                          cmd->nopsearchP ? 1 : search.numperiods,
                          cmd->nopdsearchP ? 1 : search.numpdots,
                          cmd->searchpddP ? search.numpdots : 1);
                 else
-                    printf("  Searching %d DMs, %d periods, and %d p-dots...\n",
+                    printf("[%s]   Searching %d DMs, %d periods, and %d p-dots...\n", log_timestamp(),
                            cmd->nodmsearchP ? 1 : search.numdms,
                            cmd->nopsearchP ? 1 : search.numperiods,
                            cmd->nopdsearchP ? 1 : search.numpdots);
@@ -1580,12 +1581,12 @@ int prepfold_main(int argc, char *argv[])
                     ppdot = gen_fvect(search.numpdots * search.numperiods);
                 if (cmd->searchpddP)
                     printf
-                        ("  Searching %d periods, %d p-dots, and %d p-dotdots...\n",
+                        ("[%s]   Searching %d periods, %d p-dots, and %d p-dotdots...\n", log_timestamp(),
                          cmd->nopsearchP ? 1 : search.numperiods,
                          cmd->nopdsearchP ? 1 : search.numpdots,
                          cmd->searchpddP ? search.numpdots : 1);
                 else
-                    printf("  Searching %d periods, and %d p-dots...\n",
+                    printf("[%s]   Searching %d periods, and %d p-dots...\n", log_timestamp(),
                            cmd->nopsearchP ? 1 : search.numperiods,
                            cmd->nopdsearchP ? 1 : search.numpdots);
             }
@@ -1682,7 +1683,7 @@ int prepfold_main(int argc, char *argv[])
                                 (int) (((double) currtrial) / totnumtrials * 100.0 +
                                        0.5);
                             if (newper > oldper) {
-                                printf("\r  Amount Complete = %3d%%", newper);
+                                printf("\r[%s]   Amount Complete = %3d%%", log_timestamp(), newper);
                                 fflush(stdout);
                                 oldper = newper;
                             }
@@ -1722,7 +1723,7 @@ int prepfold_main(int argc, char *argv[])
         vect_free(fdots);
         vect_free(fdotdots);
     }
-    printf("  Done searching.\n\n");
+    printf("[%s]   Done searching: %s\n\n", log_timestamp(), cmd->full_cmd_line);
 
     /* Write and plot the results and cleanup */
 
@@ -1846,7 +1847,7 @@ int prepfold_main(int argc, char *argv[])
         }
     }
 
-    printf("\nMaking plots.\n\n");
+    printf("\n[%s] Making plots: %s\n\n", log_timestamp(), cmd->full_cmd_line);
 
     /*
      *   Write the raw prepfoldinfo structure
@@ -1886,9 +1887,9 @@ int prepfold_main(int argc, char *argv[])
         vect_free(obsf);
         vect_free(idispdts);
     }
-    printf("Done.\n\n");
+    printf("[%s] Prepfold Done: %s\n\n", log_timestamp(), cmd->full_cmd_line);
     if(cmd->IOlogP){
-        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+        printf("[%s] IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", log_timestamp(), cmd->full_cmd_line, (double)data_size/(1024.0*1024.0*1024.0), (double)total_microseconds/(1000000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
     }
     return (0);
 }
