@@ -54,15 +54,16 @@ int realfft_main(int argc, char *argv[])
     /* Parse the command line using the excellent program Clig */
 
     cmd = parseCmdline(argc, argv);
+    printf("[%s] Realfft Start: %s\n", log_timestamp(), cmd->full_cmd_line);
 
 #ifdef DEBUG
     showOptionValues();
 #endif
 
     tott = times(&runtimes) / (double) CLK_TCK;
-    printf("\n");
-    printf("   Real-Valued Data FFT Program v3.0\n");
-    printf("        by Scott M. Ransom\n\n");
+    // printf("\n");
+    // printf("   Real-Valued Data FFT Program v3.0\n");
+    // printf("        by Scott M. Ransom\n\n");
 
     /* Get our file information */
     long long data_size = 0;
@@ -71,7 +72,7 @@ int realfft_main(int argc, char *argv[])
 
     numfiles = cmd->argc;
     for (int fi = 0 ; fi < numfiles ; fi++) {
-        printf("%4d:  Processing data in '%s'\n", fi + 1, cmd->argv[fi]);
+        printf("[%s] %4d:  Processing data in '%s'\n", log_timestamp(), fi + 1, cmd->argv[fi]);
         {
             int hassuffix = 0, filenmlen;
             char *filenm, *root, *suffix;
@@ -120,7 +121,7 @@ int realfft_main(int argc, char *argv[])
         if (cmd->inverseP)
             isign = 1;
         if (cmd->diskfftP && cmd->memfftP) {
-            printf("\nYou cannot take both an in- and out-of-core FFT!\n\n");
+            printf("\n[%s] You cannot take both an in- and out-of-core FFT!\n\n", log_timestamp());
             exit(1);
         }
 
@@ -133,20 +134,20 @@ int realfft_main(int argc, char *argv[])
         numdata = filelen / sizeof(float);
         if (isign == -1) {
             if (filelen % sizeof(float)) {
-                printf("\nInput file does not contain the correct number of\n");
-                printf("   bytes for it to be floating point data!  Skipping.\n\n");
+                printf("\n[%s] Input file does not contain the correct number of\n", log_timestamp());
+                printf("   bytes for it to be floating point data!  Skipping: %s.\n\n", cmd->full_cmd_line);
                 continue;
             }
-            printf("\nData OK.  There are %lld floats.\n\n", numdata);
+            printf("\n[%s] Data OK.  There are %lld floats.\n\n", log_timestamp(), numdata);
         } else {
             if (filelen % sizeof(fcomplex)) {
-                printf("\nInput file does not contain the correct number of\n");
-                printf("   bytes for it to be single precision complex data!  Skipping.\n\n");
+                printf("\n[%s] Input file does not contain the correct number of\n", log_timestamp());
+                printf("   bytes for it to be single precision complex data!  Skipping: %s.\n\n", cmd->full_cmd_line);
                 continue;
             }
-            printf("\nData OK.  There are %lld complex points.\n\n", numdata / 2);
+            printf("\n[%s] Data OK.  There are %lld complex points.\n\n", log_timestamp(), numdata / 2);
         }
-        printf("%4d:   Result will be in '%s'\n", fi + 1, outfilenm);
+        printf("[%s] %4d:   Result will be in '%s'\n", log_timestamp(), fi + 1, outfilenm);
 
         /*  Start the transform sequence  */
 
@@ -155,9 +156,9 @@ int realfft_main(int argc, char *argv[])
             /*  Perform Two-Pass, Out-of-Core, FFT  */
 
             if (isign == -1) {
-                printf("\nPerforming out-of-core two-pass forward FFT on data.\n");
+                printf("\n[%s] Performing out-of-core two-pass forward FFT on data.\n", log_timestamp());
             } else {
-                printf("\nPerforming out-of-core two-pass inverse FFT on data.\n");
+                printf("\n[%s] Performing out-of-core two-pass inverse FFT on data.\n", log_timestamp());
             }
 
             /* Copy the input files if we want to keep them */
@@ -228,11 +229,11 @@ int realfft_main(int argc, char *argv[])
 
             outfile = chkfopen(outfilenm, "w");
             if (isign == -1) {
-                printf("\nPerforming in-core forward FFT on data:\n");
+                printf("\n[%s] Performing in-core forward FFT on data:\n", log_timestamp());
             } else {
-                printf("\nPerforming in-core inverse FFT on data:\n");
+                printf("\n[%s] Performing in-core inverse FFT on data:\n", log_timestamp());
             }
-            printf("   Reading.\n");
+            printf("[%s]    Reading.\n", log_timestamp());
             data = gen_fvect(numdata);
             if (cmd->IOlogP){
                 gettimeofday(&start, NULL);
@@ -245,11 +246,11 @@ int realfft_main(int argc, char *argv[])
             }else{
                 chkfread(data, sizeof(float), numdata, datfile);
             }
-            printf("   Transforming.\n");
+            printf("[%s]    Transforming.\n", log_timestamp());
             realfft(data, numdata, isign);
             /* fftwcall((fcomplex *)data, numdata/2, isign); */
             /* tablesixstepfft((fcomplex *)data, numdata/2, isign); */
-            printf("   Writing.\n");
+            printf("[%s]    Writing.\n", log_timestamp());
             chkfwrite(data, sizeof(float), numdata, outfile);
             fclose(outfile);
 
@@ -266,7 +267,7 @@ int realfft_main(int argc, char *argv[])
 
     /* Output the timing information */
 
-    printf("Finished.\n\n");
+    printf("[%s] Realfft Finished:%s.\n\n", log_timestamp(), cmd->full_cmd_line);
     printf("Timing summary:\n");
     tott = times(&runtimes) / (double) CLK_TCK - tott;
     utim = runtimes.tms_utime / (double) CLK_TCK;
@@ -278,9 +279,9 @@ int realfft_main(int argc, char *argv[])
 
     if(cmd->IOlogP){
         if ((numdata > MAXREALFFT || cmd->diskfftP) && !cmd->memfftP){
-            printf("IOlog: numdata too large and use out-core forward FFT\n");
+            printf("[%s] IOlog: numdata too large and use out-core forward FFT: %s\n", log_timestamp(), cmd->full_cmd_line);
         }else{
-            printf("IOlog: %s read %.3f MB data, use %.3f ms, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size/(1024.0*1024.0), (double)total_microseconds/(1000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
+            printf("[%s] IOlog: %s read %.3f MB data, use %.3f ms, %.3f GB/s\n", log_timestamp(), cmd->full_cmd_line, (double)data_size/(1024.0*1024.0), (double)total_microseconds/(1000), ((double)data_size/(1024.0*1024.0*1024.0))/((double)total_microseconds/(1000000)));
         }
     }
 

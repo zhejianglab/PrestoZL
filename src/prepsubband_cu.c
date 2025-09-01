@@ -193,6 +193,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     /* Parse the command line using the excellent program Clig */
 
     cmd = parseCmdline(argc, argv);
+    printf("[%s] Prepsubband Start: %s\n", log_timestamp(), cmd->full_cmd_line);
     spectra_info_set_defaults(&s);
     dmprecision = cmd->dmprec;
     s.filenames = cmd->argv;
@@ -266,7 +267,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             insubs = 1;
         else
         {
-            printf("Error:  Unable to identify input data files.  Please specify type.\n\n");
+            printf("[%s] Error:  Unable to identify input data files.  Please specify type: %s.\n\n", log_timestamp(), cmd->full_cmd_line);
             exit(1);
         }
     }
@@ -278,9 +279,9 @@ int prepsubband_cu_main(int argc, char *argv[])
         char description[40];
         psrdatatype_description(description, s.datatype);
         if (s.num_files > 1)
-            printf("Reading %s data from %d files:\n", description, s.num_files);
+            printf("[%s] Reading %s data from %d files:", log_timestamp(), description, s.num_files);
         else
-            printf("Reading %s data from 1 file:\n", description);
+            printf("[%s] Reading %s data from 1 file:", log_timestamp(), description);
         for (ii = 0; ii < s.num_files; ii++)
         {
             printf("  '%s'\n", cmd->argv[ii]);
@@ -318,9 +319,9 @@ int prepsubband_cu_main(int argc, char *argv[])
             // the raw number of channels.
             if (s.num_channels % cmd->nsub)
             {
-                printf("Error:  The number of subbands (-nsub %d) must divide into the\n"
-                       "        number of channels (%d)\n\n",
-                       cmd->nsub, s.num_channels);
+                printf("[%s] Error:  The number of subbands (-nsub %d) must divide into the\n"
+                       "        number of channels (%d): %s\n\n", log_timestamp(),
+                       cmd->nsub, s.num_channels, cmd->full_cmd_line);
                 exit(1);
             }
             spectra_info_to_inf(&s, &idata);
@@ -343,12 +344,13 @@ int prepsubband_cu_main(int argc, char *argv[])
         /* Read an input mask if wanted */
         if (cmd->maskfileP)
         {
+            printf("[%s] Start reading mask: %s", log_timestamp(), cmd->full_cmd_line);
             read_mask(cmd->maskfile, &obsmask);
             // printf("Read mask information from '%s'\n\n", cmd->maskfile);
             if ((obsmask.numchan != idata.num_chan) ||
                 (fabs(obsmask.mjd - (idata.mjd_i + idata.mjd_f)) > 1e-9))
             {
-                printf("WARNING!: maskfile has different number of channels or start MJD than raw data! Exiting.\n\n");
+                printf("[%s] WARNING!: maskfile has different number of channels or start MJD than raw data! Exiting: %s.\n\n", log_timestamp(), cmd->full_cmd_line);
                 exit(1);
             }
             good_padvals = determine_padvals(cmd->maskfile, &obsmask, s.padvals);
@@ -364,7 +366,7 @@ int prepsubband_cu_main(int argc, char *argv[])
         char *root, *suffix;
         if (split_root_suffix(s.filenames[0], &root, &suffix) == 0)
         {
-            printf("Error:  The input filename (%s) must have a suffix!\n\n",
+            printf("[%s] Error:  The input filename (%s) must have a suffix!\n\n", log_timestamp(),
                    s.filenames[0]);
             exit(1);
         }
@@ -389,7 +391,7 @@ int prepsubband_cu_main(int argc, char *argv[])
         }
         else
         {
-            printf("\nThe input files (%s) must be subbands!  (i.e. *.sub##)\n\n",
+            printf("\n[%s] The input files (%s) must be subbands!  (i.e. *.sub##)\n\n", log_timestamp(),
                    cmd->argv[0]);
             exit(1);
         }
@@ -438,11 +440,10 @@ int prepsubband_cu_main(int argc, char *argv[])
 
         if (!cmd->nobaryP)
         {
-            printf("\nWarning:  You cannot (currently) barycenter subbands.\n"
-                   "          Setting the '-nobary' flag automatically.\n");
+            printf("\n[%s] Warning:  You cannot (currently) barycenter subbands. Setting the '-nobary' flag automatically: %s.\n", log_timestamp(), cmd->full_cmd_line);
             cmd->nobaryP = 1;
         }
-        printf("Writing subbands to:\n");
+        printf("[%s] Writing subbands to:", log_timestamp());
         cmd->numdms = 1;
         dms = gen_dvect(cmd->numdms);
         dms[0] = cmd->subdm;
@@ -498,19 +499,19 @@ int prepsubband_cu_main(int argc, char *argv[])
 
         if (fscanf(file, "%lf", &cache_maxdm) != 1)
         {
-            printf("读取 maxdm 数据失败！\n");
+            printf("[%s] 读取 maxdm 数据失败: %s!\n", log_timestamp(), cmd->full_cmd_line);
             fclose(file);
             return 1;
         }
 
         if (fscanf(file, "%lf", &cache_padding) != 1)
         {
-            printf("读取 padding 数据失败！\n");
+            printf("[%s] 读取 padding 数据失败: %s!\n", log_timestamp(), cmd->full_cmd_line);
             fclose(file);
             return 1;
         }
         maxdm = cache_maxdm;
-        printf("readpadding: maxdm和padding数据已从文件 %s 读取, maxdm:%f, avg:%f\n", cmd->readpadding, cache_maxdm, cache_padding);
+        printf("[%s] readpadding: maxdm和padding数据已从文件 %s 读取, maxdm:%f, avg:%f\n", log_timestamp(), cmd->readpadding, cache_maxdm, cache_padding);
         fclose(file);
     }
     if (cmd->writepaddingP && cmd->maxnumdmsP)
@@ -551,7 +552,7 @@ int prepsubband_cu_main(int argc, char *argv[])
                                  idata.N / worklen) *
                           worklen;
         add_to_inf_epoch(&idata, cmd->offset * idata.dt);
-        printf("Offsetting into the input files by %ld spectra (%.6g sec)\n",
+        printf("[%s] Offsetting into the input files by %ld spectra (%.6g sec)\n", log_timestamp(),
                cmd->offset, cmd->offset * idata.dt);
         if (RAWDATA)
             offset_to_spectra(cmd->offset, &s);
@@ -560,14 +561,14 @@ int prepsubband_cu_main(int argc, char *argv[])
             for (ii = 0; ii < s.num_files; ii++)
                 chkfileseek(s.files[ii], cmd->offset, sizeof(short), SEEK_SET);
             if (cmd->maskfileP)
-                printf("WARNING!:  masking does not work with old-style subbands and -start or -offset!\n");
+                printf("[%s] WARNING!:  masking does not work with old-style subbands and -start or -offset: %s!\n", log_timestamp(), cmd->full_cmd_line);
         }
     }
 
     if (cmd->nsub > s.num_channels)
     {
-        printf("Warning:  The number of requested subbands (%d) is larger than the number of channels (%d).\n",
-               cmd->nsub, s.num_channels);
+        printf("[%s] Warning:  The number of requested subbands (%d) is larger than the number of channels (%d): %s.\n", log_timestamp(),
+               cmd->nsub, s.num_channels, cmd->full_cmd_line);
         printf("          Re-setting the number of subbands to %d.\n\n",
                s.num_channels);
         cmd->nsub = s.num_channels;
@@ -575,9 +576,9 @@ int prepsubband_cu_main(int argc, char *argv[])
 
     if (s.spectra_per_subint % cmd->downsamp)
     {
-        printf("Error:  The downsample factor (%d) must be a factor of the\n",
+        printf("[%s] Error:  The downsample factor (%d) must be a factor of the\n", log_timestamp(),
                cmd->downsamp);
-        printf("        blocklength (%d).  Exiting.\n\n", s.spectra_per_subint);
+        printf("        blocklength (%d).  Exiting: %s.\n\n", s.spectra_per_subint, cmd->full_cmd_line);
         exit(1);
     }
 
@@ -588,7 +589,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     {
         cmd->numoutP = 1;
         cmd->numout = choose_good_N((long long)(idata.N / cmd->downsamp));
-        printf("Setting a 'good' output length of %ld samples\n", cmd->numout);
+        printf("[%s] Setting a 'good' output length of %ld samples\n", log_timestamp(), cmd->numout);
     }
     if (cmd->subP && (cmd->numout > idata.N / cmd->downsamp))
         cmd->numout = (long long)(idata.N / cmd->downsamp); // Don't pad subbands
@@ -624,16 +625,17 @@ int prepsubband_cu_main(int argc, char *argv[])
         }
 
         /* Allocate our data array and start getting data */
+        printf("[%s] Start do De-dispersing: %s", log_timestamp(), cmd->full_cmd_line);
 
-        printf("\nDe-dispersing using:\n");
-        printf("       Subbands = %d\n", cmd->nsub);
-        printf("     Average DM = %.7g\n", avgdm);
-        if (cmd->downsamp > 1)
-        {
-            printf("     Downsample = %d\n", cmd->downsamp);
-            printf("  New sample dt = %.10g\n", dsdt);
-        }
-        printf("\n");
+        // printf("\nDe-dispersing using:\n");
+        // printf("       Subbands = %d\n", cmd->nsub);
+        // printf("     Average DM = %.7g\n", avgdm);
+        // if (cmd->downsamp > 1)
+        // {
+        //     printf("     Downsample = %d\n", cmd->downsamp);
+        //     printf("  New sample dt = %.10g\n", dsdt);
+        // }
+        // printf("\n");
 
         // prepare offsets_gpu
         size_t offsetsSize = sizeof(int) * cmd->nsub * cmd->numdms;
@@ -717,7 +719,7 @@ int prepsubband_cu_main(int argc, char *argv[])
 
         /* Call TEMPO for the barycentering */
 
-        printf("\nGenerating barycentric corrections...\n");
+        printf("\n[%s] Generating barycentric corrections: %s\n", log_timestamp(), cmd->full_cmd_line);
         barycenter(ttoa, btoa, voverc, numbarypts, rastring, decstring, obs, ephem);
         for (ii = 0; ii < numbarypts; ii++)
         {
@@ -1020,7 +1022,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     {
         var /= (datawrote - 1);
         print_percent_complete(1, 1);
-        printf("\n\nDone.\n\nSimple statistics of the output data:\n");
+        printf("\n\n[%s] Prepsubband Done: %s.\n\nSimple statistics of the output data:\n", log_timestamp(), cmd->full_cmd_line);
         printf("             Data points written:  %ld\n", totwrote);
         if (padwrote)
             printf("          Padding points written:  %ld\n", padwrote);
@@ -1039,7 +1041,7 @@ int prepsubband_cu_main(int argc, char *argv[])
     }
     else
     {
-        printf("\n\nDone.\n");
+        printf("\n\n[%s] Prepsubband Done: %s.\n", log_timestamp(), cmd->full_cmd_line);
         printf("             Data points written:  %ld\n", totwrote);
         if (padwrote)
             printf("          Padding points written:  %ld\n", padwrote);
@@ -1103,7 +1105,7 @@ int prepsubband_cu_main(int argc, char *argv[])
 
     if (cmd->IOlogP)
     {
-        printf("IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", cmd->full_cmd_line, (double)data_size / (1024.0 * 1024.0 * 1024.0), (double)total_microseconds / (1000000), ((double)data_size / (1024.0 * 1024.0 * 1024.0)) / ((double)total_microseconds / (1000000)));
+        printf("[%s] IOlog: %s read %.3f GB data, use %.3f s, %.3f GB/s\n", log_timestamp(), cmd->full_cmd_line, (double)data_size / (1024.0 * 1024.0 * 1024.0), (double)total_microseconds / (1000000), ((double)data_size / (1024.0 * 1024.0 * 1024.0)) / ((double)total_microseconds / (1000000)));
     }
 
     if (cmd->writepaddingP && cmd->maxnumdmsP)
@@ -1123,7 +1125,7 @@ int prepsubband_cu_main(int argc, char *argv[])
         // 关闭文件
         fclose(file);
 
-        printf("writepadding: maxdm和padding数据已写入到文件 %s, maxdm:%f, avg:%f\n", cmd->writepadding, maxdm, avg);
+        printf("[%s] writepadding: maxdm和padding数据已写入到文件 %s, maxdm:%f, avg:%f\n", log_timestamp(), cmd->writepadding, maxdm, avg);
     }
 
     if (cmd->checkP && !cmd->subP)
@@ -1203,7 +1205,7 @@ int prepsubband_cu_main(int argc, char *argv[])
             fprintf(file, "%s\n", json_str);
 
             fclose(file);
-            printf("check: dat error file:%s\n", error_file);
+            printf("[%s] check: dat error file:%s\n", log_timestamp(), error_file);
         }
 
         // 释放 JSON 对象内存
@@ -1557,7 +1559,7 @@ static void print_percent_complete(int current, int number)
         newper = 100;
     if (newper > oldper)
     {
-        printf("\rAmount complete = %3d%%", newper);
+        printf("\r[%s] Amount complete = %3d%%", log_timestamp(), newper);
         fflush(stdout);
         oldper = newper;
     }

@@ -152,7 +152,7 @@ static void print_percent_complete(int current, int number, char *what, int rese
             newper = 100;
         if (newper > oldper)
         {
-            printf("\rAmount of %s complete = %3d%%", what, newper);
+            printf("\r[%s] Amount of %s complete = %3d%%", log_timestamp(), what, newper);
             fflush(stdout);
             oldper = newper;
         }
@@ -254,7 +254,7 @@ void insertOrUpdateMap(MapEntry *map, int *map_size, MapKey key, float startr, f
     else
     {
         // handle the case of map overflow
-        printf("Map overflow\n");
+        printf("[%s] Map overflow\n", log_timestamp());
     }
 }
 
@@ -378,7 +378,8 @@ void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, ac
 
     /* Parse the command line using the excellent program Clig */
 
-    cmd = parseCmdline(argc, argv);
+    cmd = parseCmdline(argc, argv);  
+    printf("[%s] Accelsearch Start CPU1: %s\n", log_timestamp(), cmd->full_cmd_line);
     *cmd_ptr = cmd;
 
 #ifdef DEBUG
@@ -401,7 +402,7 @@ void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, ac
                                &bird_lobins, &bird_hibins);
 
         /* Zap the birdies */
-        printf("Zapping them using a barycentric velocity of %.5gc.\n\n",
+        printf("[%s] Zapping them using a barycentric velocity of %.5gc.\n\n", log_timestamp(),
                cmd->baryv);
         hibin = obs.N / 2;
         for (ii = 0; ii < numbirds; ii++)
@@ -419,7 +420,7 @@ void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, ac
 
     /* Generate the correlation kernels */
 
-    printf("\nGenerating correlation kernels:\n");
+    printf("\n[%s] Generating correlation kernels: %s\n", log_timestamp(), cmd->full_cmd_line);
     subharminfs = create_subharminfos(&obs);
     *subharminfs_ptr = subharminfs;
 
@@ -440,7 +441,7 @@ void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, ac
     /* Don't use the *.txtcand files on short in-memory searches */
     if (!obs.dat_input)
     {
-        printf("  Working candidates in a test format are in '%s'.\n\n",
+        printf("[%s]  Working candidates in a test format are in '%s'.\n\n", log_timestamp(),
                obs.workfilenm);
     }
 
@@ -464,14 +465,16 @@ void accelsearch_CPU1(int argc, char *argv[], subharminfo ***subharminfs_ptr, ac
     {
         if (cmd->otheroptP)
         {
-            printf("otheroptP is not supported\n");
+            printf("[%s] otheroptP is not supported\n", log_timestamp());
             exit(-1);
         }
-    }
+    } 
+    printf("[%s] Accelsearch End CPU1: %s\n", log_timestamp(), cmd->full_cmd_line);
 }
 
 int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr, Cmdline *cmd)
-{
+{ 
+    printf("[%s] Accelsearch Start GPU: %s\n", log_timestamp(), cmd->full_cmd_line);
     int ii, rstep;
     GSList *cands = NULL;
     /* The step-size of blocks to walk through the input data */
@@ -559,7 +562,7 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
          * searches of harmonics that are below obs.rlo */
         if (obs.inmem)
         {
-            printf("inmem is not supported\n");
+            printf("[%s] inmem is not supported\n", log_timestamp());
             exit(-1);
         }
 
@@ -897,16 +900,18 @@ int accelsearch_GPU(accelobs obs, subharminfo **subharminfs, GSList **cands_ptr,
     }
     free_subharminfos(&obs, subharminfs);
     subharminfs = NULL;
-    *cands_ptr = cands;
+    *cands_ptr = cands; 
+    printf("[%s] Accelsearch End GPU: %s\n", log_timestamp(), cmd->full_cmd_line);
     return 0;
 }
 
 void accelsearch_CPU2(GSList **cands, accelobs *obs, infodata *idata, Cmdline *cmd)
 {
-    /* Candidate list trimming and optimization */
+    /* Candidate list trimming and optimization */ 
+    printf("[%s] Accelsearch Start CPU2: %s\n", log_timestamp(), cmd->full_cmd_line);
     int ii;
     int numcands = g_slist_length(*cands);
-    printf("numcands after while:%d\n", numcands);
+    printf("[%s] %s: numcands after while:%d\n", log_timestamp(), cmd->full_cmd_line, numcands);
     GSList *listptr;
     accelcand *cand;
     fourierprops *props;
@@ -966,18 +971,19 @@ void accelsearch_CPU2(GSList **cands, accelobs *obs, infodata *idata, Cmdline *c
     }
     else
     {
-        printf("No candidates above sigma = %.2f were found.\n\n", obs->sigma);
+        printf("[%s] No candidates above sigma = %.2f were found.\n\n", log_timestamp(), obs->sigma);
     }
 
-    printf("Final candidates in binary format are in '%s'.\n", obs->candnm);
-    printf("Final Candidates in a text format are in '%s'.\n\n", obs->accelnm);
+    printf("[%s] Final candidates in binary format are in '%s'.\n", log_timestamp(), obs->candnm);
+    printf("[%s] Final Candidates in a text format are in '%s'.\n\n", log_timestamp(), obs->accelnm);
 
     free_accelobs(obs);
     g_slist_foreach(*cands, free_accelcand, NULL);
     g_slist_free(*cands);
     obs = NULL;
     idata = NULL;
-    cands = NULL;
+    cands = NULL; 
+    printf("[%s] Accelsearch End CPU2: %s\n", log_timestamp(), cmd->full_cmd_line);
 }
 
 int main(int argc, char *argv[])

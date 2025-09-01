@@ -1551,4 +1551,5 @@ fcomplex *atwood_search(double *events, double *weights,
 /*    dt:  the time duration to use for the binning                */
 
 
-
+// 返回当前时间戳字符串
+char* log_timestamp();

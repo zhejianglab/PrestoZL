@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
 
     /* Parse the command line using the excellent program Clig */
 
-    cmd = parseCmdline(argc, argv);
+    cmd = parseCmdline(argc, argv);    
+    printf("[%s] Rfifind Start: %s\n", log_timestamp(), cmd->full_cmd_line);
     spectra_info_set_defaults(&s);
     s.filenames = cmd->argv;
     s.num_files = cmd->argc;
@@ -131,9 +132,9 @@ int main(int argc, char *argv[])
     showOptionValues();
 #endif
 
-    printf("\n\n");
-    printf("               Pulsar Data RFI Finder\n");
-    printf("                 by Scott M. Ransom\n\n");
+    // printf("\n\n");
+    // printf("               Pulsar Data RFI Finder\n");
+    // printf("                 by Scott M. Ransom\n\n");
 
     /* The following is the root of all the output files */
 
@@ -167,7 +168,7 @@ int main(int argc, char *argv[])
             insubs = 1;
         else {
             printf
-                ("Error:  Unable to identify input data files.  Please specify type.\n\n");
+                ("[%s] Error:  Unable to identify input data files.  Please specify type: %s.\n\n", log_timestamp(), cmd->full_cmd_line);
             exit(1);
         }
     }
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
     /* Read an input mask if wanted */
     if (cmd->maskfileP) {
         read_mask(cmd->maskfile, &oldmask);
-        printf("Read old mask information from '%s'\n\n", cmd->maskfile);
+        printf("[%s] Read old mask information from '%s'\n\n", log_timestamp(), cmd->maskfile);
     } else {
         oldmask.numchan = oldmask.numint = 0;
     }
@@ -186,9 +187,9 @@ int main(int argc, char *argv[])
             char description[40];
             psrdatatype_description(description, s.datatype);
             if (s.num_files > 1)
-                printf("Reading %s data from %d files:\n", description, s.num_files);
+                printf("[%s] Reading %s data from %d files:", log_timestamp(), description, s.num_files);
             else
-                printf("Reading %s data from 1 file:\n", description);
+                printf("[%s] Reading %s data from 1 file:", log_timestamp(), description);
             if (insubs)
                 s.files = (FILE **) malloc(sizeof(FILE *) * s.num_files);
             for (ii = 0; ii < s.num_files; ii++) {
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
             /* Set-up values if we are using subbands */
             char *tmpname, *root, *suffix;
             if (split_root_suffix(s.filenames[0], &root, &suffix) == 0) {
-                printf("Error:  The input filename (%s) must have a suffix!\n\n",
+                printf("[%s] Error:  The input filename (%s) must have a suffix!\n\n", log_timestamp(),
                        s.filenames[0]);
                 exit(1);
             }
@@ -232,7 +233,7 @@ int main(int argc, char *argv[])
                 free(tmpname);
             } else {
                 printf
-                    ("\nThe input files (%s) must be subbands!  (i.e. *.sub##)\n\n",
+                    ("\n[%s] The input files (%s) must be subbands!  (i.e. *.sub##)\n\n", log_timestamp(),
                      s.filenames[0]);
                 exit(1);
             }
@@ -271,7 +272,7 @@ int main(int argc, char *argv[])
         if ((long long) idata.N % ptsperint)
             numint++;
         inttime = ptsperint * idata.dt;
-        printf("Analyzing data sections of length %d points (%.6g sec).\n",
+        printf("[%s] Analyzing data sections of length %d points (%.6g sec).\n", log_timestamp(),
                ptsperint, inttime);
         {
             int *factors, numfactors;
@@ -313,17 +314,17 @@ int main(int argc, char *argv[])
 
         /* Main loop */
 
-        printf("Writing mask data  to '%s'.\n", maskfilenm);
-        printf("Writing  RFI data  to '%s'.\n", rfifilenm);
-        printf("Writing statistics to '%s'.\n\n", statsfilenm);
-        printf("Massaging the data ...\n\n");
-        printf("Amount Complete = %3d%%", oldper);
+        printf("[%s] Writing mask data  to '%s'.\n", log_timestamp(), maskfilenm);
+        printf("[%s] Writing  RFI data  to '%s'.\n", log_timestamp(), rfifilenm);
+        printf("[%s] Writing statistics to '%s'.\n\n", log_timestamp(), statsfilenm);
+        printf("[%s] Massaging the data ...\n\n", log_timestamp());
+        printf("[%s] Amount Complete = %3d%%", log_timestamp(), oldper);
         fflush(stdout);
 
         for (ii = 0; ii < numint; ii++) {       /* Loop over the intervals */
             newper = (int) ((float) ii / numint * 100.0 + 0.5);
             if (newper > oldper) {
-                printf("\rAmount Complete = %3d%%", newper);
+                printf("\r[%s] Amount Complete = %3d%%", log_timestamp(), newper);
                 fflush(stdout);
                 oldper = newper;
             }
@@ -376,8 +377,8 @@ int main(int argc, char *argv[])
                                            &numcands, &powavg, &powstd, &powmax);
                         // Make sure that nothing bad happened in the FFT search
                         if (!isnormal(powmax)) {
-                            printf("WARNING:  FFT search returned bad powmax (%f) in"
-                                   "int=%d and chan=%d.  Fixing.\n",
+                            printf("[%s] WARNING:  FFT search returned bad powmax (%f) in"
+                                   "int=%d and chan=%d.  Fixing.\n", log_timestamp(),
                                    powmax, ii, jj);
                             powmax = 0.0;
                             numcands = 0;
@@ -412,7 +413,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        printf("\rAmount Complete = 100%%\n");
+        printf("\r[%s] Amount Complete = 100%%\n", log_timestamp());
 
         /* Write the data to the output files */
 
@@ -427,8 +428,8 @@ int main(int argc, char *argv[])
 
         /* Read the data from the output files */
 
-        printf("Reading  RFI data  from '%s'.\n", rfifilenm);
-        printf("Reading statistics from '%s'.\n", statsfilenm);
+        printf("[%s] Reading  RFI data  from '%s'.\n", log_timestamp(), rfifilenm);
+        printf("[%s] Reading statistics from '%s'.\n", log_timestamp(), statsfilenm);
         readinf(&idata, outfilenm);
         read_rfifile(rfifilenm, &rfivect, &numrfi, &numchan, &numint,
                      &ptsperint, &lobin, &numbetween, &harmsum,
@@ -437,7 +438,7 @@ int main(int argc, char *argv[])
         read_statsfile(statsfilenm, &datapow, &dataavg, &datastd,
                        &numchan, &numint, &ptsperint, &lobin, &numbetween);
         bytemask = gen_bmatrix(numint, numchan);
-        printf("Reading  bytemask  from '%s'.\n\n", bytemaskfilenm);
+        printf("[%s] Reading  bytemask  from '%s'.\n\n", log_timestamp(), bytemaskfilenm);
         bytemaskfile = chkfopen(bytemaskfilenm, "rb");
         chkfread(bytemask[0], numint * numchan, 1, bytemaskfile);
         fclose(bytemaskfile);
@@ -551,7 +552,7 @@ int main(int argc, char *argv[])
             printf("%-2d %-8d %13s %13s %-8.2f\n", ii + 1, rfivect[ii].numobs,
                    temp2, temp1, rfivect[ii].sigma_avg);
         }
-        printf("\nDone.\n\n");
+        printf("\n[%s] Rfifind Done: %s.\n\n", log_timestamp(), cmd->full_cmd_line);
     }
 
     /* Close the files and cleanup */
