@@ -1,5 +1,6 @@
 # PrestoZL
 🎉 News!! Our paper, "**PrestoZL: A GPU-Accelerated High-Throughput Jerk Search Toolkit for Binary Pulsars**", has been accepted for publication in The Astrophysical Journal Supplement Series (APJS)! We are grateful to Prof. Scott Ransom for his invaluable advice and insightful feedback, which greatly contributed to the improvement of this work. You can find the paper [here](https://iopscience.iop.org/article/10.3847/1538-4365/adf4e5).
+---------------------
 
 PrestoZL is a highly optimized, GPU-based pulsar search and analysis software developed by the team at the Astronomical Computing Research Center of Zhejiang Lab. It was developped based on the Scott Ransom's PRESTO v4.0. The key difference between them lies in the GPU optimization of the most time-consuming **"Jerk Search"** module, which has been tailored for GPU parallel processing pipelines.  **The search speed of the GPU-based Jerk Search in PrestoZL can be accelerated by several tens of times faster than CPU-based Jerk Search in PRESTO, while maintaining the search results that are fully identical to [PRESTO C](https://github.com/scottransom/presto/tree/v4.0), including the number of detected pulsars, as well as the output search parameters and signal-to-noise ratio (SNR) values.** 
 
