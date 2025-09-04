@@ -74,11 +74,31 @@ If you have any question, be free to contact me:  maok@zhejianglab.org
 If you use the code in your experiment, please cite this repo, thank you.
 
 ```
-@misc{PrestoZL,
-  author = {ZhejiangLab},
-  title = {PrestoZL GPU version of PRESTO},
-  publisher = {GitHub},
-  url = {https://github.com/zhejianglab/PrestoZL.git},
-  year = {2024}
+@software{kuang_mao_2025_15671344,
+  author       = {Kuang Mao and
+                  Zhaorong Tang and
+                  Qiuhong Pan and
+                  Pei Wang and
+                  Huaxi Chen and
+                  Scott M. Ransom and
+                  Di Li and
+                  Yi Feng and
+                  Donghui Quan and
+                  Zujie Ren},
+  title        = {zhejianglab/PrestoZL: a gpu-accelerated high-
+                   throughput jerk search toolkit for binary pulsars
+                  },
+  month        = jun,
+  year         = 2025,
+  publisher    = {Zenodo},
+  version      = {v1.0},
+  doi          = {10.5281/zenodo.15671344},
+  url          = {https://doi.org/10.5281/zenodo.15671344},
+  swhid        = {swh:1:dir:9cd9ecb088c3f88e4124657d77689eadeb9affff
+                   ;origin=https://doi.org/10.5281/zenodo.15671343;vi
+                   sit=swh:1:snp:00caa552c4ab9400a6f6f188dd9d61e6c2d4
+                   eab3;anchor=swh:1:rel:d567e60534a59144e5e3fa07e456
+                   4da234215111;path=zhejianglab-PrestoZL-fe8f104
+                  },
 }
 ```
