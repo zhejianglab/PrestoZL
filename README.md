@@ -71,34 +71,19 @@ The following individuals contributed to this project, (listed in alphabetical o
 
 If you have any question, be free to contact me:  maok@zhejianglab.org
 
-If you use the code in your experiment, please cite this repo, thank you.
+If you use the code in your experiment, please cite PrestoZL's paper, thank you.
 
 ```
-@software{kuang_mao_2025_15671344,
-  author       = {Kuang Mao and
-                  Zhaorong Tang and
-                  Qiuhong Pan and
-                  Pei Wang and
-                  Huaxi Chen and
-                  Scott M. Ransom and
-                  Di Li and
-                  Yi Feng and
-                  Donghui Quan and
-                  Zujie Ren},
-  title        = {zhejianglab/PrestoZL: a gpu-accelerated high-
-                   throughput jerk search toolkit for binary pulsars
-                  },
-  month        = jun,
-  year         = 2025,
-  publisher    = {Zenodo},
-  version      = {v1.0},
-  doi          = {10.5281/zenodo.15671344},
-  url          = {https://doi.org/10.5281/zenodo.15671344},
-  swhid        = {swh:1:dir:9cd9ecb088c3f88e4124657d77689eadeb9affff
-                   ;origin=https://doi.org/10.5281/zenodo.15671343;vi
-                   sit=swh:1:snp:00caa552c4ab9400a6f6f188dd9d61e6c2d4
-                   eab3;anchor=swh:1:rel:d567e60534a59144e5e3fa07e456
-                   4da234215111;path=zhejianglab-PrestoZL-fe8f104
-                  },
-}
+@article{Mao_2025,
+doi = {10.3847/1538-4365/adf4e5},
+url = {https://dx.doi.org/10.3847/1538-4365/adf4e5},
+year = {2025},
+month = {sep},
+publisher = {The American Astronomical Society},
+volume = {280},
+number = {1},
+pages = {36},
+author = {Mao, Kuang and Tang, Zhaorong and Pan, Qiuhong and Wang, Pei and Chen, Huaxi and Ransom, Scott M. and Li, Di and Tang, Xuefei and Wang, Qi and Feng, Yi and Chen, Lei and Quan, Donghui and Ren, Zujie},
+title = {PrestoZL: A GPU-accelerated High-throughput Jerk Search Toolkit for Binary Pulsars},
+journal = {The Astrophysical Journal Supplement Series},
 ```
