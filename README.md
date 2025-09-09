@@ -85,5 +85,5 @@ number = {1},
 pages = {36},
 author = {Mao, Kuang and Tang, Zhaorong and Pan, Qiuhong and Wang, Pei and Chen, Huaxi and Ransom, Scott M. and Li, Di and Tang, Xuefei and Wang, Qi and Feng, Yi and Chen, Lei and Quan, Donghui and Ren, Zujie},
 title = {PrestoZL: A GPU-accelerated High-throughput Jerk Search Toolkit for Binary Pulsars},
-journal = {The Astrophysical Journal Supplement Series},
+journal = {The Astrophysical Journal Supplement Series}
 ```
