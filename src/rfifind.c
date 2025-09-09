@@ -48,6 +48,18 @@ int read_subband_rawblocks(FILE * infiles[], int numfiles, short *subbanddata,
 void get_subband(int subbandnum, float chandat[], short srawdata[], int numsamples);
 extern int *ranges_to_ivect(char *str, int minval, int maxval, int *numvals);
 
+static char* log_timestamp() {
+    static char buffer[20]; // 注意使用 static 以确保返回的字符串在调用后仍然有效
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    return buffer;
+}
+
 /* The main program */
 
 int main(int argc, char *argv[])

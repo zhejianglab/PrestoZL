@@ -1550,6 +1550,3 @@ fcomplex *atwood_search(double *events, double *weights,
 /*    Nwin:  number of bins that make up a "window" (the FFT len)  */
 /*    dt:  the time duration to use for the binning                */
 
-
-// 返回当前时间戳字符串
-char* log_timestamp();

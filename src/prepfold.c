@@ -20,6 +20,18 @@ extern char *make_polycos(char *parfilenm, infodata * idata, char *polycofilenm,
 extern int *ranges_to_ivect(char *str, int minval, int maxval, int *numvals);
 void set_posn(prepfoldinfo * in, infodata * idata);
 
+static char* log_timestamp() {
+    static char buffer[20]; // 注意使用 static 以确保返回的字符串在调用后仍然有效
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    return buffer;
+}
+
 /*
  * The main program
  */

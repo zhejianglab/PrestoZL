@@ -154,6 +154,18 @@ char *get_error_json_path(const char *outfile, char *error_file_path) {
     return error_file_path;
 }
 
+static char* log_timestamp() {
+    static char buffer[20]; // 注意使用 static 以确保返回的字符串在调用后仍然有效
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    return buffer;
+}
+
 int prepsubband_cu_main(int argc, char *argv[])
 {
     /* Any variable that begins with 't' means topocentric */
