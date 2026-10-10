@@ -1,3 +1,5 @@
+#undef __noinline__
+
 #include <glib.h>
 #include "presto.h"
 #include "accelsearch_cmd.h"
